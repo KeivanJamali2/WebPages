@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-bar-chart-line"></i> Run Analysis
+        </h1>
+        <p class="text-muted">Generate comprehensive analytics and visualizations</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-5">
+                <h4 class="mb-4">
+                    <i class="bi bi-graph-up"></i> Available Analyses
+                </h4>
+                
+                <div class="list-group mb-4">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Total Requests per Hami</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Bar chart showing request distribution across Hamis</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Message Date Distribution</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Timeline analysis of message frequency</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Top Communicators</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Analysis of employees, students, and places</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Response Time Analysis</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Average response times per person</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Common Titles</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Most frequent request subjects</p>
+                    </div>
+                </div>
+                
+                <h2 class="mb-4">Run Analysis</h2>
+                <p class="lead">Generate comprehensive analytics and plots from the processed data.</p>
+                
+                <form method="post" id="analyzeForm">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Select which analyses and plots you want to generate from the current database.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i> Date Range Filter (Optional)
+                        </label>
+                        <div class="form-text mb-3">Filter data by specifying a date range. Leave empty to analyze all data.</div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="startDate" class="form-label">Start Date (Jalali)</label>
+                                <input type="text" class="form-control" id="startDate" name="start_date" 
+                                       placeholder="e.g., 1403-01-01" pattern="\d{4}-\d{2}-\d{2}"
+                                       value="{{ saved_config.start_date }}">
+                                <div class="form-text">Format: YYYY-MM-DD (beginning of day)</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endDate" class="form-label">End Date (Jalali)</label>
+                                <input type="text" class="form-control" id="endDate" name="end_date" 
+                                       placeholder="e.g., 1403-12-29" pattern="\d{4}-\d{2}-\d{2}"
+                                       value="{{ saved_config.end_date }}">
+                                <div class="form-text">Format: YYYY-MM-DD (exclusive - beginning of this day)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Select Plots and Analyses to Generate</label>
+                        <div class="form-text mb-3">Choose one or more analyses to run:</div>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllBtn">
+                                <i class="fas fa-check-square me-1"></i>Select All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBtn">
+                                <i class="fas fa-square me-1"></i>Deselect All
+                            </button>
+                        </div>
+                        
+                        <div class="row">
+                            {% set half = ((available_analyses|length + 1) / 2)|int %}
+                            <div class="col-md-6">
+                                {% for analysis in available_analyses[:half] %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input plot-checkbox" type="checkbox" 
+                                           name="plots" value="{{ analysis.function_name }}" 
+                                           id="plot{{ loop.index }}"
+                                           {% if saved_config.selected_analyses %}{% if analysis.function_name in saved_config.selected_analyses %}checked{% endif %}{% else %}checked{% endif %}>
+                                    <label class="form-check-label" for="plot{{ loop.index }}">
+                                        <strong>{{ analysis.display_name }}</strong>
+                                        <br><small class="text-muted">{{ analysis.description }}</small>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                {% for analysis in available_analyses[half:] %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input plot-checkbox" type="checkbox" 
+                                           name="plots" value="{{ analysis.function_name }}" 
+                                           id="plot{{ loop.index + half }}"
+                                           {% if saved_config.selected_analyses %}{% if analysis.function_name in saved_config.selected_analyses %}checked{% endif %}{% else %}checked{% endif %}>
+                                    <label class="form-check-label" for="plot{{ loop.index + half }}">
+                                        <strong>{{ analysis.display_name }}</strong>
+                                        <br><small class="text-muted">{{ analysis.description }}</small>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="analyzeBtn">
+                            <i class="fas fa-chart-line me-2"></i>Run Selected Analyses
+                        </button>
+                    </div>
+                </form>                <!-- Progress Indicator -->
+                <div class="mt-4 d-none" id="analyzeProgress">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Running analyses... This may take a few minutes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle"></i> Analysis Output
+                </h5>
+                <p class="small">The analysis will generate:</p>
+                <ul class="small">
+                    <li><strong>Plots:</strong> High-quality PNG images</li>
+                    <li><strong>CSV Files:</strong> Detailed data tables</li>
+                    <li><strong>Statistics:</strong> Key metrics and insights</li>
+                </ul>
+                <hr>
+                <p class="small mb-0">
+                    <i class="bi bi-clock"></i> Estimated time: 2-5 minutes depending on data size
+                </p>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-lightbulb"></i> Tip
+                </h5>
+                <p class="small mb-0">
+                    After analysis completes, you can view plots and download CSV files from their respective pages.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Select All functionality
+document.getElementById('selectAllBtn').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.plot-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+});
+
+// Deselect All functionality
+document.getElementById('deselectAllBtn').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.plot-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+});
+
+// Form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    const btn = document.getElementById('analyzeBtn');
+    const progress = document.getElementById('analyzeProgress');
+    const checkboxes = document.querySelectorAll('.plot-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one analysis to run.');
+        return false;
+    }
+    
+    // Validate date format if provided
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    
+    if (startDate && !datePattern.test(startDate)) {
+        e.preventDefault();
+        alert('Invalid start date format. Please use YYYY-MM-DD (e.g., 1403-01-01)');
+        return false;
+    }
+    
+    if (endDate && !datePattern.test(endDate)) {
+        e.preventDefault();
+        alert('Invalid end date format. Please use YYYY-MM-DD (e.g., 1403-12-29)');
+        return false;
+    }
+    
+    // Check if start date is before end date
+    if (startDate && endDate && startDate >= endDate) {
+        e.preventDefault();
+        alert('Start date must be before end date.');
+        return false;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
+    progress.classList.remove('d-none');
+});
+</script>
+{% endblock %}

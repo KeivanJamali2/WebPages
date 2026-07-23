@@ -1,0 +1,206 @@
+/* Local Persian font faces. Place font files under ../fonts/ directory.
+   Recommended font: Vazirmatn (MIT licensed) https://github.com/rastikerdar/vazirmatn
+   Only include needed weights to keep payload small. Example below includes 400,500,700.
+*/
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Vazirmatn Regular'), local('Vazirmatn-Regular'),
+       url('../fonts/Vazirmatn-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Vazirmatn Medium'), local('Vazirmatn-Medium'),
+       url('../fonts/Vazirmatn-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Vazirmatn Bold'), local('Vazirmatn-Bold'),
+       url('../fonts/Vazirmatn-Bold.woff2') format('woff2');
+}
+
+/* Root CSS variable (fallback chain defined from server env) */
+:root {
+  --font-fa: var(--configured-persian-font, 'Vazirmatn', 'IRANSansX', 'IRANYekan', 'Tahoma', 'Helvetica Neue', Arial, sans-serif);
+}
+
+/* Utility class if you want to force Persian font regardless of direction */
+.font-fa { font-family: var(--font-fa); }
+
+/* ------------------------------------------------------------------ */
+/* Additional local Persian / decorative fonts (TTF fallback only).   */
+/* If possible, consider adding optimized WOFF2 versions for size.    */
+/* Each font declared with font-display: swap for better UX.          */
+/* ------------------------------------------------------------------ */
+
+@font-face { /* chamran */
+  font-family: 'Chamran';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Chamran'), url('../fonts/chamran.ttf') format('truetype');
+}
+
+@font-face { /* cinema */
+  font-family: 'Cinema';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Cinema'), url('../fonts/cinema.ttf') format('truetype');
+}
+
+@font-face { /* digi-hilan-bold */
+  font-family: 'DigiHilan';
+  font-style: normal;
+  font-weight: 700; /* inferred from filename */
+  font-display: swap;
+  src: local('DigiHilan Bold'), local('DigiHilan-Bold'), url('../fonts/digi-hilan-bold.ttf') format('truetype');
+}
+
+@font-face { /* dima-arsalan */
+  font-family: 'DimaArsalan';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Dima Arsalan'), url('../fonts/dima-arsalan.ttf') format('truetype');
+}
+
+@font-face { /* dima-classic-bold */
+  font-family: 'DimaClassic';
+  font-style: normal;
+  font-weight: 700; /* inferred bold */
+  font-display: swap;
+  src: local('Dima Classic Bold'), local('DimaClassic-Bold'), url('../fonts/dima-classic-bold.ttf') format('truetype');
+}
+
+@font-face { /* dima-magic */
+  font-family: 'DimaMagic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Dima Magic'), url('../fonts/dima-magic.ttf') format('truetype');
+}
+
+@font-face { /* dima-type */
+  font-family: 'DimaType';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Dima Type'), url('../fonts/dima-type.ttf') format('truetype');
+}
+
+@font-face { /* fonoon */
+  font-family: 'Fonoon';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Fonoon'), url('../fonts/fonoon.ttf') format('truetype');
+}
+
+@font-face { /* ghalam */
+  font-family: 'Ghalam';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Ghalam'), url('../fonts/ghalam.ttf') format('truetype');
+}
+
+@font-face { /* mashti */
+  font-family: 'Mashti';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Mashti'), url('../fonts/mashti.ttf') format('truetype');
+}
+
+@font-face { /* nofar */
+  font-family: 'Nofar';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Nofar'), url('../fonts/nofar.ttf') format('truetype');
+}
+
+@font-face { /* omid */
+  font-family: 'Omid';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Omid'), url('../fonts/omid.ttf') format('truetype');
+}
+
+@font-face { /* onvan-alt */
+  font-family: 'OnvanAlt';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Onvan Alt'), url('../fonts/onvan-alt.ttf') format('truetype');
+}
+
+@font-face { /* onvan */
+  font-family: 'Onvan';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Onvan'), url('../fonts/onvan.ttf') format('truetype');
+}
+
+@font-face { /* ray */
+  font-family: 'Ray';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Ray'), url('../fonts/ray.ttf') format('truetype');
+}
+
+@font-face { /* shaparak */
+  font-family: 'Shaparak';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Shaparak'), url('../fonts/shaparak.ttf') format('truetype');
+}
+
+@font-face { /* sin */
+  font-family: 'Sin';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Sin'), url('../fonts/sin.ttf') format('truetype');
+}
+
+@font-face { /* yazd */
+  font-family: 'Yazd';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Yazd'), url('../fonts/yazd.ttf') format('truetype');
+}
+
+/* Utility helper classes (optional) */
+.font-chamran { font-family: 'Chamran', var(--font-fa); }
+.font-cinema { font-family: 'Cinema', var(--font-fa); }
+.font-digihilan { font-family: 'DigiHilan', var(--font-fa); }
+.font-dima-arsalan { font-family: 'DimaArsalan', var(--font-fa); }
+.font-dima-classic { font-family: 'DimaClassic', var(--font-fa); }
+.font-dima-magic { font-family: 'DimaMagic', var(--font-fa); }
+.font-dima-type { font-family: 'DimaType', var(--font-fa); }
+.font-fonoon { font-family: 'Fonoon', var(--font-fa); }
+.font-ghalam { font-family: 'Ghalam', var(--font-fa); }
+.font-mashti { font-family: 'Mashti', var(--font-fa); }
+.font-nofar { font-family: 'Nofar', var(--font-fa); }
+.font-omid { font-family: 'Omid', var(--font-fa); }
+.font-onvan-alt { font-family: 'OnvanAlt', var(--font-fa); }
+.font-onvan { font-family: 'Onvan', var(--font-fa); }
+.font-ray { font-family: 'Ray', var(--font-fa); }
+.font-shaparak { font-family: 'Shaparak', var(--font-fa); }
+.font-sin { font-family: 'Sin', var(--font-fa); }
+.font-yazd { font-family: 'Yazd', var(--font-fa); }

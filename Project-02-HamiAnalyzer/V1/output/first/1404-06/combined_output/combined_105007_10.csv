@@ -1,0 +1,22 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-25 05:49:16,<empty>,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-25 11:12:00,<empty>,Erfan Jamshidi,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,<empty>,6f1a79cb-b68f-44f5-9a15-6fd5b4c22df1,True
+1404-06-25 11:45:00,"موضوع: 'درخواست مهمانی و انتقال'
+با سلام . احتراما درخواست دانشجو ارسال می گردد",دکتری عمومی_پزشکی_یزد_4021,سمیرا سالاری مدوار,336763@iau.ir,6f1a79cb-b68f-44f5-9a15-6fd5b4c22df1,6a33e7fd-a8be-4834-8d8f-4445e049eb51,True
+1404-06-25 11:45:33,با سلام . احتراما درخواست دانشجو ارسال می گردد,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-25 15:27:00,<empty>,دکتری عمومی_پزشکی_یزد_4021,مهدی بیک,336766@iau.ir,6f1a79cb-b68f-44f5-9a15-6fd5b4c22df1,ffec6e8d-5f66-442d-b8d0-ae5582cc035b,True
+1404-06-25 17:49:00,موضوع: 'درخواست مهمانی و انتقال',دکتری عمومی_پزشکی_یزد_4021,ایمان اله حیدری,336804@iau.ir,6f1a79cb-b68f-44f5-9a15-6fd5b4c22df1,33891c0f-977a-4aa2-9abd-cc7501ec9695,True
+1404-06-26 09:34:59,"با سلام 
+سرکار خانم سالاری فرمودند انجام شده است .",Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-26 09:36:00,There is nothing about this message in the Emails.,مهدی بیک,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,ffec6e8d-5f66-442d-b8d0-ae5582cc035b,3a98c518-94ad-47d9-9105-98543e102db4,False
+1404-06-26 21:35:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_4021,Erfan Jamshidi,2900371783@iau.ir,3a98c518-94ad-47d9-9105-98543e102db4,5a303f37-5b10-4fb2-984e-0ad5f78c008f,False
+1404-06-31 10:07:00,"موضوع: 'پاسخ: درخواست مهمانی و انتقال'
+با سلام. پرونده تكميل وبه واحد اروميه ارسال گرديد.",ایمان اله حیدری,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,33891c0f-977a-4aa2-9abd-cc7501ec9695,bc9052e5-6d2e-46fa-a7b0-eb00bb0b11d1,True
+1404-06-31 10:42:57,با سلام. پرونده تكميل وبه واحد اروميه ارسال گرديد.,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-31 10:43:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_4021,Erfan Jamshidi,2900371783@iau.ir,3a98c518-94ad-47d9-9105-98543e102db4,1d956e31-87a2-45f4-8b65-3c3a378dd436,False
+1404-07-01 11:27:00,"موضوع: 'پاسخ: درخواست مهمانی و انتقال'
+با سلام و احترام 
+انجام شده است
+با تشکر",سمیرا سالاری مدوار,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,6a33e7fd-a8be-4834-8d8f-4445e049eb51,dfec4a9f-7a4f-4ed3-8076-ab8b198dffdd,True
+1404-07-01 14:07:00,با سلام .انجام شده است .,دکتری عمومی_پزشکی_یزد_4021,Erfan Jamshidi,2900371783@iau.ir,dfec4a9f-7a4f-4ed3-8076-ab8b198dffdd,97978682-3141-44e0-b689-e44909c7e0a2,True
+1500-01-01 00:00:00,انتقال پرونده از واحد یزد به واحد ارومیه,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False

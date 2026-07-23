@@ -1,0 +1,15 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-05 10:47:00,<empty>,Armin Hoomei,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,<empty>,905d59ce-3c21-4897-81d4-2eeaaa9a8534,True
+1404-06-05 14:03:00,با سلام . احتراما درخواست دانشجو ارسال می گردد,دکتری عمومی_پزشکی_یزد_3981,سمیرا سالاری مدوار,336763@iau.ir,905d59ce-3c21-4897-81d4-2eeaaa9a8534,3b0807cb-0ae2-44f5-b249-64fc81e6a075,True
+1404-06-09 04:15:39,احتراما درخواست دانشجو ارسال می گردد .,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-09 16:15:00,"موضوع: 'درخواست ارسال لیست دروس'
+احتراما درخواست دانشجو ارسال می گردد .",دکتری عمومی_پزشکی_یزد_3981,مهدی بیک,336766@iau.ir,905d59ce-3c21-4897-81d4-2eeaaa9a8534,ba894cc9-866f-4a8c-a4f1-b6d7eecbb572,True
+1404-06-11 01:06:55,"سلام
+
+لیست دروس نامبرده در تاریخ 6/6/1404 ارسال گردیده است",Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-11 12:15:00,"موضوع: 'پاسخ: درخواست ارسال لیست دروس'
+سلام
+لیست دروس نامبرده در تاریخ 6/6/1404 ارسال گردیده است",مهدی بیک,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,ba894cc9-866f-4a8c-a4f1-b6d7eecbb572,2ebaa73c-bffc-4406-b68e-c61810a9402d,True
+1404-06-11 13:07:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_3981,Armin Hoomei,1273183967@iau.ir,2ebaa73c-bffc-4406-b68e-c61810a9402d,ffa69b2a-2994-45aa-b955-a77e3501966b,False
+1500-01-01 00:00:00,"با عرض سلام و وقت بخیر
+اینجانب آرمین حومئی در نیمسال ۴۰۴۱ به واحد نف آباد مهمان شده ام و خواهشمند هستم لیست دروس من را به واحد مقصد(نجف آباد) اعلام بفرمایید",Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False

@@ -1,0 +1,12 @@
+parent_id: None
+id: bed9e3f3-c74d-4acc-a3be-9eb8f4cb5cab
+date: دوشنبه، 13 مرداد 1404 22:50
+name: کارشناسی پیوسته_حقوق_یزد_4001
+email: sf-105-20803-4-4001@iau.ir
+--------------------------------------------------
+parent_id: bed9e3f3-c74d-4acc-a3be-9eb8f4cb5cab
+id: 58fac438-57bf-4cb5-8fe7-f16a28621347
+date: شنبه، 14 مرداد 1404 20:02
+name: Mahdieh Shekari
+email: 3140205661@iau.ir
+--------------------------------------------------

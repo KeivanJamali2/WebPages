@@ -1,0 +1,1302 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('new_daily_form') if mode == 'new' else t('edit_daily_form') }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<!-- Persian Date Picker -->
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<style>
+    .datepicker-plot-area { font-family: 'Vazirmatn', sans-serif !important; }
+    .day-of-week-display {
+        background: var(--bg-color);
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius);
+        font-weight: 600;
+        color: var(--primary-color);
+        border: 1px solid var(--border-color);
+    }
+    .excel-notice {
+        background: linear-gradient(135deg, var(--success-light) 0%, rgba(16, 185, 129, 0.1) 100%);
+        border: 1px solid var(--success-color);
+        border-radius: var(--radius-lg);
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .excel-notice-icon {
+        font-size: 2rem;
+    }
+    .excel-notice-text {
+        color: var(--success-dark);
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div class="d-flex justify-between align-center flex-wrap gap-2">
+        <h1>{{ t('new_daily_form') if mode == 'new' else t('edit_daily_form') }}</h1>
+        {% if mode == 'new' %}
+        <button type="button" class="btn btn-secondary" id="load-previous-btn" title="{{ t('load_previous_form_desc') }}">
+            📋 {{ t('load_previous_form') }}
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+{% if excel_data %}
+<div class="excel-notice">
+    <span class="excel-notice-icon">📊</span>
+    <span class="excel-notice-text">{{ t('data_loaded_from_excel') }}</span>
+</div>
+{% endif %}
+
+<form method="POST" id="daily-form" enctype="multipart/form-data" action="{% if mode == 'new' %}{{ url_for('forms.new_form') }}{% elif mode == 'edit' %}{{ url_for('forms.edit_form', form_id=form.id) }}{% endif %}">
+    <!-- Section 1: Date and Time -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📅 {{ t('date_and_time') }}</h3>
+        </div>
+        <div class="form-section-body">
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('project') }} *</label>
+                    <select name="project_id" class="form-control" required>
+                        <option value="">{{ t('select_project') }}</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" 
+                            {% if form and form.project_id == project.id %}selected
+                            {% elif selected_project and selected_project.id == project.id %}selected
+                            {% elif excel_data and excel_data.date_time.project_name and project.name == excel_data.date_time.project_name %}selected
+                            {% endif %}>
+                            {{ project.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group flex-1" style="min-width: 180px;">
+                    <label class="form-label">{{ t('form_date') }} *</label>
+                    <input type="text" name="form_date" id="jalali-date-input" class="form-control" required
+                           placeholder="۱۴۰۴-۰۹-۰۶"
+                           value="{% if excel_data and excel_data.date_time.form_date %}{{ excel_data.date_time.form_date }}{% elif form %}{{ form.form_date|jalali('%Y-%m-%d') }}{% else %}{{ today_jalali() }}{% endif %}"
+                           autocomplete="off">
+                </div>
+                <div class="form-group flex-1" style="min-width: 130px;">
+                    <label class="form-label">{{ t('day_of_week') }}</label>
+                    <div class="day-of-week-display" id="day-of-week-display">
+                        {% if excel_data and excel_data.date_time.day_of_week %}{{ excel_data.date_time.day_of_week }}{% elif form and form.day_of_week %}{{ form.day_of_week }}{% else %}-{% endif %}
+                    </div>
+                    <input type="hidden" name="day_of_week" id="day-of-week-input" 
+                           value="{% if excel_data and excel_data.date_time.day_of_week %}{{ excel_data.date_time.day_of_week }}{% elif form %}{{ form.day_of_week }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('work_shift') }}</label>
+                    {% set excel_shift = excel_data.date_time.work_shift if excel_data else '' %}
+                    <select name="work_shift" class="form-control">
+                        <option value="">{{ t('select') }}</option>
+                        <option value="Morning" {% if (form and form.work_shift == 'Morning') or ('صبح' in excel_shift or 'morning' in excel_shift.lower()) %}selected{% endif %}>{{ t('morning_shift') }}</option>
+                        <option value="Night" {% if (form and form.work_shift == 'Night') or ('شب' in excel_shift or 'night' in excel_shift.lower()) %}selected{% endif %}>{{ t('night_shift') }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Climate Condition -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🌤️ {{ t('climate_condition') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            {% set climate = form.climate_conditions.first() if form else None %}
+            {% set excel_climate = excel_data.climate if excel_data else {} %}
+            
+            <!-- Temperature and Humidity -->
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('min_temperature') }} (°C)</label>
+                    <input type="number" name="min_temp" class="form-control" step="0.1"
+                           value="{% if excel_climate.min_temperature %}{{ excel_climate.min_temperature }}{% elif climate %}{{ climate.min_temperature }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('max_temperature') }} (°C)</label>
+                    <input type="number" name="max_temp" class="form-control" step="0.1"
+                           value="{% if excel_climate.max_temperature %}{{ excel_climate.max_temperature }}{% elif climate %}{{ climate.max_temperature }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('humidity') }} (%)</label>
+                    <input type="number" name="humidity" class="form-control" min="0" max="100"
+                           value="{% if excel_climate.humidity %}{{ excel_climate.humidity }}{% elif climate %}{{ climate.humidity }}{% endif %}">
+                </div>
+            </div>
+            
+            <!-- Weather Type - Single Selection -->
+            {% set weather_val = excel_climate.weather_type if excel_climate else (climate.weather_type if climate else '') %}
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('weather_type') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_clear" value="clear"
+                               {% if weather_val == 'clear' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_clear">☀️ {{ t('clear') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_cloudy" value="cloudy"
+                               {% if weather_val == 'cloudy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_cloudy">☁️ {{ t('cloudy') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_rainy" value="rainy"
+                               {% if weather_val == 'rainy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_rainy">🌧️ {{ t('rainy') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_foggy" value="foggy"
+                               {% if weather_val == 'foggy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_foggy">🌫️ {{ t('foggy') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_snowy" value="snowy"
+                               {% if weather_val == 'snowy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_snowy">❄️ {{ t('snowy') }}</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Wind Speed - Single Selection -->
+            {% set wind_val = excel_climate.wind_speed if excel_climate else (climate.wind_speed if climate else '') %}
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('wind_speed') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input type="radio" name="wind_speed" class="form-check-input" id="wind_slow" value="slow"
+                               {% if wind_val == 'slow' %}checked{% endif %}>
+                        <label class="form-check-label" for="wind_slow">🍃 {{ t('wind_slow') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="wind_speed" class="form-check-input" id="wind_normal" value="normal"
+                               {% if wind_val == 'normal' %}checked{% endif %}>
+                        <label class="form-check-label" for="wind_normal">💨 {{ t('wind_normal') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="wind_speed" class="form-check-input" id="wind_fast" value="fast"
+                               {% if wind_val == 'fast' %}checked{% endif %}>
+                        <label class="form-check-label" for="wind_fast">🌪️ {{ t('wind_fast') }}</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Climate Effect on Project - Single Selection -->
+            {% set effect_val = excel_climate.climate_effect if excel_climate else (climate.climate_effect if climate else '') %}
+            <div class="form-group">
+                <label class="form-label">{{ t('climate_effect') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input type="radio" name="climate_effect" class="form-check-input" id="effect_none" value="no_effect"
+                               {% if effect_val == 'no_effect' %}checked{% endif %}>
+                        <label class="form-check-label" for="effect_none">✅ {{ t('no_effect') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="climate_effect" class="form-check-input" id="effect_slow" value="slow_progress"
+                               {% if effect_val == 'slow_progress' %}checked{% endif %}>
+                        <label class="form-check-label" for="effect_slow">⚠️ {{ t('slow_progress') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="climate_effect" class="form-check-input" id="effect_stopped" value="stopped"
+                               {% if effect_val == 'stopped' %}checked{% endif %}>
+                        <label class="form-check-label" for="effect_stopped">🛑 {{ t('stopped_completely') }}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Section 3: Human Resources -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>👥 {{ t('human_resources') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="hr-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('post') }}</th>
+                        <th style="width: 100px;">{{ t('count') }}</th>
+                        <th style="width: 100px;">{{ t('working_hours') }}</th>
+                        <th>{{ t('explanations') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.human_resources %}
+                        {% for hr in excel_data.human_resources %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="hr_post[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for position in configuration['Human_Resources'] %}
+                                    <option value="{{ position }}" {% if hr.post == position %}selected{% endif %}>{{ position }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="hr_count[]" value="{{ hr.count }}" min="0"></td>
+                            <td><input type="number" name="hr_hours[]" value="{{ hr.working_hours }}" min="0" step="0.5"></td>
+                            <td><input type="text" name="hr_notes[]" value="{{ hr.notes or '' }}"></td>
+                            <td><span class="remove-row-btn" title="{{ t('remove') }}">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for hr in form.human_resources %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="hr_post[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for position in configuration['Human_Resources'] %}
+                                    <option value="{{ position }}" {% if hr.post and hr.post.strip() == position.strip() %}selected{% endif %}>{{ position }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="hr_count[]" value="{{ hr.count }}" min="0"></td>
+                            <td><input type="number" name="hr_hours[]" value="{{ hr.working_hours }}" min="0" step="0.5"></td>
+                            <td><input type="text" name="hr_notes[]" value="{{ hr.notes or '' }}"></td>
+                            <td><span class="remove-row-btn" title="{{ t('remove') }}">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="hr_post[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for position in configuration['Human_Resources'] %}
+                                <option value="{{ position }}">{{ position }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="hr_count[]" min="0" value="0"></td>
+                        <td><input type="number" data-name="hr_hours[]" min="0" step="0.5" value="0"></td>
+                        <td><input type="text" data-name="hr_notes[]"></td>
+                        <td><span class="remove-row-btn" title="{{ t('remove') }}">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="hr-table">➕ {{ t('add_position') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 4: Tools and Equipment -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🚜 {{ t('tools_and_equipment') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="eq-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('equipment_name') }}</th>
+                        <th style="width: 80px;">{{ t('count_active') }}</th>
+                        <th style="width: 80px;">{{ t('working_hours') }}</th>
+                        <th style="width: 120px;">{{ t('situation') }}</th>
+                        <th>{{ t('inactivity_reason') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.tools_equipment %}
+                        {% for eq in excel_data.tools_equipment %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="eq_name[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for equipment in configuration['Tools_And_Equipments'] %}
+                                    <option value="{{ equipment }}" {% if eq.equipment_name and eq.equipment_name.strip() == equipment.strip() %}selected{% endif %}>{{ equipment }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="eq_active[]" value="{{ eq.count_active }}" min="0"></td>
+                            <td><input type="number" name="eq_hours[]" value="{{ eq.working_hours }}" min="0" step="0.5"></td>
+                            <td>
+                                <select name="eq_situation[]">
+                                    <option value="">-</option>
+                                    <option value="Active" {% if eq.situation == 'Active' or 'فعال' in (eq.situation or '') %}selected{% endif %}>{{ t('active') }}</option>
+                                    <option value="Inactive" {% if eq.situation == 'Inactive' or 'غیرفعال' in (eq.situation or '') %}selected{% endif %}>{{ t('inactive') }}</option>
+                                    <option value="Under Repair" {% if eq.situation == 'Under Repair' or 'تعمیر' in (eq.situation or '') %}selected{% endif %}>{{ t('under_repair') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="eq_reason[]" value="{{ eq.inactivity_reason or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for eq in form.tools_equipments %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="eq_name[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for equipment in configuration['Tools_And_Equipments'] %}
+                                    <option value="{{ equipment }}" {% if eq.equipment_name and eq.equipment_name.strip() == equipment.strip() %}selected{% endif %}>{{ equipment }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="eq_active[]" value="{{ eq.count_active }}" min="0"></td>
+                            <td><input type="number" name="eq_hours[]" value="{{ eq.working_hours }}" min="0" step="0.5"></td>
+                            <td>
+                                <select name="eq_situation[]">
+                                    <option value="">-</option>
+                                    <option value="Active" {% if eq.situation == 'Active' %}selected{% endif %}>{{ t('active') }}</option>
+                                    <option value="Inactive" {% if eq.situation == 'Inactive' %}selected{% endif %}>{{ t('inactive') }}</option>
+                                    <option value="Under Repair" {% if eq.situation == 'Under Repair' %}selected{% endif %}>{{ t('under_repair') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="eq_reason[]" value="{{ eq.inactivity_reason or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="eq_name[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for equipment in configuration['Tools_And_Equipments'] %}
+                                <option value="{{ equipment }}">{{ equipment }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="eq_active[]" min="0" value="0"></td>
+                        <td><input type="number" data-name="eq_hours[]" min="0" step="0.5" value="0"></td>
+                        <td>
+                            <select data-name="eq_situation[]">
+                                <option value="">-</option>
+                                <option value="Active">{{ t('active') }}</option>
+                                <option value="Inactive">{{ t('inactive') }}</option>
+                                <option value="Under Repair">{{ t('under_repair') }}</option>
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="eq_reason[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="eq-table">➕ {{ t('add_equipment') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 5: Construction Operations -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🏗️ {{ t('construction_operations') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="op-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('operation_type') }}</th>
+                        <th style="width: 100px;">{{ t('start_km') }}</th>
+                        <th style="width: 100px;">{{ t('end_km') }}</th>
+                        <th style="width: 100px;">{{ t('unit') }}</th>
+                        <th style="width: 100px;">{{ t('progress') }}</th>
+                        <th style="width: 100px;">{{ t('map_number') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.operations %}
+                        {% for op in excel_data.operations %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="op_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for operation in configuration['Daily_Activity_Report'] %}
+                                    <option value="{{ operation }}" {% if op.operation_type and op.operation_type.strip() == operation.strip() %}selected{% endif %}>{{ operation }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="op_start[]" value="{{ op.start_km or '' }}" step="0.01"></td>
+                            <td><input type="number" name="op_end[]" value="{{ op.end_km or '' }}" step="0.01"></td>
+                            <td>
+                                <select name="op_unit[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for unit in configuration['Units'] %}
+                                    <option value="{{ unit }}" {% if op.unit and op.unit.strip() == unit.strip() %}selected{% endif %}>{{ unit }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="op_progress[]" value="{{ op.progress }}" step="0.01"></td>
+                            <td><input type="text" name="op_map[]" value="{{ op.map_number or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for op in form.construction_operations %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="op_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for operation in configuration['Daily_Activity_Report'] %}
+                                    <option value="{{ operation }}" {% if op.operation_type and op.operation_type.strip() == operation.strip() %}selected{% endif %}>{{ operation }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="op_start[]" value="{{ op.start_km or '' }}" step="0.01"></td>
+                            <td><input type="number" name="op_end[]" value="{{ op.end_km or '' }}" step="0.01"></td>
+                            <td>
+                                <select name="op_unit[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for unit in configuration['Units'] %}
+                                    <option value="{{ unit }}" {% if op.unit and op.unit.strip() == unit.strip() %}selected{% endif %}>{{ unit }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="op_progress[]" value="{{ op.progress }}" step="0.01"></td>
+                            <td><input type="text" name="op_map[]" value="{{ op.map_number or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="op_type[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for operation in configuration['Daily_Activity_Report'] %}
+                                <option value="{{ operation }}">{{ operation }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="op_start[]" step="0.01"></td>
+                        <td><input type="number" data-name="op_end[]" step="0.01"></td>
+                        <td>
+                            <select data-name="op_unit[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for unit in configuration['Units'] %}
+                                <option value="{{ unit }}">{{ unit }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="op_progress[]" step="0.01" value="0"></td>
+                        <td><input type="text" data-name="op_map[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="op-table">➕ {{ t('add_operation') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 6: Incoming Materials -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📦 {{ t('incoming_materials') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="mat-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('material_type') }}</th>
+                        <th>{{ t('incoming_amount') }}</th>
+                        <th>{{ t('cumulative_incoming') }}</th>
+                        <th>{{ t('used_amount') }}</th>
+                        <th>{{ t('cumulative_used') }}</th>
+                        <th>{{ t('storage_place') }}</th>
+                        <th>{{ t('waybill_number') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.materials %}
+                        {% for mat in excel_data.materials %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="mat_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for material in configuration['Incoming_Materials_And_Goods'] %}
+                                    <option value="{{ material }}" {% if mat.material_type == material %}selected{% endif %}>{{ material }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="mat_incoming[]" value="{{ mat.incoming_amount }}" step="0.01"></td>
+                            <td><input type="number" name="mat_cum_in[]" value="{{ mat.cumulative_incoming }}" step="0.01"></td>
+                            <td><input type="number" name="mat_used[]" value="{{ mat.used_amount }}" step="0.01"></td>
+                            <td><input type="number" name="mat_cum_used[]" value="{{ mat.cumulative_used }}" step="0.01"></td>
+                            <td><input type="text" name="mat_storage[]" value="{{ mat.storage_place or '' }}"></td>
+                            <td><input type="text" name="mat_waybill[]" value="{{ mat.waybill_number or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for mat in form.incoming_materials %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="mat_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for material in configuration['Incoming_Materials_And_Goods'] %}
+                                    <option value="{{ material }}" {% if mat.material_type and mat.material_type.strip() == material.strip() %}selected{% endif %}>{{ material }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="mat_incoming[]" value="{{ mat.incoming_amount }}" step="0.01"></td>
+                            <td><input type="number" name="mat_cum_in[]" value="{{ mat.cumulative_incoming }}" step="0.01"></td>
+                            <td><input type="number" name="mat_used[]" value="{{ mat.used_amount }}" step="0.01"></td>
+                            <td><input type="number" name="mat_cum_used[]" value="{{ mat.cumulative_used }}" step="0.01"></td>
+                            <td><input type="text" name="mat_storage[]" value="{{ mat.storage_place or '' }}"></td>
+                            <td><input type="text" name="mat_waybill[]" value="{{ mat.waybill_number or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="mat_type[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for material in configuration['Incoming_Materials_And_Goods'] %}
+                                <option value="{{ material }}">{{ material }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="mat_incoming[]" step="0.01" value="0"></td>
+                        <td><input type="number" data-name="mat_cum_in[]" step="0.01" value="0"></td>
+                        <td><input type="number" data-name="mat_used[]" step="0.01" value="0"></td>
+                        <td><input type="number" data-name="mat_cum_used[]" step="0.01" value="0"></td>
+                        <td><input type="text" data-name="mat_storage[]"></td>
+                        <td><input type="text" data-name="mat_waybill[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="mat-table">➕ {{ t('add_material') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 7: Project Issues -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>⚠️ {{ t('project_issues') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="issue-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('issue_type') }}</th>
+                        <th>{{ t('effect') }}</th>
+                        <th style="width: 100px;">{{ t('location_km') }}</th>
+                        <th>{{ t('notes') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.issues %}
+                        {% for issue in excel_data.issues %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="issue_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for issue_option in configuration['Project_Issues'] %}
+                                    <option value="{{ issue_option }}" {% if issue.issue_type and issue.issue_type.strip() == issue_option.strip() %}selected{% endif %}>{{ issue_option }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="issue_effect[]" value="{{ issue.effect or '' }}"></td>
+                            <td><input type="number" name="issue_location[]" value="{{ issue.location_km or '' }}" step="0.01"></td>
+                            <td><input type="text" name="issue_notes[]" value="{{ issue.notes or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for issue in form.project_issues %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="issue_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for issue_option in configuration['Project_Issues'] %}
+                                    <option value="{{ issue_option }}" {% if issue.issue_type and issue.issue_type.strip() == issue_option.strip() %}selected{% endif %}>{{ issue_option }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="issue_effect[]" value="{{ issue.effect or '' }}"></td>
+                            <td><input type="number" name="issue_location[]" value="{{ issue.location_km or '' }}" step="0.01"></td>
+                            <td><input type="text" name="issue_notes[]" value="{{ issue.notes or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="issue_type[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for issue_option in configuration['Project_Issues'] %}
+                                <option value="{{ issue_option }}">{{ issue_option }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="issue_effect[]"></td>
+                        <td><input type="number" data-name="issue_location[]" step="0.01"></td>
+                        <td><input type="text" data-name="issue_notes[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="issue-table">➕ {{ t('add_issue') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 8: Safety -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🛡️ {{ t('safety') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            {% set safety = form.safety_records.first() if form else None %}
+            {% set excel_safety = excel_data.safety if excel_data else None %}
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('safety_situation') }}</label>
+                    <select name="safety_situation" class="form-control">
+                        <option value="">{{ t('select') }}</option>
+                        {% set selected_situation = excel_safety.safety_situation if excel_safety else (safety.safety_situation if safety else '') %}
+                        <option value="Incident" {% if selected_situation == 'Incident' %}selected{% endif %}>{{ t('incident') }}</option>
+                        <option value="NearMiss" {% if selected_situation == 'NearMiss' %}selected{% endif %}>{{ t('near_miss') }}</option>
+                        <option value="NoIncident" {% if selected_situation == 'NoIncident' %}selected{% endif %}>{{ t('no_incident') }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-check">
+                    {% set inspection_checked = excel_safety.safety_inspection if excel_safety else (safety.safety_inspection if safety else False) %}
+                    <input type="checkbox" name="safety_inspection" class="form-check-input" id="safety_inspection"
+                           {% if inspection_checked %}checked{% endif %}>
+                    <label class="form-check-label" for="safety_inspection">{{ t('safety_inspection') }}</label>
+                </div>
+                <div class="form-check">
+                    {% set incident_checked = excel_safety.incident_occurred if excel_safety else (safety.incident_occurred if safety else False) %}
+                    <input type="checkbox" name="incident_occurred" class="form-check-input" id="incident_occurred"
+                           {% if incident_checked %}checked{% endif %}>
+                    <label class="form-check-label" for="incident_occurred">{{ t('incident_occurred') }}</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ t('incident_explanation') }}</label>
+                {% set incident_text = excel_safety.incident_explanation if excel_safety else (safety.incident_explanation if safety else '') %}
+                <textarea name="incident_explanation" class="form-control" rows="3">{{ incident_text }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 9: Events -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📌 {{ t('events') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="event-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th style="width: 120px;">{{ t('event_type') }}</th>
+                        <th>{{ t('event_name') }}</th>
+                        <th>{{ t('explanation') }}</th>
+                        <th style="width: 200px;">{{ t('meeting_minutes') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.events %}
+                        {% for event in excel_data.events %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="event_type[]" class="form-control event-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    <option value="Visit" {% if event.event_type == 'Visit' %}selected{% endif %}>{{ t('event_visit') }}</option>
+                                    <option value="Meeting" {% if event.event_type == 'Meeting' %}selected{% endif %}>{{ t('event_meeting') }}</option>
+                                    <option value="Other" {% if event.event_type == 'Other' %}selected{% endif %}>{{ t('event_other') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="event_name[]" value="{{ event.event_name or '' }}" class="event-name-input"></td>
+                            <td><input type="text" name="event_explanation[]" value="{{ event.explanation or '' }}"></td>
+                            <td>
+                                <input type="file" name="event_document_{{ loop.index0 }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="form-control event-doc-input">
+                            </td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for event in form.events %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="event_type[]" class="form-control event-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    <option value="Visit" {% if event.event_type == 'Visit' %}selected{% endif %}>{{ t('event_visit') }}</option>
+                                    <option value="Meeting" {% if event.event_type == 'Meeting' %}selected{% endif %}>{{ t('event_meeting') }}</option>
+                                    <option value="Other" {% if event.event_type == 'Other' %}selected{% endif %}>{{ t('event_other') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="event_name[]" value="{{ event.event_name }}" class="event-name-input"></td>
+                            <td><input type="text" name="event_explanation[]" value="{{ event.explanation or '' }}"></td>
+                            <td>
+                                {% if event.document_filename %}
+                                <span class="badge badge-success" title="{{ event.document_filename }}">📄 {{ t('documents_attached') }}</span>
+                                {% endif %}
+                                <input type="file" name="event_document_{{ loop.index0 }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="form-control event-doc-input">
+                            </td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="event_type[]" class="form-control event-type-select">
+                                <option value="">{{ t('select') }}</option>
+                                <option value="Visit">{{ t('event_visit') }}</option>
+                                <option value="Meeting">{{ t('event_meeting') }}</option>
+                                <option value="Other">{{ t('event_other') }}</option>
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="event_name[]" class="event-name-input"></td>
+                        <td><input type="text" data-name="event_explanation[]"></td>
+                        <td><input type="file" data-name="event_document_INDEX" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="form-control event-doc-input"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="event-table">➕ {{ t('add_event') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 10: Documents -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📎 {{ t('form_documents') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <div class="document-upload-area">
+                <div class="upload-info mb-3">
+                    <p class="text-muted">{{ t('upload_documents_desc') }}</p>
+                    <small class="text-muted">{{ t('allowed_file_types') }} | {{ t('max_file_size') }}</small>
+                </div>
+                
+                {% if form and form.documents_path %}
+                <div class="existing-documents mb-3" id="existing-documents">
+                    <div class="d-flex align-center gap-2 flex-wrap">
+                        <span class="badge badge-success">📄 {{ t('documents_attached') }}</span>
+                        <a href="{{ url_for('forms.download_form_documents', form_id=form.id) }}" class="btn btn-sm btn-primary">
+                            📥 {{ t('download_documents') }}
+                        </a>
+                        {% if form.status == 'draft' %}
+                        <button type="button" class="btn btn-sm btn-danger" id="delete-documents-btn" 
+                                data-form-id="{{ form.id }}">
+                            🗑️ {{ t('delete_documents') }}
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="file-input-wrapper">
+                    <label class="file-input-label" for="form-documents">
+                        <span class="file-input-icon">📁</span>
+                        <span class="file-input-text">{{ t('select_files') }}</span>
+                        <input type="file" 
+                               name="form_documents[]" 
+                               id="form-documents" 
+                               multiple 
+                               accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.doc,.docx,.zip,.rar"
+                               class="file-input">
+                    </label>
+                </div>
+                
+                <div class="selected-files-list mt-3" id="selected-files-list" style="display: none;">
+                    <h5>{{ t('selected_files') }}:</h5>
+                    <ul id="files-list"></ul>
+                    <div class="total-size mt-2">
+                        <span id="total-size-display"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Buttons -->
+    <div class="d-flex gap-3 mt-4">
+        <button type="submit" name="action" value="draft" class="btn btn-outline">💾 {{ t('save_draft') }}</button>
+        <button type="submit" name="action" value="submit" class="btn btn-primary">✈️ {{ t('submit_form') }}</button>
+        <a href="{{ url_for('forms.my_forms') }}" class="btn btn-outline">{{ t('cancel') }}</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Persian Date Picker -->
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Project-specific configurations
+    var projectConfigs = {{ project_configs | tojson | safe }};
+    
+    // Store current selection value
+    var selectLabel = '{{ t("select") }}';
+    
+    // Function to update dropdown options based on project
+    function updateConfigurableDropdowns(projectId) {
+        if (!projectId || !projectConfigs[projectId]) return;
+        
+        var config = projectConfigs[projectId];
+        
+        // Update Human Resources dropdowns
+        updateSelectOptions('hr_post[]', config['Human_Resources']);
+        
+        // Update Equipment dropdowns
+        updateSelectOptions('eq_name[]', config['Tools_And_Equipments']);
+        
+        // Update Operations dropdowns
+        updateSelectOptions('op_type[]', config['Daily_Activity_Report']);
+        
+        // Update Materials dropdowns
+        updateSelectOptions('mat_type[]', config['Incoming_Materials_And_Goods']);
+        
+        // Update Issues dropdowns
+        updateSelectOptions('issue_type[]', config['Project_Issues']);
+        
+        // Update Units dropdowns
+        updateSelectOptions('op_unit[]', config['Units']);
+        
+        // Also update the row templates
+        updateTemplateOptions('hr-table', 'hr_post[]', config['Human_Resources']);
+        updateTemplateOptions('eq-table', 'eq_name[]', config['Tools_And_Equipments']);
+        updateTemplateOptions('op-table', 'op_type[]', config['Daily_Activity_Report']);
+        updateTemplateOptions('op-table', 'op_unit[]', config['Units']);
+        updateTemplateOptions('mat-table', 'mat_type[]', config['Incoming_Materials_And_Goods']);
+        updateTemplateOptions('issue-table', 'issue_type[]', config['Project_Issues']);
+    }
+    
+    // Function to update select options while preserving current value
+    function updateSelectOptions(selectName, options) {
+        $('select[name="' + selectName + '"]').each(function() {
+            var currentValue = $(this).val();
+            var $select = $(this);
+            
+            // Clear and rebuild options
+            $select.empty();
+            $select.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(options, function(i, option) {
+                $select.append($('<option>', { value: option, text: option }));
+            });
+            
+            // Try to restore previous value if it exists in new options
+            if (currentValue && options.indexOf(currentValue) !== -1) {
+                $select.val(currentValue);
+            }
+        });
+    }
+    
+    // Function to update template row options
+    function updateTemplateOptions(tableId, dataName, options) {
+        var $template = $('#' + tableId + ' .row-template');
+        var $select = $template.find('select[data-name="' + dataName + '"]');
+        
+        if ($select.length) {
+            $select.empty();
+            $select.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(options, function(i, option) {
+                $select.append($('<option>', { value: option, text: option }));
+            });
+        }
+    }
+    
+    // Handle project selection change
+    $('select[name="project_id"]').on('change', function() {
+        var projectId = $(this).val();
+        updateConfigurableDropdowns(projectId);
+    });
+    
+    // Initialize dropdowns with currently selected project (if any)
+    var initialProjectId = $('select[name="project_id"]').val();
+    if (initialProjectId) {
+        updateConfigurableDropdowns(initialProjectId);
+    }
+    
+    // Persian weekday names
+    var weekdays = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
+    
+    // Function to update day of week display
+    function updateDayOfWeek(unix) {
+        var pDate = new persianDate(unix);
+        var dayIndex = pDate.day(); // 0=Saturday in Persian calendar
+        var dayName = weekdays[dayIndex];
+        $('#day-of-week-display').text(dayName);
+        $('#day-of-week-input').val(dayName);
+    }
+    
+    // Initialize Persian date picker with today's date as default
+    var datepicker = $('#jalali-date-input').persianDatepicker({
+        format: 'YYYY-MM-DD',
+        initialValue: true,
+        initialValueType: 'persian',
+        autoClose: true,
+        calendar: {
+            persian: {
+                locale: 'fa'
+            }
+        },
+        toolbox: {
+            calendarSwitch: {
+                enabled: false
+            }
+        },
+        onSelect: function(unix) {
+            updateDayOfWeek(unix);
+        }
+    });
+    
+    // Set initial day of week on page load
+    var initialDateStr = $('#jalali-date-input').val();
+    if (initialDateStr) {
+        // Parse the initial date and update day of week
+        var parts = initialDateStr.split('-');
+        if (parts.length === 3) {
+            var pDate = new persianDate([parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])]);
+            updateDayOfWeek(pDate.valueOf());
+        }
+    } else {
+        // Default to today
+        updateDayOfWeek(new persianDate().valueOf());
+    }
+    
+    // Load Previous Form functionality
+    $('#load-previous-btn').on('click', function() {
+        var confirmMsg = currentLang === 'fa' ? 
+            'این عمل اطلاعات فعلی فرم را با آخرین فرم ارسالی شما جایگزین می‌کند. ادامه می‌دهید؟' : 
+            'This will replace current form data with your last submission. Continue?';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        var $btn = $(this);
+        var originalText = $btn.html();
+        var loadingText = currentLang === 'fa' ? '⏳ در حال بارگذاری...' : '⏳ Loading...';
+        
+        $btn.prop('disabled', true).html(loadingText);
+        
+        // Get current project ID if selected
+        var projectId = $('select[name="project_id"]').val();
+        var url = '{{ url_for("forms.get_previous_form") }}';
+        if (projectId) {
+            url += '?project_id=' + projectId;
+        }
+        
+        $.get(url)
+            .done(function(data) {
+                if (data.success) {
+                    populateFormWithPreviousData(data);
+                    var successMsg = currentLang === 'fa' ? 
+                        'اطلاعات فرم قبلی با موفقیت بارگذاری شد' : 
+                        'Previous form data loaded successfully';
+                    showAlert('success', successMsg);
+                }
+            })
+            .fail(function(xhr) {
+                var errorMsg = currentLang === 'fa' ? 
+                    'فرم قبلی یافت نشد' : 
+                    'No previous form found';
+                showAlert('warning', errorMsg);
+            })
+            .always(function() {
+                $btn.prop('disabled', false).html(originalText);
+            });
+    });
+    
+    function populateFormWithPreviousData(data) {
+        // Set project
+        if (data.project_id) {
+            $('select[name="project_id"]').val(data.project_id).trigger('change');
+        }
+        
+        // Set work shift
+        if (data.work_shift) {
+            $('select[name="work_shift"]').val(data.work_shift);
+        }
+        
+        // Set climate data
+        if (data.climate) {
+            $('input[name="min_temp"]').val(data.climate.min_temperature || '');
+            $('input[name="max_temp"]').val(data.climate.max_temperature || '');
+            $('input[name="humidity"]').val(data.climate.humidity || '');
+            
+            if (data.climate.weather_type) {
+                $('input[name="weather_type"][value="' + data.climate.weather_type + '"]').prop('checked', true);
+            }
+            if (data.climate.wind_speed) {
+                $('input[name="wind_speed"][value="' + data.climate.wind_speed + '"]').prop('checked', true);
+            }
+            if (data.climate.climate_effect) {
+                $('input[name="climate_effect"][value="' + data.climate.climate_effect + '"]').prop('checked', true);
+            }
+        }
+        
+        // Populate Human Resources table
+        populateDynamicTable('hr-table', data.human_resources, function(row, item) {
+            row.find('select[name="hr_post[]"]').val(item.post);
+            row.find('input[name="hr_count[]"]').val(item.count || 0);
+            row.find('input[name="hr_hours[]"]').val(item.working_hours || 0);
+            row.find('input[name="hr_notes[]"]').val(item.notes || '');
+        });
+        
+        // Populate Tools and Equipment table
+        populateDynamicTable('eq-table', data.tools_equipment, function(row, item) {
+            row.find('select[name="eq_name[]"]').val(item.equipment_name);
+            row.find('input[name="eq_active[]"]').val(item.count_active || 0);
+            row.find('input[name="eq_hours[]"]').val(item.working_hours || 0);
+            row.find('select[name="eq_situation[]"]').val(item.situation || '');
+            row.find('input[name="eq_reason[]"]').val(item.inactivity_reason || '');
+        });
+        
+        // Populate Construction Operations table
+        populateDynamicTable('op-table', data.operations, function(row, item) {
+            row.find('select[name="op_type[]"]').val(item.operation_type);
+            row.find('input[name="op_start[]"]').val(item.start_km || '');
+            row.find('input[name="op_end[]"]').val(item.end_km || '');
+            row.find('select[name="op_unit[]"]').val(item.unit || '');
+            row.find('input[name="op_progress[]"]').val(item.progress || 0);
+            row.find('input[name="op_map[]"]').val(item.map_number || '');
+        });
+        
+        // Populate Incoming Materials table
+        populateDynamicTable('mat-table', data.materials, function(row, item) {
+            row.find('select[name="mat_type[]"]').val(item.material_type);
+            row.find('input[name="mat_incoming[]"]').val(item.incoming_amount || 0);
+            row.find('input[name="mat_cum_in[]"]').val(item.cumulative_incoming || 0);
+            row.find('input[name="mat_used[]"]').val(item.used_amount || 0);
+            row.find('input[name="mat_cum_used[]"]').val(item.cumulative_used || 0);
+            row.find('input[name="mat_storage[]"]').val(item.storage_place || '');
+            row.find('input[name="mat_waybill[]"]').val(item.waybill_number || '');
+        });
+        
+        // Populate Project Issues table
+        populateDynamicTable('issue-table', data.issues, function(row, item) {
+            row.find('select[name="issue_type[]"]').val(item.issue_type);
+            row.find('input[name="issue_effect[]"]').val(item.effect || '');
+            row.find('input[name="issue_location[]"]').val(item.location_km || '');
+            row.find('input[name="issue_notes[]"]').val(item.notes || '');
+        });
+        
+        // Set Safety data
+        if (data.safety) {
+            $('select[name="safety_situation"]').val(data.safety.safety_situation || '');
+            $('input[name="safety_inspection"]').prop('checked', data.safety.safety_inspection);
+            $('input[name="incident_occurred"]').prop('checked', data.safety.incident_occurred);
+            $('textarea[name="incident_explanation"]').val(data.safety.incident_explanation || '');
+        }
+        
+        // Populate Events table
+        populateDynamicTable('event-table', data.events, function(row, item) {
+            row.find('select[name="event_type[]"]').val(item.event_type || '');
+            row.find('input[name="event_name[]"]').val(item.event_name);
+            row.find('input[name="event_explanation[]"]').val(item.explanation || '');
+        });
+        
+        // Re-initialize searchable selects for newly added rows
+        if (typeof initSearchableSelects === 'function') {
+            setTimeout(function() {
+                initSearchableSelects();
+            }, 100);
+        }
+    }
+    
+    // Event type auto-fill event name
+    var eventTypeNames = {
+        'Visit': currentLang === 'fa' ? 'بازدید' : 'Visit',
+        'Meeting': currentLang === 'fa' ? 'جلسه' : 'Meeting',
+        'Other': currentLang === 'fa' ? 'موارد دیگر' : 'Other'
+    };
+    
+    $(document).on('change', '.event-type-select', function() {
+        var $row = $(this).closest('tr');
+        var $nameInput = $row.find('.event-name-input');
+        var selectedType = $(this).val();
+        
+        // Only auto-fill if name is empty or matches a previous auto-fill
+        var currentName = $nameInput.val().trim();
+        var isAutoFilled = Object.values(eventTypeNames).includes(currentName) || currentName === '';
+        
+        if (isAutoFilled && selectedType && eventTypeNames[selectedType]) {
+            $nameInput.val(eventTypeNames[selectedType]);
+        }
+    });
+    
+    function populateDynamicTable(tableId, items, populateRow) {
+        if (!items || items.length === 0) return;
+        
+        var $table = $('#' + tableId);
+        var $tbody = $table.find('tbody');
+        var $template = $table.find('.row-template');
+        
+        // Remove existing non-template rows
+        $tbody.find('tr:not(.row-template)').remove();
+        
+        // Add rows for each item
+        items.forEach(function(item, index) {
+            var $newRow = $template.clone();
+            $newRow.removeClass('row-template d-none');
+            $newRow.css('display', '');
+            
+            // Convert data-name to name attributes
+            $newRow.find('[data-name]').each(function() {
+                var dataName = $(this).attr('data-name');
+                $(this).attr('name', dataName);
+            });
+            
+            // Set row number
+            $newRow.find('.row-number').text(index + 1);
+            
+            // Populate the row with data
+            populateRow($newRow, item);
+            
+            $tbody.append($newRow);
+        });
+    }
+    
+    // Document upload handling
+    var MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 MB
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    }
+    
+    function getFileIcon(filename) {
+        var ext = filename.split('.').pop().toLowerCase();
+        var icons = {
+            'pdf': '📕',
+            'doc': '📘',
+            'docx': '📘',
+            'png': '🖼️',
+            'jpg': '🖼️',
+            'jpeg': '🖼️',
+            'gif': '🖼️',
+            'bmp': '🖼️',
+            'zip': '📦',
+            'rar': '📦'
+        };
+        return icons[ext] || '📄';
+    }
+    
+    $('#form-documents').on('change', function() {
+        var files = this.files;
+        var $list = $('#files-list');
+        var $container = $('#selected-files-list');
+        var $totalSize = $('#total-size-display');
+        
+        $list.empty();
+        
+        if (files.length === 0) {
+            $container.hide();
+            return;
+        }
+        
+        var totalSize = 0;
+        
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            totalSize += file.size;
+            
+            var $li = $('<li>');
+            $li.html(
+                '<span class="file-name">' + getFileIcon(file.name) + ' ' + file.name + '</span>' +
+                '<span class="file-size">' + formatFileSize(file.size) + '</span>'
+            );
+            $list.append($li);
+        }
+        
+        var totalSizeClass = '';
+        if (totalSize > MAX_FILE_SIZE) {
+            totalSizeClass = 'danger';
+        } else if (totalSize > MAX_FILE_SIZE * 0.8) {
+            totalSizeClass = 'warning';
+        }
+        
+        var totalLabel = currentLang === 'fa' ? 'حجم کل:' : 'Total size:';
+        $totalSize.html(totalLabel + ' <strong>' + formatFileSize(totalSize) + '</strong>');
+        $totalSize.parent().removeClass('warning danger').addClass(totalSizeClass);
+        
+        if (totalSize > MAX_FILE_SIZE) {
+            var warningMsg = currentLang === 'fa' ? 
+                '⚠️ حجم فایل‌ها از حد مجاز (۲۰۰ مگابایت) بیشتر است!' : 
+                '⚠️ File size exceeds limit (200 MB)!';
+            $totalSize.append('<br><span style="color: var(--danger-color);">' + warningMsg + '</span>');
+        }
+        
+        $container.show();
+    });
+    
+    // Delete documents button
+    $('#delete-documents-btn').on('click', function() {
+        var formId = $(this).data('form-id');
+        if (!formId) return;
+        
+        var confirmMsg = currentLang === 'fa' ? 
+            'آیا مطمئن هستید که می‌خواهید اسناد پیوست شده را حذف کنید؟' : 
+            'Are you sure you want to delete the attached documents?';
+        
+        if (!confirm(confirmMsg)) return;
+        
+        $.post('/forms/' + formId + '/documents/delete')
+            .done(function(data) {
+                if (data.success) {
+                    // Remove main documents indicator
+                    $('#existing-documents').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    
+                    // Also remove event document badges since they were in the ZIP
+                    $('#event-table .badge-success').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    
+                    var successMsg = currentLang === 'fa' ? 'اسناد با موفقیت حذف شد' : 'Documents deleted successfully';
+                    showAlert('success', successMsg);
+                }
+            })
+            .fail(function() {
+                var errorMsg = currentLang === 'fa' ? 'خطا در حذف اسناد' : 'Error deleting documents';
+                showAlert('danger', errorMsg);
+            });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+{% block title %}گفتگو | دور {{ room.game.round }}{% endblock %}
+{% block content %}
+<section class="chat-phase-head">
+  <h1 class="chat-phase-title">گفتگوی بین دورها</h1>
+  <p class="chat-phase-sub">زمان می‌گذرد؛ فشار برای کشف سرنخ‌ها احساس می‌شود، ولی فضا گرم و امن است. ایده‌هایت را راحت بگو.</p>
+  <div class="chat-timer-large" id="chat-timer-big" aria-live="polite">--:--</div>
+  <div class="ready-indicator" id="ready-indicator" data-ready-count="0"></div>
+</section>
+<div class="chat-layout" data-room-id="{{ room.id }}">
+  <aside class="history-panel" aria-label="تاریخچه شخصی">
+    <h2>تاریخچه تو</h2>
+    <div class="history-block">
+      <h3>سوالات</h3>
+      <ul class="history-list" id="personal-questions">
+        {% for q in personal_history.questions|reverse %}
+        <li><span class="round">دور {{ q.round }}</span><span class="txt">{{ q.question }}</span><span class="ans {{ 'yes' if q.answer else 'no' }}">{{ 'بله' if q.answer else 'خیر' }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="history-block">
+      <h3>حدس‌ها</h3>
+      <ul class="history-list" id="personal-guesses">
+        {% for g in personal_history.guesses|reverse %}
+        <li><span class="round">دور {{ g.round }}</span><span class="txt">{{ g.guess }}</span><span class="ans {{ 'yes' if g.correct else 'no' }}">{{ '✅' if g.correct else '❌' }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+  <section class="live-chat" aria-label="گفتگو">
+    <header class="live-chat-head">
+      <h2>اتاق گفتگو</h2>
+      <div class="mini-timer" id="mini-timer">--:--</div>
+      <div class="persona-tag" id="persona-tag" style="font-size:.65rem;opacity:.8"></div>
+    </header>
+    <ul class="chat-log big" id="chat-log" aria-live="polite"></ul>
+    <form id="chat-form" class="chat-form main" autocomplete="off">
+      <input id="chat-input" name="msg" maxlength="200" placeholder="پیامی بنویس..." aria-label="پیام">
+      <button type="submit" class="btn">ارسال</button>
+      <button type="button" id="bot-btn" class="btn ghost" title="کمک ربات" aria-label="کمک ربات">🤖</button>
+      <button type="button" id="ready-btn" class="btn ghost">آماده‌ام</button>
+    </form>
+    <div class="chat-hint-alt">با زدن «آماده‌ام» اگر همه آماده شوند یا زمان تمام شود، دور بعد شروع می‌گردد.</div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

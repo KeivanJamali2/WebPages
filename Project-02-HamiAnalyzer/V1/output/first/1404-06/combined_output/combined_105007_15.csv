@@ -1,0 +1,9 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-17 19:36:00,<empty>,Mahdi Jafari,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,<empty>,11225654-8ed8-4d72-b3f8-7e09a5201f88,True
+1404-06-18 01:47:00,"موضوع: 'فايل پايان نامه نهايي'
+با سلام . احتراما درخواست دانشجو ارسال می گردد .",دکتری عمومی_پزشکی_یزد_4021,فاطمه جعفری ندوشن,336774@iau.ir,11225654-8ed8-4d72-b3f8-7e09a5201f88,55a4f880-afdc-45d4-9328-aa806bea3842,True
+1404-06-18 01:47:12,با سلام . احتراما درخواست دانشجو ارسال می گردد .,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-18 09:46:00,"موضوع: 'پاسخ: فايل پايان نامه نهايي'
+سلام فایلتونو در پژوهشیار بارگذاری کنید",فاطمه جعفری ندوشن,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,55a4f880-afdc-45d4-9328-aa806bea3842,4d1e86c9-7581-41b1-bb03-8b66c891ebeb,True
+1404-06-18 10:44:54,سلام فایلتونو در پژوهشیار بارگذاری کنید,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-18 10:45:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_4021,Mahdi Jafari,4420614315@iau.ir,4d1e86c9-7581-41b1-bb03-8b66c891ebeb,a1d0edf2-85aa-4fa7-a1b0-4035c3124d0d,False

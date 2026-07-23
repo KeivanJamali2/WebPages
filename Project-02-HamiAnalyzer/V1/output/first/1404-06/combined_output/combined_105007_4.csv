@@ -1,0 +1,10 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-30 11:18:00,<empty>,Hesam Abolhosseini,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,<empty>,d42dbaad-3a8c-45d2-b89f-4cdf5968ec16,True
+1404-06-30 11:42:00,"موضوع: 'درخواست اخذ مجوز پیش دفاع'
+با سلام . احتراما درخواست دانشجو ارسال می گردد",دکتری عمومی_پزشکی_یزد_3981,فاطمه جعفری ندوشن,336774@iau.ir,d42dbaad-3a8c-45d2-b89f-4cdf5968ec16,3f07fb6b-1573-40ec-a1a3-33a6aad6f6ea,True
+1404-06-30 11:42:47,با سلام . احتراما درخواست دانشجو ارسال می گردد,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-30 12:04:00,"موضوع: 'پاسخ: درخواست اخذ مجوز پیش دفاع'
+سلام جلسه دفاع شما فردا 31 شهزیور",فاطمه جعفری ندوشن,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,3f07fb6b-1573-40ec-a1a3-33a6aad6f6ea,2ebd7792-417c-4041-b244-9e5f969ccfbc,True
+1404-06-30 12:34:00,سلام جلسه دفاع شما فردا 31 شهریور,دکتری عمومی_پزشکی_یزد_3981,Hesam Abolhosseini,4420920564@iau.ir,2ebd7792-417c-4041-b244-9e5f969ccfbc,a798e15a-77b3-48c8-bca0-13c2ede748d7,True
+1404-06-30 12:38:06,<empty>,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1500-01-01 00:00:00,با سلام و احترام لطفا جهت انجام دفاغ پروپوزال موافقت نمایید با تشکر,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False

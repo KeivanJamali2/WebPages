@@ -1,0 +1,12 @@
+parent_id: None
+id: 7d083e74-085a-4df5-b2ad-ce83e7f77cda
+date: جمعه، 6 تیر 1404 12:59
+name: دکتری عمومی_پزشکی_یزد_4031
+email: sf-105-10101-6-4031@iau.ir
+--------------------------------------------------
+parent_id: 7d083e74-085a-4df5-b2ad-ce83e7f77cda
+id: 0bebf306-ea92-4fc1-a890-3eab27c07cdc
+date: دوشنبه، 9 تیر 1404 10:11
+name: Sheyda kabi por falahieh
+email: 1820446077@iau.ir
+--------------------------------------------------

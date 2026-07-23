@@ -1,0 +1,10 @@
+## Resources
+NaturalGas, 65.0, 12, 0.06
+Oil, 75.0, 10, 0.05
+Minerals, 45.0, 8, 0.08
+
+## Capacity
+144
+
+## HouseWorth
+50000

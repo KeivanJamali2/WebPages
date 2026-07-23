@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ t('app_name') }}{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Persian Font - Vazirmatn (always load for consistency) -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/searchable-select.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+    
+    <style>
+        /* Global Font Family */
+        body, input, select, textarea, button {
+            font-family: 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        /* RTL adjustments */
+        {% if lang == 'fa' %}
+        .mr-1, .mr-2, .mr-3 { margin-right: 0; margin-left: 0.25rem; }
+        .ml-1, .ml-2, .ml-3 { margin-left: 0; margin-right: 0.25rem; }
+        .mr-2 { margin-left: 0.5rem; }
+        .ml-2 { margin-right: 0.5rem; }
+        .mr-3 { margin-left: 1rem; }
+        .ml-3 { margin-right: 1rem; }
+        {% endif %}
+    </style>
+</head>
+<body dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+    {% if user %}
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{{ url_for('main.dashboard') }}" class="navbar-brand">
+            <span>📊</span>
+            <span>{{ t('app_name') }}</span>
+        </a>
+        
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">{{ t('dashboard') }}</a></li>
+            
+            {% if user.role == 'employee' %}
+            <li><a href="{{ url_for('forms.my_forms') }}" class="nav-link {% if 'forms' in request.endpoint %}active{% endif %}">{{ t('my_forms') }}</a></li>
+            {% endif %}
+            
+            {% if user.role in ['admin', 'boss'] %}
+            <li><a href="{{ url_for('forms.all_forms') }}" class="nav-link {% if 'forms' in request.endpoint %}active{% endif %}">{{ t('all_forms') }}</a></li>
+            {% endif %}
+            
+            {% if user.role == 'admin' %}
+            <li><a href="{{ url_for('forms.pending_forms') }}" class="nav-link">{{ t('pending_forms') }} {% if pending_count %}<span class="badge badge-warning">{{ pending_count }}</span>{% endif %}</a></li>
+            {% endif %}
+            
+            {% if user.role == 'boss' %}
+            <li><a href="{{ url_for('projects.list_projects') }}" class="nav-link {% if 'projects' in request.endpoint %}active{% endif %}">{{ t('projects') }}</a></li>
+            <li><a href="{{ url_for('analytics.index') }}" class="nav-link {% if 'analytics' in request.endpoint %}active{% endif %}">{{ t('analytics') }}</a></li>
+            {% endif %}
+        </ul>
+        
+        <div class="navbar-user">
+            <!-- Language Toggle -->
+            <div class="lang-toggle">
+                <button class="lang-btn {% if lang == 'en' %}active{% endif %}" data-lang="en">EN</button>
+                <button class="lang-btn {% if lang == 'fa' %}active{% endif %}" data-lang="fa">فا</button>
+            </div>
+            
+            <!-- Notifications -->
+            <div class="notification-badge">
+                <a href="{{ url_for('notifications.list_notifications') }}" class="notification-bell" title="{{ t('notifications') }}">
+                    🔔
+                    {% if unread_count and unread_count > 0 %}
+                    <span class="notification-count">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+                <div class="notification-dropdown">
+                    <div class="notification-header">
+                        <strong>{{ t('notifications') }}</strong>
+                        <a href="#" onclick="markAllNotificationsRead(); return false;">{{ t('mark_all_read') }}</a>
+                    </div>
+                    <div class="notification-list" id="notification-list">
+                        <!-- Notifications loaded via JS -->
+                    </div>
+                    <div class="notification-footer">
+                        <a href="{{ url_for('notifications.list_notifications') }}">{{ t('view_all_notifications') }} →</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="user-info">
+                <span>{{ user|display_name }}</span>
+                <span class="user-role">{{ t(user.role) }}</span>
+            </div>
+            
+            <a href="{{ url_for('auth.logout') }}" class="nav-link">{{ t('logout') }}</a>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="container">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" data-auto-dismiss="5000">
+                        <span>{{ message }}</span>
+                        <button type="button" class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    {% block footer %}{% endblock %}
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        // Pass translations to JavaScript
+        var translations = {{ translations_json|safe if translations_json else '{}' }};
+        var currentLang = '{{ lang }}';
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/searchable-select.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

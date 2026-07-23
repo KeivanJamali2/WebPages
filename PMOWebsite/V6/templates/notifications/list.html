@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('notifications') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>🔔 {{ t('notifications') }}</h1>
+</div>
+
+<!-- Notification Tabs and Actions -->
+<div class="notification-toolbar">
+    <div class="notification-tabs">
+        <a href="{{ url_for('notifications.list_notifications', filter='all') }}" 
+           class="notification-tab {% if filter_type == 'all' %}active{% endif %}">
+            📥 {{ t('all') }}
+            <span class="tab-count">{{ all_count }}</span>
+        </a>
+        <a href="{{ url_for('notifications.list_notifications', filter='unread') }}" 
+           class="notification-tab {% if filter_type == 'unread' %}active{% endif %}">
+            📬 {{ t('unread') }}
+            <span class="tab-count {% if unread_count > 0 %}highlight{% endif %}">{{ unread_count }}</span>
+        </a>
+        <a href="{{ url_for('notifications.list_notifications', filter='starred') }}" 
+           class="notification-tab {% if filter_type == 'starred' %}active{% endif %}">
+            ⭐ {{ t('starred') }}
+            <span class="tab-count">{{ starred_count }}</span>
+        </a>
+    </div>
+    
+    <div class="notification-actions-toolbar">
+        {% if unread_count > 0 %}
+        <button onclick="markAllRead()" class="btn btn-outline btn-sm">
+            ✓ {{ t('mark_all_read') }}
+        </button>
+        {% endif %}
+        {% if all_count > unread_count %}
+        <button onclick="deleteAllRead()" class="btn btn-outline btn-sm">
+            🗑️ {{ t('delete_read') }}
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        {% if notifications.items %}
+        <div class="notifications-list">
+            {% for notification in notifications.items %}
+            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
+                 id="notification-{{ notification.id }}"
+                 data-id="{{ notification.id }}">
+                
+                <!-- Star Button -->
+                <button class="star-btn {% if notification.is_starred %}starred{% endif %}" 
+                        onclick="toggleStar({{ notification.id }})"
+                        title="{{ t('star') }}">
+                    {% if notification.is_starred %}⭐{% else %}☆{% endif %}
+                </button>
+                
+                <!-- Notification Icon -->
+                <div class="notification-icon">
+                    {% if notification.notification_type == 'form_submitted' %}
+                    <span class="icon-badge submitted">📝</span>
+                    {% elif notification.notification_type == 'form_approved' %}
+                    <span class="icon-badge approved">✅</span>
+                    {% elif notification.notification_type == 'form_rejected' %}
+                    <span class="icon-badge rejected">❌</span>
+                    {% elif notification.notification_type == 'comment_added' %}
+                    <span class="icon-badge comment">💬</span>
+                    {% else %}
+                    <span class="icon-badge default">🔔</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Content -->
+                <div class="notification-content" onclick="openNotification({{ notification.id }}, {{ notification.related_form_id or 'null' }})">
+                    <div class="notification-title">
+                        {% if notification.title.startswith('notif_') %}
+                            {{ t(notification.title) }}
+                        {% elif notification.title == 'New Form Submitted' %}
+                            {{ t('notif_form_submitted_title') }}
+                        {% elif notification.title == 'Form Approved' %}
+                            {{ t('notif_form_approved_title') }}
+                        {% elif notification.title == 'Form Rejected' %}
+                            {{ t('notif_form_rejected_title') }}
+                        {% else %}
+                            {{ notification.title }}
+                        {% endif %}
+                    </div>
+                    <div class="notification-message">
+                        {% if notification.message.startswith('notif_') %}
+                            {% set msg_parts = notification.message.split('|') %}
+                            {% if msg_parts|length == 3 %}
+                                {{ t(msg_parts[0]).format(msg_parts[1], msg_parts[2]) }}
+                            {% elif msg_parts|length == 2 %}
+                                {{ t(msg_parts[0]).format(msg_parts[1]) }}
+                            {% else %}
+                                {{ t(notification.message) }}
+                            {% endif %}
+                        {% elif 'has been submitted by' in notification.message %}
+                            {% set doc_code = notification.message.split('(')[1].split(')')[0] if '(' in notification.message else '' %}
+                            {% set username = notification.message.split('by ')[1].split(' and')[0] if 'by ' in notification.message else '' %}
+                            {{ t('notif_form_submitted_msg').format(doc_code, username) }}
+                        {% elif 'has been approved' in notification.message %}
+                            {% set doc_code = notification.message.split('(')[1].split(')')[0] if '(' in notification.message else '' %}
+                            {{ t('notif_form_approved_msg').format(doc_code) }}
+                        {% elif 'has been rejected' in notification.message %}
+                            {% set doc_code = notification.message.split('(')[1].split(')')[0] if '(' in notification.message else '' %}
+                            {% set reason = notification.message.split('Reason: ')[1] if 'Reason: ' in notification.message else '' %}
+                            {{ t('notif_form_rejected_msg').format(doc_code, reason) }}
+                        {% else %}
+                            {{ notification.message }}
+                        {% endif %}
+                    </div>
+                    <div class="notification-meta">
+                        <span class="notification-time">{{ notification.created_at|jalali_datetime }}</span>
+                        {% if notification.is_read %}
+                        <span class="read-status">✓ {{ t('read') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="notification-actions">
+                    {% if notification.related_form_id %}
+                    <a href="{{ url_for('forms.view_form', form_id=notification.related_form_id) }}" 
+                       class="action-btn view-btn" title="{{ t('view_form') }}">
+                        👁️
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.is_read %}
+                    <button class="action-btn" onclick="markUnread({{ notification.id }})" title="{{ t('mark_unread') }}">
+                        📬
+                    </button>
+                    {% else %}
+                    <button class="action-btn" onclick="markRead({{ notification.id }})" title="{{ t('mark_read') }}">
+                        ✓
+                    </button>
+                    {% endif %}
+                    
+                    <button class="action-btn delete-btn" onclick="deleteNotification({{ notification.id }})" title="{{ t('delete') }}">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if notifications.pages > 1 %}
+        <div class="pagination mt-4" style="padding: 1rem;">
+            {% if notifications.has_prev %}
+            <a href="{{ url_for('notifications.list_notifications', page=notifications.prev_num, filter=filter_type) }}" class="pagination-btn">«</a>
+            {% endif %}
+            
+            {% for page in notifications.iter_pages() %}
+                {% if page %}
+                <a href="{{ url_for('notifications.list_notifications', page=page, filter=filter_type) }}" 
+                   class="pagination-btn {% if page == notifications.page %}active{% endif %}">{{ page }}</a>
+                {% else %}
+                <span class="pagination-btn" style="border: none;">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if notifications.has_next %}
+            <a href="{{ url_for('notifications.list_notifications', page=notifications.next_num, filter=filter_type) }}" class="pagination-btn">»</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state" style="padding: 4rem 2rem;">
+            <div class="empty-state-icon">
+                {% if filter_type == 'unread' %}📭{% elif filter_type == 'starred' %}⭐{% else %}🔔{% endif %}
+            </div>
+            <h3>
+                {% if filter_type == 'unread' %}
+                {{ t('no_unread_notifications') }}
+                {% elif filter_type == 'starred' %}
+                {{ t('no_starred_notifications') }}
+                {% else %}
+                {{ t('no_notifications') }}
+                {% endif %}
+            </h3>
+            <p class="text-muted">{{ t('no_data') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.notification-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.notification-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--card-bg);
+    padding: 0.375rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.notification-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all var(--transition);
+    text-decoration: none;
+}
+
+.notification-tab:hover {
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.notification-tab.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.tab-count {
+    background: var(--bg-color);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.notification-tab.active .tab-count {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.tab-count.highlight {
+    background: var(--danger-color);
+    color: white;
+}
+
+.notification-actions-toolbar {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    transition: all var(--transition);
+    background: var(--card-bg);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background: var(--bg-color);
+}
+
+.notification-item.unread {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
+    border-right: 3px solid var(--primary-color);
+}
+
+[dir="rtl"] .notification-item.unread {
+    border-right: none;
+    border-left: 3px solid var(--primary-color);
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: all var(--transition);
+    padding: 0.25rem;
+}
+
+.star-btn:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.star-btn.starred {
+    opacity: 1;
+}
+
+.notification-icon {
+    flex-shrink: 0;
+}
+
+.icon-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius);
+    font-size: 1.25rem;
+}
+
+.icon-badge.submitted {
+    background: linear-gradient(135deg, var(--warning-light) 0%, rgba(254, 243, 199, 0.5) 100%);
+}
+
+.icon-badge.approved {
+    background: linear-gradient(135deg, var(--success-light) 0%, rgba(209, 250, 229, 0.5) 100%);
+}
+
+.icon-badge.rejected {
+    background: linear-gradient(135deg, var(--danger-light) 0%, rgba(254, 226, 226, 0.5) 100%);
+}
+
+.icon-badge.comment {
+    background: linear-gradient(135deg, var(--info-light) 0%, rgba(224, 242, 254, 0.5) 100%);
+}
+
+.icon-badge.default {
+    background: linear-gradient(135deg, var(--primary-light) 0%, rgba(224, 231, 255, 0.5) 100%);
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+}
+
+.notification-item.unread .notification-title {
+    color: var(--primary-color);
+}
+
+.notification-message {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 0.375rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.notification-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.read-status {
+    font-size: 0.75rem;
+    color: var(--success-color);
+    background: var(--success-light);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-full);
+}
+
+.notification-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.notification-item:hover .notification-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+.action-btn.delete-btn:hover {
+    background: var(--danger-light);
+    border-color: var(--danger-color);
+}
+
+.action-btn.view-btn {
+    text-decoration: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .notification-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .notification-tabs {
+        overflow-x: auto;
+        justify-content: flex-start;
+    }
+    
+    .notification-tab {
+        white-space: nowrap;
+    }
+    
+    .notification-actions-toolbar {
+        justify-content: flex-end;
+    }
+    
+    .notification-item {
+        padding: 1rem;
+    }
+    
+    .notification-actions {
+        opacity: 1;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markRead(id) {
+    fetch(`/notifications/mark-read/${id}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.getElementById(`notification-${id}`);
+            item.classList.remove('unread');
+            location.reload();
+        }
+    });
+}
+
+function markUnread(id) {
+    fetch(`/notifications/mark-unread/${id}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function toggleStar(id) {
+    fetch(`/notifications/toggle-star/${id}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.getElementById(`notification-${id}`);
+            const starBtn = item.querySelector('.star-btn');
+            if (data.is_starred) {
+                starBtn.classList.add('starred');
+                starBtn.innerHTML = '⭐';
+            } else {
+                starBtn.classList.remove('starred');
+                starBtn.innerHTML = '☆';
+            }
+        }
+    });
+}
+
+function deleteNotification(id) {
+    if (confirm('{{ t("confirm_delete") }}')) {
+        fetch(`/notifications/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const item = document.getElementById(`notification-${id}`);
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(100px)';
+                setTimeout(() => {
+                    item.remove();
+                    // Check if list is empty
+                    const list = document.querySelector('.notifications-list');
+                    if (list && list.children.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            }
+        });
+    }
+}
+
+function markAllRead() {
+    fetch('/notifications/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function deleteAllRead() {
+    if (confirm('{{ t("confirm_delete_all_read") }}')) {
+        fetch('/notifications/delete-all-read', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function openNotification(id, formId) {
+    // Mark as read first
+    fetch(`/notifications/mark-read/${id}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(() => {
+        if (formId) {
+            window.location.href = `/forms/${formId}`;
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+parent_id: None
+id: da221a30-c043-457e-b9c7-3b9fc2efade0
+date: چهارشنبه، 24 اردیبهشت 1404 23:12
+name: کارشناسی پیوسته_شیمی کاربردی_یزد_4021
+email: sf-105-30343-4-4021@iau.ir
+--------------------------------------------------
+parent_id: da221a30-c043-457e-b9c7-3b9fc2efade0
+id: 025dd3a7-db7d-45f1-b6e8-31772751058f
+date: شنبه، 25 خرداد 1404 11:54
+name: Kimia Dehghani
+email: 3381311824@iau.ir
+--------------------------------------------------
+parent_id: da221a30-c043-457e-b9c7-3b9fc2efade0
+id: a871bb9e-6990-4ffd-a3a3-f75b797eaa80
+date: شنبه، 31 خرداد 1404 09:33
+name: Kimia Dehghani
+email: 3381311824@iau.ir
+--------------------------------------------------
+parent_id: da221a30-c043-457e-b9c7-3b9fc2efade0
+id: 6adc5a64-9bdb-4f63-81aa-acfe32830a39
+date: شنبه، 31 خرداد 1404 09:33
+name: Kimia Dehghani
+email: 3381311824@iau.ir
+--------------------------------------------------
+parent_id: da221a30-c043-457e-b9c7-3b9fc2efade0
+id: 5b9c08e6-080c-433b-913c-dcd39086dd08
+date: چهارشنبه، 4 تیر 1404 09:21
+name: Kimia Dehghani
+email: 3381311824@iau.ir
+--------------------------------------------------
+parent_id: da221a30-c043-457e-b9c7-3b9fc2efade0
+id: 673653b0-5655-4ce2-86de-059e7c31ace5
+date: چهارشنبه، 4 تیر 1404 09:21
+name: Kimia Dehghani
+email: 3381311824@iau.ir
+--------------------------------------------------

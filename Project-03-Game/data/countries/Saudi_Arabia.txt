@@ -1,0 +1,9 @@
+## Resources
+Oil, 95.0, 8, 0.04
+Petrochemicals, 70.0, 4, 0.06
+
+## Capacity
+36
+
+## HouseWorth
+120000

@@ -1,0 +1,794 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ t('analysis') }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Tab Navigation */
+    .tab-navigation {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 0;
+    }
+    
+    .tab-btn {
+        padding: 16px 32px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.3s ease;
+    }
+    
+    .tab-btn:hover {
+        color: var(--primary-color);
+    }
+    
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* Health Score Circle */
+    .health-score-container {
+        text-align: center;
+        padding: 40px;
+    }
+    
+    .health-circle {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 0 auto 20px;
+    }
+    
+    .health-circle svg {
+        transform: rotate(-90deg);
+    }
+    
+    .health-circle-bg {
+        fill: none;
+        stroke: var(--border-color);
+        stroke-width: 12;
+    }
+    
+    .health-circle-progress {
+        fill: none;
+        stroke: var(--primary-color);
+        stroke-width: 12;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease;
+    }
+    
+    .health-score-value {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .health-score-number {
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .health-score-grade {
+        font-size: 24px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        margin-top: 8px;
+        display: inline-block;
+    }
+    
+    .grade-A { background: #10b981; color: white; }
+    .grade-B { background: #3b82f6; color: white; }
+    .grade-C { background: #f59e0b; color: white; }
+    .grade-D { background: #f97316; color: white; }
+    .grade-F { background: #ef4444; color: white; }
+    
+    /* Key Metrics Grid */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .metric-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .metric-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    
+    .metric-status {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 8px;
+        display: inline-block;
+    }
+    
+    .status-good { background: #dcfce7; color: #166534; }
+    .status-warning { background: #fef3c7; color: #92400e; }
+    .status-critical { background: #fee2e2; color: #991b1b; }
+    
+    /* Overview Cards */
+    .overview-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .overview-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+    }
+    
+    .overview-card h3 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        color: var(--text-secondary);
+    }
+    
+    /* Recommendations List */
+    .recommendations-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .recommendations-list li {
+        padding: 12px 16px;
+        background: #fef3c7;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* Summary Cards */
+    .summary-section {
+        margin-bottom: 32px;
+    }
+    
+    .summary-section h2 {
+        font-size: 20px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    /* Chart Grid */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .chart-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+    }
+    
+    .chart-card h3 {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    /* Loading State */
+    .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        color: var(--text-secondary);
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border-color);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* No Data State */
+    .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+    
+    .no-data-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+    
+    /* Highlight Box */
+    .highlight-box {
+        background: linear-gradient(135deg, var(--primary-color), #6366f1);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    
+    .highlight-box h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+    }
+    
+    .highlight-box p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    /* Data Table */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .data-table th {
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+    
+    /* Progress Bar */
+    .progress-bar-container {
+        background: var(--border-color);
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+    
+    .progress-good { background: #10b981; }
+    .progress-warning { background: #f59e0b; }
+    .progress-critical { background: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div class="d-flex justify-between align-center">
+        <div>
+            <a href="{{ url_for('boss.dashboard') }}" class="btn btn-secondary" style="margin-bottom: 8px;">
+                ← {{ t('back') if lang == 'en' else 'بازگشت' }}
+            </a>
+            <h1>{{ project.name }}</h1>
+            <p style="color: var(--text-secondary);">{{ t('analysis_dashboard') if lang == 'en' else 'داشبورد تحلیل' }}</p>
+        </div>
+        <div>
+            <span id="lastUpdated" style="color: var(--text-secondary); font-size: 14px;"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<div class="tab-navigation">
+    <button class="tab-btn active" onclick="switchTab('overview')">
+        🎯 {{ t('overview') if lang == 'en' else 'نمای کلی' }}
+    </button>
+    <button class="tab-btn" onclick="switchTab('summary')">
+        📊 {{ t('summary') if lang == 'en' else 'خلاصه' }}
+    </button>
+    <a href="{{ url_for('boss.detailed_analysis', project_id=project.id) }}" class="tab-btn" style="text-decoration: none;">
+        📈 {{ t('detailed_analysis') if lang == 'en' else 'تحلیل جامع' }}
+    </a>
+</div>
+
+{% if not has_data %}
+<!-- No Data State -->
+<div class="no-data">
+    <div class="no-data-icon">📋</div>
+    <h2>{{ t('no_data_yet') if lang == 'en' else 'داده‌ای موجود نیست' }}</h2>
+    <p>{{ t('submit_daily_forms') if lang == 'en' else 'برای مشاهده تحلیل‌ها، فرم‌های روزانه ثبت کنید.' }}</p>
+    <a href="{{ url_for('forms.index') }}" class="btn btn-primary" style="margin-top: 20px;">
+        {{ t('go_to_forms') if lang == 'en' else 'رفتن به فرم‌ها' }}
+    </a>
+</div>
+{% else %}
+
+<!-- Overview Tab -->
+<div id="tab-overview" class="tab-content active">
+    <div class="loading" id="overview-loading">
+        <div class="loading-spinner"></div>
+    </div>
+    <div id="overview-content" style="display: none;">
+        <!-- Content loaded via JavaScript -->
+    </div>
+</div>
+
+<!-- Summary Tab -->
+<div id="tab-summary" class="tab-content">
+    <div class="loading" id="summary-loading">
+        <div class="loading-spinner"></div>
+    </div>
+    <div id="summary-content" style="display: none;">
+        <!-- Content loaded via JavaScript -->
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const PROJECT_ID = {{ project.id }};
+const LANG = '{{ lang }}';
+let chartsInitialized = {};
+
+// Translation helper functions
+function translateScheduleStatus(status) {
+    const translations = {
+        'ahead': 'جلوتر از برنامه',
+        'behind': 'عقب‌تر از برنامه',
+        'on schedule': 'طبق برنامه',
+        'on_schedule': 'طبق برنامه'
+    };
+    return translations[status] || status;
+}
+
+function translateCostStatus(status) {
+    const translations = {
+        'under budget': 'زیر بودجه',
+        'over budget': 'بالاتر از بودجه',
+        'on budget': 'طبق بودجه'
+    };
+    return translations[status] || status;
+}
+
+function translateStatus(status) {
+    if (LANG !== 'fa') return status;
+    const translations = {
+        'good': 'خوب',
+        'critical': 'بحرانی',
+        'low': 'کم',
+        'medium': 'متوسط',
+        'high': 'بالا'
+    };
+    return translations[status] || status;
+}
+
+// Tab switching
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById('tab-' + tabName).classList.add('active');
+    event.target.classList.add('active');
+    
+    // Load data for tab
+    loadTabData(tabName);
+}
+
+// Load data for a specific tab
+function loadTabData(tabName) {
+    if (tabName === 'overview' && !chartsInitialized.overview) {
+        loadOverview();
+    } else if (tabName === 'summary' && !chartsInitialized.summary) {
+        loadSummary();
+    }
+}
+
+// Format large numbers
+function formatNumber(num) {
+    if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+    return num.toFixed(1);
+}
+
+// Format currency
+function formatCurrency(amount) {
+    return new Intl.NumberFormat(LANG === 'fa' ? 'fa-IR' : 'en-US').format(Math.round(amount));
+}
+
+// Get status class based on value
+function getStatusClass(value, threshold1, threshold2) {
+    if (value >= threshold1) return 'status-good';
+    if (value >= threshold2) return 'status-warning';
+    return 'status-critical';
+}
+
+// Load Overview Data
+async function loadOverview() {
+    try {
+        const response = await fetch(`/boss/api/${PROJECT_ID}/overview`);
+        const result = await response.json();
+        
+        if (result.success) {
+            renderOverview(result.data);
+        } else if (result.no_data) {
+            showError('overview', result.error, true);
+        } else {
+            showError('overview', result.error);
+        }
+    } catch (error) {
+        showError('overview', error.message);
+    }
+}
+
+// Render Overview Tab
+function renderOverview(data) {
+    const healthScore = data.health_score;
+    const metrics = data.key_metrics;
+    const status = data.status_summary;
+    const completion = data.completion;
+    const recommendations = data.recommendations;
+    
+    // Calculate circle progress
+    const circumference = 2 * Math.PI * 85;
+    const progress = (healthScore.overall_score / 100) * circumference;
+    
+    // Determine circle color
+    let scoreColor = '#10b981'; // green
+    if (healthScore.overall_score < 60) scoreColor = '#ef4444'; // red
+    else if (healthScore.overall_score < 75) scoreColor = '#f59e0b'; // yellow
+    else if (healthScore.overall_score < 90) scoreColor = '#3b82f6'; // blue
+    
+    let html = `
+        <div class="overview-row">
+            <!-- Health Score -->
+            <div class="overview-card">
+                <div class="health-score-container">
+                    <div class="health-circle">
+                        <svg width="200" height="200">
+                            <circle class="health-circle-bg" cx="100" cy="100" r="85"></circle>
+                            <circle class="health-circle-progress" cx="100" cy="100" r="85"
+                                stroke-dasharray="${circumference}"
+                                stroke-dashoffset="${circumference - progress}"
+                                style="stroke: ${scoreColor}"></circle>
+                        </svg>
+                        <div class="health-score-value">
+                            <div class="health-score-number">${Math.round(healthScore.overall_score)}</div>
+                            <div class="health-score-grade grade-${healthScore.grade}">
+                                ${LANG === 'en' ? 'Grade' : 'رتبه'} ${healthScore.grade}
+                            </div>
+                        </div>
+                    </div>
+                    <h3>${LANG === 'en' ? 'Project Health Score' : 'امتیاز سلامت پروژه'}</h3>
+                </div>
+            </div>
+            
+            <!-- Key Metrics -->
+            <div class="overview-card">
+                <h3>📊 ${LANG === 'en' ? 'Key Metrics' : 'شاخص‌های کلیدی'}</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">${metrics.progress_percent}%</div>
+                        <div class="metric-label">${LANG === 'en' ? 'Progress' : 'پیشرفت'}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${metrics.budget_spent_percent}%</div>
+                        <div class="metric-label">${LANG === 'en' ? 'Budget Used' : 'بودجه مصرفی'}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${metrics.cpi}</div>
+                        <div class="metric-label">CPI</div>
+                        <div class="metric-status ${metrics.cpi >= 1 ? 'status-good' : 'status-warning'}">
+                            ${metrics.cpi >= 1 ? (LANG === 'en' ? 'Good' : 'خوب') : (LANG === 'en' ? 'Attention' : 'توجه')}
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${metrics.spi}</div>
+                        <div class="metric-label">SPI</div>
+                        <div class="metric-status ${metrics.spi >= 1 ? 'status-good' : 'status-warning'}">
+                            ${metrics.spi >= 1 ? (LANG === 'en' ? 'Good' : 'خوب') : (LANG === 'en' ? 'Attention' : 'توجه')}
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${metrics.days_safe}</div>
+                        <div class="metric-label">${LANG === 'en' ? 'Safe Days' : 'روز ایمن'}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="overview-row">
+            <!-- Completion Estimate -->
+            <div class="overview-card">
+                <h3>📅 ${LANG === 'en' ? 'Completion Estimate' : 'تخمین اتمام'}</h3>
+                <div style="padding: 20px 0;">
+                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">
+                        ${LANG === 'en' ? 'Planned End Date' : 'تاریخ اتمام برنامه‌ریزی'}
+                    </div>
+                    <div style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">
+                        ${completion.planned_date || 'N/A'}
+                    </div>
+                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">
+                        ${LANG === 'en' ? 'Estimated Completion' : 'تخمین اتمام'}
+                    </div>
+                    <div style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">
+                        ${completion.estimated_date || 'N/A'}
+                    </div>
+                    <div class="metric-status ${completion.variance_days <= 0 ? 'status-good' : (completion.variance_days <= 14 ? 'status-warning' : 'status-critical')}">
+                        ${completion.variance_days <= 0 
+                            ? (LANG === 'en' ? 'On Track' : 'در مسیر')
+                            : (LANG === 'en' ? `${completion.variance_days} days late` : `${completion.variance_days} روز تأخیر`)}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            <div class="overview-card">
+                <h3>💡 ${LANG === 'en' ? 'Recommendations' : 'پیشنهادات'}</h3>
+                ${recommendations && recommendations.length > 0 ? `
+                    <ul class="recommendations-list">
+                        ${recommendations.map(r => `<li>⚠️ ${r}</li>`).join('')}
+                    </ul>
+                ` : `
+                    <div style="text-align: center; padding: 20px; color: #10b981;">
+                        ✓ ${LANG === 'en' ? 'No issues detected' : 'مشکلی شناسایی نشد'}
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('overview-content').innerHTML = html;
+    document.getElementById('overview-loading').style.display = 'none';
+    document.getElementById('overview-content').style.display = 'block';
+    chartsInitialized.overview = true;
+}
+
+// Load Summary Data
+async function loadSummary() {
+    try {
+        const response = await fetch(`/boss/api/${PROJECT_ID}/summary`);
+        const result = await response.json();
+        
+        if (result.success) {
+            renderSummary(result.data);
+        } else if (result.no_data) {
+            showError('summary', result.error, true);
+        } else {
+            showError('summary', result.error);
+        }
+    } catch (error) {
+        showError('summary', error.message);
+    }
+}
+
+// Render Summary Tab
+function renderSummary(data) {
+    const progress = data.progress;
+    const financial = data.financial;
+    const schedule = data.schedule;
+    const safety = data.safety;
+    const issues = data.issues;
+    
+    let html = `
+        <!-- Progress Summary -->
+        <div class="summary-section">
+            <h2>📈 ${LANG === 'en' ? 'Progress Summary' : 'خلاصه پیشرفت'}</h2>
+            <div class="overview-row">
+                <div class="overview-card">
+                    <h3>${LANG === 'en' ? 'Overall Progress' : 'پیشرفت کلی'}</h3>
+                    <div class="metric-value" style="font-size: 48px;">
+                        ${progress.overall.weighted_progress.toFixed(1)}%
+                    </div>
+                    <div class="progress-bar-container" style="margin-top: 16px;">
+                        <div class="progress-bar progress-good" style="width: ${progress.overall.weighted_progress}%"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; color: var(--text-secondary);">
+                        <span>${progress.by_activity_count.completed} ${LANG === 'en' ? 'completed' : 'تکمیل'}</span>
+                        <span>${progress.by_activity_count.in_progress} ${LANG === 'en' ? 'in progress' : 'در حال انجام'}</span>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <h3>${LANG === 'en' ? 'Velocity' : 'سرعت'}</h3>
+                    <div class="metric-value">${progress.velocity.daily_average.toFixed(2)}</div>
+                    <div class="metric-label">${LANG === 'en' ? 'Daily Average' : 'میانگین روزانه'}</div>
+                    <div class="metric-status ${progress.velocity.trend === 'increasing' ? 'status-good' : (progress.velocity.trend === 'decreasing' ? 'status-critical' : 'status-warning')}">
+                        ${progress.velocity.trend === 'increasing' ? '📈' : (progress.velocity.trend === 'decreasing' ? '📉' : '➡️')} ${LANG === 'en' ? progress.velocity.trend : (progress.velocity.trend === 'increasing' ? 'در حال افزایش' : (progress.velocity.trend === 'decreasing' ? 'در حال کاهش' : 'پایدار'))}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Financial Summary -->
+        <div class="summary-section">
+            <h2>💰 ${LANG === 'en' ? 'Financial Summary' : 'خلاصه مالی'}</h2>
+            <div class="overview-row">
+                <div class="overview-card">
+                    <h3>${LANG === 'en' ? 'Budget Overview' : 'نمای کلی بودجه'}</h3>
+                    <table class="data-table">
+                        <tr>
+                            <td>${LANG === 'en' ? 'Total Budget' : 'بودجه کل'}</td>
+                            <td style="text-align: right; font-weight: 600;">${formatCurrency(financial.budget_overview.total_budget)}</td>
+                        </tr>
+                        <tr>
+                            <td>${LANG === 'en' ? 'Spent' : 'مصرف شده'}</td>
+                            <td style="text-align: right; font-weight: 600;">${formatCurrency(financial.budget_overview.spent)}</td>
+                        </tr>
+                        <tr>
+                            <td>${LANG === 'en' ? 'Remaining' : 'باقی‌مانده'}</td>
+                            <td style="text-align: right; font-weight: 600; color: #10b981;">${formatCurrency(financial.budget_overview.remaining)}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="overview-card">
+                    <h3>${LANG === 'en' ? 'EVM Metrics' : 'شاخص‌های EVM'}</h3>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="metric-card">
+                            <div class="metric-value">${financial.evm_summary.cpi}</div>
+                            <div class="metric-label">CPI</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${financial.evm_summary.spi}</div>
+                            <div class="metric-label">SPI</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; padding: 12px; background: ${financial.evm_summary.interpretation.health === 'good' ? '#dcfce7' : '#fef3c7'}; border-radius: 8px; text-align: center;">
+                        ${financial.evm_summary.interpretation.schedule === 'ahead' ? '✓' : '⚠️'} ${LANG === 'en' ? 'Schedule' : 'زمان‌بندی'}: ${LANG === 'en' ? financial.evm_summary.interpretation.schedule : translateScheduleStatus(financial.evm_summary.interpretation.schedule)}
+                        <br>
+                        ${financial.evm_summary.interpretation.cost === 'under budget' ? '✓' : '⚠️'} ${LANG === 'en' ? 'Cost' : 'هزینه'}: ${LANG === 'en' ? financial.evm_summary.interpretation.cost : translateCostStatus(financial.evm_summary.interpretation.cost)}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Safety Summary -->
+        <div class="summary-section">
+            <h2>🛡️ ${LANG === 'en' ? 'Safety Summary' : 'خلاصه ایمنی'}</h2>
+            <div class="overview-row">
+                <div class="overview-card">
+                    <h3>${LANG === 'en' ? 'Safety Record' : 'سابقه ایمنی'}</h3>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="metric-card">
+                            <div class="metric-value">${safety.streak.current_streak}</div>
+                            <div class="metric-label">${LANG === 'en' ? 'Days Safe' : 'روز ایمن'}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${safety.incident_rate.total_incidents}</div>
+                            <div class="metric-label">${LANG === 'en' ? 'Incidents' : 'حوادث'}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${safety.compliance.compliance_rate.toFixed(1)}%</div>
+                            <div class="metric-label">${LANG === 'en' ? 'Compliance' : 'انطباق'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <h3>${LANG === 'en' ? 'Issues' : 'مشکلات'}</h3>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="metric-card">
+                            <div class="metric-value">${issues.total}</div>
+                            <div class="metric-label">${LANG === 'en' ? 'Total Issues' : 'کل مشکلات'}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${issues.resolution_rate.toFixed(1)}%</div>
+                            <div class="metric-label">${LANG === 'en' ? 'Resolved' : 'حل شده'}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Weekly Highlights -->
+        ${data.weekly_highlights && data.weekly_highlights.length > 0 ? `
+        <div class="highlight-box">
+            <h3>📌 ${LANG === 'en' ? 'This Week\'s Highlights' : 'نکات مهم این هفته'}</h3>
+            <ul style="margin: 16px 0 0 20px; padding: 0;">
+                ${data.weekly_highlights.map(h => `<li>${h}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('summary-content').innerHTML = html;
+    document.getElementById('summary-loading').style.display = 'none';
+    document.getElementById('summary-content').style.display = 'block';
+    chartsInitialized.summary = true;
+}
+
+// Show error message
+function showError(tab, message, isNoData = false) {
+    const content = document.getElementById(tab + '-content');
+    const loading = document.getElementById(tab + '-loading');
+    
+    if (isNoData) {
+        content.innerHTML = `
+            <div class="no-data" style="padding: 60px 20px; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 20px;">📊</div>
+                <h2 style="color: var(--text-primary); margin-bottom: 10px;">
+                    ${LANG === 'en' ? 'No Data Available' : 'داده‌ای موجود نیست'}
+                </h2>
+                <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto;">
+                    ${LANG === 'en' 
+                        ? 'No daily forms have been submitted for this project yet. Once forms are submitted and approved, analysis will appear here.'
+                        : 'هنوز هیچ فرم روزانه‌ای برای این پروژه ثبت نشده است. پس از ثبت و تأیید فرم‌ها، تحلیل‌ها در اینجا نمایش داده می‌شوند.'}
+                </p>
+            </div>
+        `;
+    } else {
+        content.innerHTML = `
+            <div class="no-data">
+                <div class="no-data-icon">❌</div>
+                <h2>${LANG === 'en' ? 'Error Loading Data' : 'خطا در بارگذاری'}</h2>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+    
+    loading.style.display = 'none';
+    content.style.display = 'block';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadOverview();
+    document.getElementById('lastUpdated').textContent = 
+        (LANG === 'en' ? 'Last updated: ' : 'آخرین بروزرسانی: ') + new Date().toLocaleString();
+});
+</script>
+{% endblock %}

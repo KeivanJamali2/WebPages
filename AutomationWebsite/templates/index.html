@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% block content %}
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <h1 class="hero-title" data-i18n="automation_tools">Automation Tools</h1>
+    <p class="hero-subtitle">
+      {% if session.get('user_email') %}
+        <span data-i18n="welcome_back">Welcome back</span>, <strong>{{ session.get('user_name', 'User') }}</strong>! 
+        <span data-i18n="select_tool">Select a tool to get started.</span>
+      {% else %}
+        <span data-i18n="hero_subtitle">Powerful tools to automate your data processing tasks</span>
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- Tools Grid -->
+  <div class="tools-grid">
+    {% for tool in tools %}
+      <a href="{{ tool.url }}" class="tool-card">
+        <div class="tool-icon-wrapper">
+          <span class="tool-icon">{{ tool.icon }}</span>
+        </div>
+        <div class="tool-content">
+          <h3 class="tool-name" data-i18n="{{ tool.name }}">{{ tool.name }}</h3>
+          {% if tool.description %}
+            <p class="tool-description" data-i18n="{{ tool.description }}">{{ tool.description }}</p>
+          {% endif %}
+        </div>
+        <div class="tool-arrow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+  
+  {% if not session.get('user_email') %}
+    <!-- Login CTA -->
+    <div class="login-cta">
+      <div class="login-cta-icon">🔐</div>
+      <div class="login-cta-content">
+        <h3 data-i18n="unlock_features">Unlock All Features</h3>
+        <p data-i18n="sign_in_access">Sign in to access personalized tools and save your progress</p>
+      </div>
+      <a href="{{ url_for('login') }}" class="login-cta-btn" data-i18n="login">Sign In</a>
+    </div>
+  {% endif %}
+
+  <!-- Stats Section (Optional) -->
+  <div class="stats-section">
+    <div class="stat-item">
+      <span class="stat-number">8+</span>
+      <span class="stat-label" data-i18n="stat_tools">Tools Available</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-number">100%</span>
+      <span class="stat-label" data-i18n="stat_automated">Automated</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-number">24/7</span>
+      <span class="stat-label" data-i18n="stat_available">Available</span>
+    </div>
+  </div>
+{% endblock %}

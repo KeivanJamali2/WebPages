@@ -1,0 +1,56 @@
+<html>
+{% extends "layout.html" %}
+{% block content %}
+  <h1>Talk to My Assistant</h1>
+  <form method="post" id="chat-form">
+    <div>
+      <label for="user-input">Your Message:</label>
+      <input type="text" name="user-input" id="user-input" required>
+    </div>
+    <input type="submit" value="Send">
+  </form>
+
+  <div id="chat-box">
+    <h3>Chat History</h3>
+    <div id="chat-content"></div>
+  </div>
+
+  <div id="processing-info" style="display: none;">
+    <p>Processing... Time elapsed: <span id="timer">0</span> seconds</p>
+  </div>
+
+  <script>
+    document.getElementById('chat-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      document.getElementById('processing-info').style.display = 'block';
+      let startTime = Date.now();
+
+      const updateTimer = () => {
+        let elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('timer').textContent = elapsed;
+      };
+
+      const timerInterval = setInterval(updateTimer, 1000);
+
+      fetch('{{ url_for("send_to_assistant_d") }}', {
+        method: 'POST',
+        body: new FormData(this)
+      }).then(response => response.json())
+        .then(data => {
+          clearInterval(timerInterval);
+          document.getElementById('processing-info').style.display = 'none';
+          if (data.response) {
+            document.getElementById('chat-content').innerHTML += `<p><strong>You:</strong> ${data.user_message}</p><p><strong>Assistant:</strong> ${data.response}</p>`;
+            document.getElementById('user-input').value = '';  // Clear input
+          } else {
+            alert('Failed to get a response from assistant');
+          }
+        }).catch(error => {
+          clearInterval(timerInterval);
+          document.getElementById('processing-info').style.display = 'none';
+          alert('An error occurred');
+        });
+    });
+  </script>
+{% endblock %}
+</html>

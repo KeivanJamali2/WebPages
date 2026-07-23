@@ -1,0 +1,216 @@
+{% extends 'layout.html' %}
+{% block title %}{{ room.name }} | تالار بازی{% endblock %}
+{% block content %}
+<section class="chamber-head" aria-labelledby="room-title">
+  <div class="head-inner">
+    <h1 id="room-title" class="room-title">{{ room.name }}</h1>
+    <div class="actions">
+      <form method="post" action="{{ url_for('leave_room', room_id=room.id) }}">
+        <button class="btn ghost" type="submit">خروج</button>
+      </form>
+      <form method="post" action="{{ url_for('reset_room', room_id=room.id) }}">
+        <button class="btn ghost" type="submit">ریست</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<aside class="players-panel scroll parchment" aria-label="بازیکنان">
+  <h2 class="panel-title">همراهان</h2>
+  <ul class="players-list">
+    {% for p in room.players %}
+      <li class="player-chip">{{ p }}</li>
+    {% endfor %}
+  </ul>
+</aside>
+
+<div id="game-area" class="game-grid" data-room-id="{{ room.id }}" data-started="{{ '1' if room.started else '0' }}">
+  <section class="panel start parchment start-panel" id="start-box" {% if room.started %}style="display:none"{% endif %}>
+    <header class="panel-header start-header">
+      <h3>آغاز ماجراجویی</h3>
+      <p class="start-sub">تنظیمات را انتخاب کن، یک کارآگاه افسانه‌ای را به عنوان دستیار در گفتگوها برگزین و بازی را شروع کن.</p>
+    </header>
+    <form method="post" action="{{ url_for('start_game', room_id=room.id) }}" id="start-form" class="start-form enhanced" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      <!-- Removed global total question limit; only per-round questions matter now -->
+      <input type="hidden" name="mode" value="multi">
+      <label class="fld">تعداد دورها
+        <input name="rounds" type="number" min="1" max="20" value="3">
+      </label>
+      <label class="fld">سوال در هر دور
+        <input name="questions_per_round" type="number" min="1" max="50" value="3">
+      </label>
+      <label class="fld">حدس در هر دور
+        <input name="guesses_per_round" type="number" min="1" max="10" value="1">
+      </label>
+      <label class="fld">زمان گفتگو (ثانیه)
+        <input name="chat_seconds" type="number" min="10" max="900" value="300">
+      </label>
+      <fieldset class="persona-box persona-upgraded" id="persona-picker" aria-describedby="persona-help">
+        <legend>دستیار کمکی (ویژه)</legend>
+        <input type="hidden" name="persona" id="persona-input" value="">
+        <div class="persona-grid" role="list" aria-label="انتخاب دستیار">
+          <!-- Each persona card -->
+          <button type="button" class="persona-card" data-persona="Sherlock Holmes" role="listitem" aria-pressed="false">
+            <span class="avatar">🕵️‍♂️</span>
+            <span class="title">شرلوک هولمز</span>
+            <span class="tag">تحلیل‌گر</span>
+            <span class="status" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="persona-card" data-persona="Hercule Poirot" role="listitem" aria-pressed="false">
+            <span class="avatar">🧠</span>
+            <span class="title">پوآرو</span>
+            <span class="tag">منطقی دقیق</span>
+            <span class="status" aria-hidden="true"></span>
+          </button>
+            <button type="button" class="persona-card" data-persona="Columbo" role="listitem" aria-pressed="false">
+            <span class="avatar">👤</span>
+            <span class="title">کلمبو</span>
+            <span class="tag">ساده‌نما</span>
+            <span class="status" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="persona-card" data-persona="Miss Marple" role="listitem" aria-pressed="false">
+            <span class="avatar">🧵</span>
+            <span class="title">خانم مارپل</span>
+            <span class="tag">جزئیات ظریف</span>
+            <span class="status" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="persona-card" data-persona="Mentalist" role="listitem" aria-pressed="false">
+            <span class="avatar">✨</span>
+            <span class="title">منتالیست</span>
+            <span class="tag">الهامات</span>
+            <span class="status" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="persona-card neutral" data-persona="" role="listitem" aria-pressed="false">
+            <span class="avatar">∅</span>
+            <span class="title">بدون دستیار</span>
+            <span class="tag">(خالص)</span>
+            <span class="status" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p id="persona-help" class="persona-hint">هر شخصیت فقط توسط یک بازیکن قابل انتخاب است. دستیار فقط در فاز گفتگو فعال می‌شود.</p>
+      </fieldset>
+      <button type="submit" class="btn primary">شروع</button>
+    </form>
+  </section>
+
+  <section class="panel status rune" id="status-box" {% if not room.started %}style="display:none"{% endif %}>
+    <header class="panel-header"><h3>وضعیت</h3></header>
+    <div class="status-core">
+      <div class="progress-orb" aria-label="پیشرفت سوالات">
+        <svg class="orb" viewBox="0 0 120 120" width="120" height="120" role="img" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle class="ring-fg" cx="60" cy="60" r="52" stroke-dasharray="327" stroke-dashoffset="0" data-ring></circle>
+        </svg>
+        <div class="orb-center">
+          <span class="orb-number" id="questions-remaining">{% if room.game %}{{ room.game.questions_remaining_shared }}{% else %}—{% endif %}</span>
+          <span class="orb-label">باقی</span>
+        </div>
+      </div>
+      <div class="winner-box">
+        <strong>برنده</strong>
+        <div id="winner" class="winner-name">{% if room.game and room.game.winner %}{{ room.game.winner }}{% else %}—{% endif %}</div>
+      </div>
+    </div>
+    <div id="per-player-status" class="per-player-status"></div>
+    <div id="round-phase" class="round-phase" style="margin-top:.6rem; font-size:.6rem; text-align:center;"></div>
+  </section>
+
+  <section class="panel qa scroll" id="qa-box" {% if not room.started %}style="display:none"{% endif %}>
+    <header class="panel-header"><h3>طرح پرسش</h3></header>
+    <form id="ask-form" class="inline-form" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      <input name="question" id="question-input" placeholder="سوال بله/خیر..." maxlength="120" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      <button type="submit" class="btn">ارسال</button>
+    </form>
+    <ul id="questions-log" class="log questions" aria-live="polite" aria-label="لیست سوالات"></ul>
+  </section>
+
+  <section class="panel guess scroll" id="guess-box" {% if not room.started %}style="display:none"{% endif %}>
+    <header class="panel-header"><h3>حدس</h3></header>
+    <form id="guess-form" class="inline-form" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      <input name="guess" id="guess-input" placeholder="حدس واژه" maxlength="50" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      <button type="submit" class="btn">حدس</button>
+    </form>
+    <ul id="guesses-log" class="log guesses" aria-live="polite" aria-label="لیست حدس‌ها"></ul>
+  </section>
+
+  <section class="panel reveal" id="reveal-box" style="display:none">
+    <header class="panel-header"><h3>واژه نهان</h3></header>
+    <button id="reveal-btn" type="button" class="btn glow">نمایش</button>
+    <div id="revealed-word" class="revealed"></div>
+  </section>
+
+  <!-- Chat phase now has its own dedicated page (/chat/<room_id>) -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/room.js') }}"></script>
+<script>
+// Persona card selection & uniqueness UI logic (enhanced)
+(function(){
+  const picker = document.getElementById('persona-picker');
+  if(!picker) return;
+  const hidden = document.getElementById('persona-input');
+  const cards = [...picker.querySelectorAll('.persona-card')];
+  const roomArea = document.getElementById('game-area');
+  const roomId = roomArea ? roomArea.getAttribute('data-room-id') : null;
+  if(!roomId) return;
+  function selectCard(card){
+    if(card.classList.contains('taken') && !card.classList.contains('me')) return; // cannot take other's
+    cards.forEach(c=>{ c.classList.remove('selected','me'); c.setAttribute('aria-pressed','false'); });
+    const persona = card.getAttribute('data-persona') || '';
+    hidden.value = persona; // may be empty
+    card.classList.add('selected','me');
+    card.setAttribute('aria-pressed','true');
+    // Persist server-side
+    const fd = new FormData();
+    fd.append('persona', persona);
+    fetch('/set_persona', {method:'POST', body: fd}).then(r=>r.json()).then(js=>{
+      if(js.error){
+        alert(js.error); // revert visual
+        fetchState();
+      } else {
+        applyStateFromPersonas(js.personas, js.persona);
+      }
+    }).catch(()=>{});
+  }
+  cards.forEach(card=>card.addEventListener('click', ()=>selectCard(card)));
+  function applyStateFromPersonas(personas, myPersona){
+    if(!personas) return;
+    const entries = Object.entries(personas); // [[playerName, persona|null]]
+    const taken = new Map();
+    let meName = null;
+    entries.forEach(([player, per])=>{ if(per) taken.set(per, player); });
+    // Find me by matching any persona flagged in session hidden input later via /state you field
+    // We'll fetch /state to get 'you'
+  }
+  function applyState(state){
+    if(!state || !state.personas) return;
+    const myName = state.you;
+    const personas = state.personas;
+    const taken = new Map();
+    Object.entries(personas).forEach(([player, per])=>{ if(per) taken.set(per, player); });
+    cards.forEach(card=>{
+      const val = card.getAttribute('data-persona') || '';
+      const owner = val ? taken.get(val) : null;
+      card.classList.remove('taken','me','selected');
+      card.querySelector('.status').textContent = '';
+      if(val && owner){
+        if(personas[myName] === val){
+          card.classList.add('selected','me');
+          hidden.value = val;
+          card.querySelector('.status').textContent = 'شما';
+        } else {
+          card.classList.add('taken');
+          card.querySelector('.status').textContent = owner;
+        }
+      } else if(!val){ // empty persona card
+        if(!personas[myName]){ card.classList.add('selected','me'); hidden.value=''; card.querySelector('.status').textContent=''; }
+      }
+    });
+  }
+  function fetchState(){ fetch(`/state/${roomId}`).then(r=>r.json()).then(js=>{ if(!js.error) applyState(js); }); }
+  fetchState();
+  const poller = setInterval(fetchState, 3000);
+})();
+</script>
+{% endblock %}

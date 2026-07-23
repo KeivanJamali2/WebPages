@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Duplicate Records - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-exclamation-triangle"></i> Duplicate Records Found
+        </h1>
+        <p class="text-muted">Found duplicate records that need to be resolved</p>
+    </div>
+</div>
+
+<div class="alert alert-warning" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <strong>Duplicate Detection Summary:</strong>
+    <br>
+    Total Duplicate Groups: <strong>{{ summary.total_duplicate_groups }}</strong>
+    <br>
+    Total Duplicate Records: <strong>{{ summary.total_duplicates }}</strong>
+    <br>
+    <small class="text-muted">Click on a group to expand and see all duplicate records</small>
+</div>
+
+<!-- Debug info (remove in production) -->
+{% if summary.grouped_duplicates %}
+<div class="alert alert-secondary small mb-3" style="max-height: 150px; overflow-y: auto;">
+    <strong>Debug Info:</strong>
+    <br>
+    Number of groups: {{ summary.grouped_duplicates|length }}
+    {% if summary.grouped_duplicates[0] %}
+    <br>
+    First group keys: {{ summary.grouped_duplicates[0].keys()|list }}
+    <br>
+    First group has {{ summary.grouped_duplicates[0].records|length }} records
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Resolution Options</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <button class="btn btn-success w-100" onclick="handleDuplicateAction('keep_newer')">
+                    <i class="bi bi-calendar2-check"></i> Keep Newer Records (Remove Old Duplicates)
+                </button>
+                <small class="d-block text-muted mt-2">Keep the newest version of each duplicate and delete older versions</small>
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-warning w-100" onclick="showManualSelectionMode()">
+                    <i class="bi bi-hand-index"></i> Manual Selection
+                </button>
+                <small class="d-block text-muted mt-2">Manually choose which records to delete</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Duplicate Records by Reference Code</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="expandAllGroups()">
+                    <i class="bi bi-chevron-down"></i> Expand All
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="collapseAllGroups()">
+                    <i class="bi bi-chevron-up"></i> Collapse All
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="duplicates-list">
+            {% if summary.grouped_duplicates %}
+                {% for duplicate_group in summary.grouped_duplicates %}
+                <div class="duplicate-group mb-3 border rounded p-3">
+                    <button type="button" class="btn btn-link text-start w-100 p-0 group-toggle" 
+                            onclick="toggleGroup(this)" data-ref-code="{{ duplicate_group.reference_code }}">
+                        <i class="bi bi-chevron-right expand-icon"></i>
+                        <strong>Reference Code: {{ duplicate_group.reference_code }}</strong>
+                        <span class="badge bg-danger">{{ duplicate_group.count }} records</span>
+                    </button>
+                    
+                    <div class="group-content" style="display: none; margin-top: 15px;">
+                        <div class="alert alert-info small mb-2">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Keep Newer:</strong> Will keep record with highest month/number (usually the last one) and remove others
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input manual-select-checkbox" 
+                                                   data-ref-code="{{ duplicate_group.reference_code }}"
+                                                   onchange="updateCheckboxParent(this)" style="display: none;">
+                                        </th>
+                                        <th>Hami ID</th>
+                                        <th>Number</th>
+                                        <th>Month</th>
+                                        <th>Student Name</th>
+                                        <th>Subject</th>
+                                        <th>Major</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in duplicate_group.records %}
+                                    <tr class="duplicate-record">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input record-checkbox manual-record-checkbox" 
+                                                   data-hami="{{ record.hami_id }}"
+                                                   data-number="{{ record.number }}"
+                                                   data-month="{{ record.month }}"
+                                                   data-ref-code="{{ duplicate_group.reference_code }}"
+                                                   onchange="updateRecordSelection()" style="display: none;">
+                                        </td>
+                                        <td><code>{{ record.hami_id }}</code></td>
+                                        <td>{{ record.number }}</td>
+                                        <td><small>{{ record.month }}</small></td>
+                                        <td>{{ record.name }}</td>
+                                        <td>{{ record.subject }}</td>
+                                        <td>{{ record.major }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> No duplicate records found!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Processing...</span>
+    </div>
+    <p class="text-center mt-2">Processing your request...</p>
+</div>
+
+<script>
+let manualSelectionMode = false;
+
+function toggleGroup(button) {
+    const icon = button.querySelector('.expand-icon');
+    const content = button.parentElement.querySelector('.group-content');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.classList.remove('bi-chevron-right');
+        icon.classList.add('bi-chevron-down');
+    } else {
+        content.style.display = 'none';
+        icon.classList.remove('bi-chevron-down');
+        icon.classList.add('bi-chevron-right');
+    }
+}
+
+function expandAllGroups() {
+    document.querySelectorAll('.group-toggle').forEach(btn => {
+        const icon = btn.querySelector('.expand-icon');
+        const content = btn.parentElement.querySelector('.group-content');
+        content.style.display = 'block';
+        icon.classList.remove('bi-chevron-right');
+        icon.classList.add('bi-chevron-down');
+    });
+}
+
+function collapseAllGroups() {
+    document.querySelectorAll('.group-toggle').forEach(btn => {
+        const icon = btn.querySelector('.expand-icon');
+        const content = btn.parentElement.querySelector('.group-content');
+        content.style.display = 'none';
+        icon.classList.remove('bi-chevron-down');
+        icon.classList.add('bi-chevron-right');
+    });
+}
+
+function showManualSelectionMode() {
+    manualSelectionMode = !manualSelectionMode;
+    
+    // Show/hide checkboxes and table rows
+    document.querySelectorAll('.manual-select-checkbox').forEach(cb => {
+        cb.style.display = manualSelectionMode ? 'block' : 'none';
+    });
+    
+    document.querySelectorAll('.manual-record-checkbox').forEach(cb => {
+        cb.style.display = manualSelectionMode ? 'block' : 'none';
+    });
+    
+    document.querySelectorAll('.manual-row').forEach(row => {
+        row.style.display = manualSelectionMode ? 'table-row' : 'none';
+    });
+    
+    // Update button appearance
+    const btn = event.target.closest('button');
+    if (manualSelectionMode) {
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-danger');
+        btn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Manual Selection';
+        
+        // Show delete button
+        if (!document.getElementById('manual-delete-btn')) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.id = 'manual-delete-btn';
+            deleteBtn.className = 'btn btn-danger ms-2';
+            deleteBtn.innerHTML = '<i class="bi bi-trash"></i> Delete Selected Records';
+            deleteBtn.onclick = () => handleManualRemoval();
+            btn.parentElement.appendChild(deleteBtn);
+        }
+    } else {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-warning');
+        btn.innerHTML = '<i class="bi bi-hand-index"></i> Manual Selection';
+        
+        // Remove delete button
+        const deleteBtn = document.getElementById('manual-delete-btn');
+        if (deleteBtn) deleteBtn.remove();
+        
+        // Uncheck all checkboxes
+        document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = false);
+    }
+}
+
+function updateRecordSelection() {
+    // Update parent checkbox status based on child checkboxes
+    document.querySelectorAll('.manual-select-checkbox').forEach(parentCb => {
+        const refCode = parentCb.dataset.refCode;
+        const childCheckboxes = document.querySelectorAll(`.manual-record-checkbox[data-ref-code="${refCode}"]`);
+        const checkedCount = Array.from(childCheckboxes).filter(cb => cb.checked).length;
+        
+        if (checkedCount === 0) {
+            parentCb.indeterminate = false;
+            parentCb.checked = false;
+        } else if (checkedCount === childCheckboxes.length) {
+            parentCb.indeterminate = false;
+            parentCb.checked = true;
+        } else {
+            parentCb.indeterminate = true;
+        }
+    });
+}
+
+function updateCheckboxParent(parentCb) {
+    const refCode = parentCb.dataset.refCode;
+    const childCheckboxes = document.querySelectorAll(`.manual-record-checkbox[data-ref-code="${refCode}"]`);
+    childCheckboxes.forEach(cb => cb.checked = parentCb.checked);
+}
+
+function handleDuplicateAction(action) {
+    const actionText = action === 'keep_newer' ? 'keep the newest records and delete older duplicates' : 'process duplicates';
+    
+    if (confirm(`Are you sure you want to ${actionText}?`)) {
+        showLoadingIndicator(true);
+        
+        fetch('/api/handle_duplicates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: action,
+                date_source: '{{ date_source }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoadingIndicator(false);
+            
+            if (data.success) {
+                // Show success message and reload immediately
+                alert(`✓ Success! ${data.message}\n\nThe page will now refresh to show the updated data.`);
+                location.reload();
+            } else {
+                showAlert('danger', `Error: ${data.error || 'Unknown error occurred'}`);
+            }
+        })
+        .catch(error => {
+            showLoadingIndicator(false);
+            showAlert('danger', `Error: ${error.message}`);
+        });
+    }
+}
+
+function handleManualRemoval() {
+    const selectedRecords = [];
+    document.querySelectorAll('.manual-record-checkbox:checked').forEach(cb => {
+        selectedRecords.push({
+            hami_id: cb.dataset.hami,
+            number: parseInt(cb.dataset.number),
+            month: cb.dataset.month
+        });
+    });
+    
+    if (selectedRecords.length === 0) {
+        showAlert('warning', 'Please select at least one record to delete.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${selectedRecords.length} selected record(s)? This action cannot be undone.`)) {
+        showLoadingIndicator(true);
+        
+        fetch('/api/handle_duplicates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'manual',
+                date_source: '{{ date_source }}',
+                records_to_remove: selectedRecords
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoadingIndicator(false);
+            
+            if (data.success) {
+                showAlert('success', `Success! ${data.message}`);
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showAlert('danger', `Error: ${data.error || 'Unknown error occurred'}`);
+            }
+        })
+        .catch(error => {
+            showLoadingIndicator(false);
+            showAlert('danger', `Error: ${error.message}`);
+        });
+    }
+}
+
+function showLoadingIndicator(show) {
+    document.getElementById('loading-indicator').style.display = show ? 'block' : 'none';
+}
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    const container = document.querySelector('.card:first-of-type');
+    const alertDiv = document.createElement('div');
+    alertDiv.innerHTML = alertHtml;
+    container.parentElement.insertBefore(alertDiv.firstElementChild, container);
+}
+
+// Add button to go back to database management
+document.addEventListener('DOMContentLoaded', function() {
+    const backBtn = document.createElement('a');
+    backBtn.href = "{{ url_for('manage_database') }}";
+    backBtn.className = 'btn btn-outline-secondary mt-3';
+    backBtn.innerHTML = '<i class="bi bi-arrow-left"></i> Back to Database Management';
+    document.querySelector('.card:last-of-type').parentElement.appendChild(backBtn);
+});
+</script>
+{% endblock %}

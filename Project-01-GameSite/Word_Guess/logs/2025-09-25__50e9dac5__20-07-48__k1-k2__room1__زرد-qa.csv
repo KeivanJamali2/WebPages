@@ -1,0 +1,6 @@
+ts,game_id,round,phase,player,action,text,answer_or_correct
+,,,,,,,
+1758818270,50e9dac5,1,QUESTION,k2,Q,asdf,0
+1758818271,50e9dac5,1,QUESTION,k2,G,asdf,0
+1758818274,50e9dac5,1,GUESS,k1,Q,asdf,0
+1758818275,50e9dac5,1,COMPLETED,k1,G,asdf,0

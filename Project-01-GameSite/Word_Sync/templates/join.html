@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel fade-in" style="max-width:460px;">
+  <h2 style="margin-top:0; font-size:1.2rem; letter-spacing:.5px;">Enter the Arena</h2>
+  <p style="margin:.2rem 0 1rem; font-size:.85rem; color:var(--text-dim); line-height:1.4;">Synchronize minds. Both players think of words until you converge perfectly.</p>
+  <form id="joinForm" method="post" class="flex-col gap-sm" style="display:flex;" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div style="width:100%;">
+      <label for="nameInput">Your name</label>
+  <input id="nameInput" name="name" type="text" autofocus required placeholder="e.g. Nova" value="{{ request.form.name or '' }}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+    </div>
+    <div style="width:100%;">
+      <label for="passwordInput">Room Password</label>
+      <input id="passwordInput" name="password" type="password" required placeholder="One of the room passcodes" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <p style="margin:.2rem 0 0; font-size:.65rem; color:var(--text-dim); letter-spacing:.5px;">Use one of the 3 passcodes to join a room (2 players max per room).</p>
+      <ul style="margin:.3rem 0 0; padding-left:1.1rem; font-size:.58rem; color:var(--text-dim); list-style:disc; display:flex; gap:1rem; flex-wrap:wrap;">
+        {% for pc in passcodes %}<li>{{ pc }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div style="width:100%;">
+      <label style="display:block; font-size:.7rem; margin-bottom:.3rem;">Select Two Reporters (order matters)</label>
+      <div id="reporterPick" style="display:flex; flex-wrap:wrap; gap:.4rem;">
+        {% for p in (allowed_reporters or []) %}
+          <button type="button" class="rep-option" data-persona="{{ p }}" style="font-size:.55rem; padding:.35rem .55rem; background:var(--surface-2); border:1px solid var(--surface-3); border-radius:.45rem; cursor:pointer;">{{ p }}</button>
+        {% endfor %}
+      </div>
+      <div id="repStatus" style="font-size:.55rem; color:var(--text-dim); margin-top:.3rem;">Choose reporter 1 then reporter 2.</div>
+      <input type="hidden" name="reporters" id="reportersInput" />
+    </div>
+  {% if error %}<div class="toast bad" style="position:static; animation:none;">{{ error }}</div>{% endif %}
+    <div class="flex gap-sm" style="justify-content:flex-start;">
+      <button type="submit">Join Game</button>
+      <button type="button" class="outline secondary" onclick="document.getElementById('nameInput').value=''; document.getElementById('nameInput').focus();">Clear</button>
+    </div>
+  </form>
+  <!-- Defaults for reporters injected via Jinja to avoid inline JS template confusion -->
+  <div id="reporterDefaults" data-defaults='{{ (default_reporters or []) | tojson | safe }}' hidden></div>
+  <hr />
+  <p style="font-size:.7rem; color:var(--text-dim); margin:0;">Open this page on the other device & use a distinct name to connect.</p>
+</section>
+<script>
+  (function(){
+    const picked = [];
+    const max = 2;
+    const statusEl = document.getElementById('repStatus');
+    const hidden = document.getElementById('reportersInput');
+    function update(){
+      hidden.value = picked.join('||');
+      statusEl.textContent = picked.length < 2 ? `Pick ${2-picked.length} more` : `Selected: ${picked[0]} + ${picked[1]}`;
+    }
+    document.querySelectorAll('#reporterPick .rep-option').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const persona = btn.getAttribute('data-persona');
+        if(picked.includes(persona)){
+          // allow deselect
+          const idx = picked.indexOf(persona);
+          picked.splice(idx,1);
+          btn.classList.remove('active');
+        } else {
+          if(picked.length >= max){ return; }
+          picked.push(persona);
+          btn.classList.add('active');
+        }
+        // visual ordering numbers
+        document.querySelectorAll('#reporterPick .rep-option').forEach(b=> b.dataset.order='');
+        picked.forEach((p,i)=>{
+          const el = document.querySelector(`#reporterPick .rep-option[data-persona="${p}"]`);
+          if(el) el.dataset.order = (i+1);
+        });
+        update();
+      });
+    });
+    update();
+    // On submit store selection in localStorage so game page script can POST /api/reporters
+    document.getElementById('joinForm').addEventListener('submit', ()=>{
+      if(picked.length === 2){
+        localStorage.setItem('pending_reporters', JSON.stringify(picked));
+      } else {
+        // allow auto fill with defaults if user skipped
+        const holder = document.getElementById('reporterDefaults');
+        let defaults = [];
+        if(holder){
+          try { defaults = JSON.parse(holder.dataset.defaults || '[]'); } catch(e){ defaults = []; }
+        }
+        localStorage.setItem('pending_reporters', JSON.stringify(defaults));
+      }
+    });
+  })();
+</script>
+{% endblock %}

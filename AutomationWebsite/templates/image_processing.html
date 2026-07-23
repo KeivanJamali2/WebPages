@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h1>Image Processing</h1>
+  <div class="card">
+    <p>This file doesn't need installation. You move it to your local PC and run it whenever you need it.</p>
+    
+    <h2>Purpose:</h2>
+    <p>Change the sorting of your images into folders suitable for apps. This app does not alter your images at all. It only makes a copy of your images in the result folder. Ensure you have enough space, as the output images will be created in the specified output folder.</p>
+    
+    <h2>Parameters:</h2>
+    <ul style="text-align: left; padding-left: 20px;">
+      <li><strong>Main Folder:</strong> The folder where images are located. Images can be in subfolders, but they should be in a write sequence according to the name of the folder and filename.</li>
+      <li><strong>Output Folder:</strong> Choose a folder where the output will be stored.</li>
+      <li><strong>Minutes Limit:</strong> The limit you think is suitable for your images. For example, if your images are taken at the rate of 10 seconds or 1 minute, and you need to sort images for 10 minutes, you can set this limit to 5 minutes. 5 is a good number in most cases.</li>
+    </ul>  
+
+    <form method="post" action="{{ url_for('Image_processing') }}" style="margin-top: 30px;">
+      <input type="submit" value="Download App" class="btn-primary">
+    </form>
+  </div>
+{% endblock %}

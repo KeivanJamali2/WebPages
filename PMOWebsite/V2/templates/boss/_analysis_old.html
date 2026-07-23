@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ t('analysis') if lang == 'en' else 'تحلیل' }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .analysis-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--primary-color);
+        text-decoration: none;
+        margin-bottom: 24px;
+        font-size: 14px;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    .project-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .project-header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+    .project-header .subtitle {
+        color: var(--text-secondary);
+        font-size: 16px;
+    }
+
+    /* Data availability banner */
+    .data-banner {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 24px;
+        border-radius: 12px;
+        margin-bottom: 32px;
+    }
+    .data-banner.has-data {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+    }
+    .data-banner.no-data {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+    }
+    .data-banner .icon { font-size: 32px; }
+    .data-banner .info h3 { margin: 0 0 4px 0; font-size: 16px; }
+    .data-banner .info p  { margin: 0; font-size: 14px; }
+
+    /* Summary counts grid */
+    .counts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 40px;
+    }
+    .count-card {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+    .count-card .number {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--primary-color, #3b82f6);
+    }
+    .count-card .label {
+        font-size: 13px;
+        color: var(--text-secondary, #6b7280);
+        margin-top: 4px;
+    }
+
+    /* Coming soon section */
+    .coming-soon {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--card-bg, #fff);
+        border: 2px dashed var(--border-color, #e5e7eb);
+        border-radius: 16px;
+    }
+    .coming-soon .icon { font-size: 64px; margin-bottom: 16px; }
+    .coming-soon h2 { margin-bottom: 8px; }
+    .coming-soon p {
+        color: var(--text-secondary);
+        max-width: 480px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-container">
+
+    <!-- Back link -->
+    <a href="{{ url_for('boss.dashboard') }}" class="back-link">
+        ← {{ 'Back to Projects' if lang == 'en' else 'بازگشت به پروژه‌ها' }}
+    </a>
+
+    <!-- Project header -->
+    <div class="project-header">
+        <h1>📊 {{ project.name }}</h1>
+        <p class="subtitle">
+            {{ 'Project Analysis Dashboard' if lang == 'en' else 'داشبورد تحلیل پروژه' }}
+        </p>
+    </div>
+
+    <!-- Data availability banner -->
+    {% if has_data %}
+    <div class="data-banner has-data">
+        <div class="icon">✅</div>
+        <div class="info">
+            <h3>{{ 'Data Available' if lang == 'en' else 'داده موجود است' }}</h3>
+            <p>{{ form_count }} {{ 'approved form(s) ready for analysis.' if lang == 'en' else 'فرم تأیید شده آماده تحلیل.' }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="data-banner no-data">
+        <div class="icon">⚠️</div>
+        <div class="info">
+            <h3>{{ 'No Data Yet' if lang == 'en' else 'هنوز داده‌ای نیست' }}</h3>
+            <p>{{ 'Submit and approve daily forms to enable analysis.' if lang == 'en' else 'برای فعال‌سازی تحلیل، فرم‌های روزانه را ثبت و تأیید کنید.' }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Summary counts (loaded via JS) -->
+    <div class="counts-grid" id="countsGrid">
+        <div class="count-card">
+            <div class="number" id="cnt-forms">–</div>
+            <div class="label">{{ 'Forms' if lang == 'en' else 'فرم‌ها' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-human_resources">–</div>
+            <div class="label">{{ 'HR Records' if lang == 'en' else 'رکوردهای نیروی انسانی' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-tools_equipment">–</div>
+            <div class="label">{{ 'Equipment Records' if lang == 'en' else 'رکوردهای تجهیزات' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-construction_operations">–</div>
+            <div class="label">{{ 'Operations' if lang == 'en' else 'عملیات ساختمانی' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-incoming_materials">–</div>
+            <div class="label">{{ 'Material Records' if lang == 'en' else 'رکوردهای مصالح' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-climate_conditions">–</div>
+            <div class="label">{{ 'Climate Records' if lang == 'en' else 'رکوردهای آب‌و‌هوا' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-project_issues">–</div>
+            <div class="label">{{ 'Issues' if lang == 'en' else 'مشکلات' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-safety_records">–</div>
+            <div class="label">{{ 'Safety Records' if lang == 'en' else 'رکوردهای ایمنی' }}</div>
+        </div>
+        <div class="count-card">
+            <div class="number" id="cnt-events">–</div>
+            <div class="label">{{ 'Events' if lang == 'en' else 'رویدادها' }}</div>
+        </div>
+    </div>
+
+    <!-- Analysis Modules Navigation -->
+    {% if has_data %}
+    <h2 style="margin-bottom:16px;">{{ 'Analysis Modules' if lang == 'en' else 'بخش‌های تحلیل' }}</h2>
+    <div class="counts-grid" style="margin-bottom:40px;">
+        <a href="{{ url_for('boss.analysis_activities', project_id=project.id) }}" class="count-card" style="text-decoration:none; cursor:pointer; transition:box-shadow .2s;">
+            <div class="number" style="font-size:36px;">📐</div>
+            <div class="label" style="font-size:15px; font-weight:600; color:var(--text-primary,#111);">{{ 'Activities & Roadmap' if lang == 'en' else 'فعالیت‌ها و نقشه مسیر' }}</div>
+        </a>
+        <div class="count-card" style="opacity:0.5; cursor:not-allowed;">
+            <div class="number" style="font-size:36px;">👷</div>
+            <div class="label" style="font-size:15px; font-weight:600; color:var(--text-primary,#111);">{{ 'Human Resources' if lang == 'en' else 'نیروی انسانی' }}</div>
+        </div>
+        <div class="count-card" style="opacity:0.5; cursor:not-allowed;">
+            <div class="number" style="font-size:36px;">🚜</div>
+            <div class="label" style="font-size:15px; font-weight:600; color:var(--text-primary,#111);">{{ 'Tools & Equipment' if lang == 'en' else 'ماشین‌آلات و تجهیزات' }}</div>
+        </div>
+        <div class="count-card" style="opacity:0.5; cursor:not-allowed;">
+            <div class="number" style="font-size:36px;">📦</div>
+            <div class="label" style="font-size:15px; font-weight:600; color:var(--text-primary,#111);">{{ 'Materials' if lang == 'en' else 'مصالح' }}</div>
+        </div>
+        <div class="count-card" style="opacity:0.5; cursor:not-allowed;">
+            <div class="number" style="font-size:36px;">⚠️</div>
+            <div class="label" style="font-size:15px; font-weight:600; color:var(--text-primary,#111);">{{ 'Issues & Safety' if lang == 'en' else 'مشکلات و ایمنی' }}</div>
+        </div>
+        <div class="count-card" style="opacity:0.5; cursor:not-allowed;">
+            <div class="number" style="font-size:36px;">🌤️</div>
+            <div class="label" style="font-size:15px; font-weight:600; color:var(--text-primary,#111);">{{ 'Weather' if lang == 'en' else 'آب و هوا' }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Placeholder for modules not yet built -->
+    <div class="coming-soon">
+        <div class="icon">🚧</div>
+        <h2>{{ 'More Modules Coming Soon' if lang == 'en' else 'بخش‌های بیشتر به زودی' }}</h2>
+        <p>
+            {{ 'Additional analysis modules are being developed. Stay tuned!'
+               if lang == 'en'
+               else 'بخش‌های تحلیلی بیشتر در حال توسعه هستند. منتظر باشید!' }}
+        </p>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('{{ url_for("boss.api_summary_counts", project_id=project.id) }}')
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                const d = res.data;
+                for (const [key, val] of Object.entries(d)) {
+                    const el = document.getElementById('cnt-' + key);
+                    if (el) el.textContent = val.toLocaleString();
+                }
+            }
+        })
+        .catch(() => {});
+});
+</script>
+{% endblock %}

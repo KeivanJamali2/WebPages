@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="grid-layout">
+  <div class="panel fade-in" style="margin-bottom:1rem; padding:.6rem .9rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.6rem;">
+      <div>
+        <h2 style="margin:.1rem 0; font-size:1rem; letter-spacing:.5px;">Room <span id="roomIdDisplay">{{ room_id }}</span></h2>
+        <div style="font-size:.6rem; color:var(--text-dim);">Players in this room (max 2):</div>
+      </div>
+      <div id="roomPlayers" style="display:flex; gap:.4rem; flex-wrap:wrap; font-size:.65rem;"></div>
+    </div>
+    <hr style="margin:.5rem 0; opacity:.25;" />
+    <div id="reporterBox">
+      <div style="display:flex; align-items:center; gap:.4rem; margin-bottom:.3rem;">
+        <strong style="font-size:.65rem; letter-spacing:.3px;">Reporters</strong>
+        <span id="reporterConfigStatus" style="font-size:.5rem; color:var(--text-dim);"></span>
+      </div>
+      <div id="reporterConfig" style="margin-bottom:.4rem; display:flex; flex-wrap:wrap; gap:.3rem;">
+        <!-- Filled by JS with selectable reporters if unlocked -->
+      </div>
+  <ul id="reporterComments" style="list-style:none; margin:0; padding:0; font-size:.7rem; line-height:1.25; display:flex; flex-direction:column;" class="reporter-comments"></ul>
+    </div>
+  </div>
+  <section class="panel phases" id="mainGame">
+    <div class="flex justify-between gap-sm" style="align-items:flex-start; flex-wrap:wrap;">
+      <div style="max-width:70%;">
+        <h2 style="margin:0 0 .35rem; font-size:1.1rem; letter-spacing:.5px;">Prompt</h2>
+        <div id="promptText" style="font-size:clamp(1.05rem,1.5vw,1.35rem); font-weight:600; background:var(--gradient-accent); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 2px 6px #000a);"></div>
+      </div>
+      <div class="badges" style="align-items:flex-start;">
+        <span id="statusBadge" class="badge">status</span>
+        <span class="badge" id="roundBadge">Round <span id="roundNum">1</span><span id="roundLimitSpan" style="display:none;"> / <span id="roundLimitVal"></span></span></span>
+      </div>
+    </div>
+    <div style="font-size:.75rem; color:var(--text-dim);">You are <strong id="youName" style="color:var(--text);"></strong></div>
+    <div class="flex gap-sm" style="margin:.4rem 0 .2rem; flex-wrap:wrap;">
+      <button type="button" id="exitBtn" class="outline bad" style="font-size:.6rem; padding:.35rem .6rem;">Exit Game</button>
+      <span style="font-size:.55rem; color:var(--text-dim); align-self:center;">(You can re-join anytime.)</span>
+    </div>
+    <hr />
+
+    <div id="collectingPhase" class="phase fade-in">
+  <form id="wordForm" class="flex-col gap-sm" style="display:flex;" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <div>
+          <label for="wordInput">Enter your word</label>
+          <input id="wordInput" type="text" required placeholder="Your secret thought" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        </div>
+        <div class="flex gap-sm">
+          <button id="submitWordBtn" style="flex:1;">Submit Word</button>
+          <button type="button" class="outline secondary" onclick="wordInput.value=''; wordInput.focus();">Clear</button>
+        </div>
+        <div id="collectingHelp" style="font-size:.65rem; color:var(--text-dim);">All players submit then decide together.</div>
+      </form>
+    </div>
+
+    <div id="decidingPhase" class="phase hidden fade-in">
+      <h3 style="margin:0 0 .4rem; font-size:1rem;">Submitted Words</h3>
+      <ul id="submittedWords" class="word-list"></ul>
+      <div class="flex gap-sm" style="margin-top:.6rem; flex-wrap:wrap;">
+        <button data-decision="same" id="btnSame" style="flex:1;">We Matched ✨</button>
+        <button data-decision="again" id="btnAgain" class="secondary outline" style="flex:1;">Another Round ↺</button>
+      </div>
+      <div id="decisionStatus" style="font-size:.7rem; margin-top:.5rem; color:var(--text-dim);"></div>
+    </div>
+
+    <div id="finishedPhase" class="phase hidden fade-in">
+      <h2 style="margin:0 0 .4rem; font-size:1.25rem;">Perfect Sync Achieved 🎉</h2>
+      <p style="margin:.2rem 0 1rem; font-size:.9rem;">It took <strong id="roundCount"></strong> rounds to align your minds.</p>
+      <div class="flex gap-sm">
+        <button id="resetBtn">Play Again</button>
+        <button id="hardReset" class="outline secondary">Hard Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="sideColumn">
+    <section class="panel fade-in" id="historyCard">
+      <h3 style="margin:0 0 .6rem; font-size:1rem; letter-spacing:.5px;">Round History</h3>
+      <table id="historyTable">
+        <thead><tr><th style="text-align:left;">Round</th><th style="text-align:left;">Words</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel fade-in" id="adminCard">
+      <h3 style="margin:0 0 .5rem; font-size:1rem; letter-spacing:.5px;">Adjust Prompt</h3>
+  <form id="promptForm" class="flex gap-sm" style="flex-wrap:wrap;" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <input id="promptInput" type="text" placeholder="New prompt phrase" style="flex:1; min-width:160px;" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button style="white-space:nowrap;">Set</button>
+      </form>
+      <p style="font-size:.6rem; color:var(--text-dim); margin:.6rem 0 0;">Any player may change prompt or reset (trust model).</p>
+      <hr />
+      <h3 style="margin:0 0 .5rem; font-size:.9rem; letter-spacing:.5px;">Round Limit</h3>
+      <div style="display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-size:.6rem;">
+        <input id="roundLimitRange" type="range" min="0" max="30" value="0" style="flex:1;" />
+        <div style="white-space:nowrap;">Limit: <strong id="roundLimitLabel">∞</strong></div>
+        <button type="button" id="roundLimitResetBtn" class="outline secondary" style="font-size:.55rem; padding:.25rem .5rem;" title="Reset game to adjust limit again">Reset Game</button>
+      </div>
+      <p style="font-size:.55rem; color:var(--text-dim); margin:.4rem 0 0;">Drag to set a maximum number of rounds (0 = unlimited). When reached without convergence the game auto-finishes.</p>
+    </section>
+  </div>
+</div>
+
+<script type="module">
+  import { toast, diffStates, animatePulse, listTransition, handleSounds } from "{{ url_for('static', filename='js/ui.js') }}";
+
+  const POLL_INTERVAL = 1100;
+  let lastState = null;
+
+  async function api(path, method='GET', body=null){
+    const res = await fetch(path, { method, headers: { 'Content-Type':'application/json' }, body: body? JSON.stringify(body): null });
+    return res.json();
+  }
+  function show(el){ el.classList.remove('hidden'); }
+  function hide(el){ el.classList.add('hidden'); }
+  function updatePhases(state){
+    const collecting = document.getElementById('collectingPhase');
+    const deciding = document.getElementById('decidingPhase');
+    const finished = document.getElementById('finishedPhase');
+    if(state.status === 'collecting'){ show(collecting); hide(deciding); hide(finished); }
+    else if(state.status === 'deciding'){ hide(collecting); show(deciding); hide(finished); }
+    else { hide(collecting); hide(deciding); show(finished); }
+  }
+  function badgeStatusClass(status){ return 'badge status-'+status; }
+
+  function render(state){
+    document.getElementById('promptText').textContent = state.prompt;
+    document.getElementById('youName').textContent = state.you || '';
+    const statusBadge = document.getElementById('statusBadge');
+    statusBadge.textContent = state.status;
+    statusBadge.className = badgeStatusClass(state.status);
+  document.getElementById('roundNum').textContent = state.round;
+  const limitSpanWrap = document.getElementById('roundLimitSpan');
+  const limitValEl = document.getElementById('roundLimitVal');
+  if(state.max_rounds){ limitSpanWrap.style.display='inline'; limitValEl.textContent = state.max_rounds; }
+  else { limitSpanWrap.style.display='none'; }
+    updatePhases(state);
+    // Manage submit button disable state while waiting for others
+    if(state.status === 'collecting'){
+      const me = state.players.find(p=> p.name === state.you);
+      const submitBtn = document.getElementById('submitWordBtn');
+      const wordInput = document.getElementById('wordInput');
+      const help = document.getElementById('collectingHelp');
+      if(me && me.current_word){
+        submitBtn.disabled = true;
+        wordInput.disabled = true;
+        if(help) help.textContent = 'Submitted. Waiting for other players...';
+      } else {
+        submitBtn.disabled = false;
+        wordInput.disabled = false;
+        if(help) help.textContent = 'All players submit then decide together.';
+      }
+    }
+    if(state.status === 'deciding'){
+      const ul = document.getElementById('submittedWords');
+      ul.innerHTML = '';
+      state.players.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = p.name + ': ' + p.current_word + (p.decision? ' ('+p.decision+')':'');
+        if(p.decision) li.classList.add('decided');
+        ul.appendChild(li);
+      });
+      listTransition(ul);
+      const decidedCount = state.players.filter(p=> p.decision).length;
+      document.getElementById('decisionStatus').textContent = decidedCount + ' / ' + state.players.length + ' decided';
+    }
+    if(state.status === 'finished'){
+      const rcEl = document.getElementById('roundCount');
+      rcEl.textContent = state.round + (state.max_rounds? (' / '+ state.max_rounds): '');
+      if(state.finished_reason === 'round_limit'){
+        rcEl.parentElement.previousElementSibling.textContent = 'Round Limit Reached ⚑';
+      } else {
+        rcEl.parentElement.previousElementSibling.textContent = 'Perfect Sync Achieved 🎉';
+      }
+    }
+    // history
+    const tbody = document.querySelector('#historyTable tbody');
+    tbody.innerHTML = '';
+    state.history.forEach((roundObj, idx)=>{
+      const tr = document.createElement('tr');
+      const words = Object.entries(roundObj).map(([k,v])=> `<span style="white-space:nowrap;">${k}: <strong>${v}</strong></span>`).join(', ');
+      tr.innerHTML = `<td>${idx+1}</td><td>${words}</td>`;
+      tbody.appendChild(tr);
+    });
+    // Sync Round Limit slider display with authoritative state
+    const rlRange = document.getElementById('roundLimitRange');
+    const locked = state.round_limit_locked;
+    if(rlRange){
+      // Only update value if we are not currently dragging (avoid jumpiness)
+      if(!rlRange.matches(':active')){
+        const serverVal = state.max_rounds || 0;
+        if(parseInt(rlRange.value,10) !== serverVal){ rlRange.value = serverVal; updateRLDisplay(serverVal); }
+      }
+      rlRange.disabled = locked; // lock once game started
+      rlRange.title = locked ? 'Locked after game start. Use Reset Game to adjust.' : 'Adjust before first submission.';
+    }
+    const rlResetBtn = document.getElementById('roundLimitResetBtn');
+    if(rlResetBtn){ rlResetBtn.disabled = false; }
+  }
+
+  function renderRoomPlayers(state){
+    const wrap = document.getElementById('roomPlayers');
+    if(!wrap) return;
+    wrap.innerHTML = '';
+    (state.players || []).forEach(p=>{
+      const chip = document.createElement('span');
+      chip.textContent = p.name;
+      chip.style.padding = '.15rem .45rem';
+      chip.style.background = 'var(--surface-2)';
+      chip.style.borderRadius = '.5rem';
+      if(p.name === state.you){ chip.style.outline = '1px solid var(--accent)'; }
+      wrap.appendChild(chip);
+    });
+    // Reporter persona config
+    const cfgWrap = document.getElementById('reporterConfig');
+    const cfgStatus = document.getElementById('reporterConfigStatus');
+    if(cfgWrap){
+      cfgWrap.innerHTML='';
+      const locked = state.reporter_lock;
+      const chosen = state.reporter_personas || [];
+      cfgStatus.textContent = locked ? '(locked)' : '(editable)';
+      if(locked){
+        chosen.forEach((p,i)=>{
+          const span = document.createElement('span');
+          span.textContent = (i+1)+'. '+p;
+          span.style.fontSize = '.5rem';
+          span.style.padding='.15rem .4rem';
+          span.style.background='var(--surface-2)';
+          span.style.borderRadius='.4rem';
+          cfgWrap.appendChild(span);
+        });
+      } else {
+        (state.allowed_reporter_personas||[]).forEach(persona=>{
+          const btn = document.createElement('button');
+          btn.type='button';
+          btn.textContent = persona;
+          btn.className='outline secondary';
+          btn.style.fontSize='.5rem';
+          btn.style.padding='.25rem .4rem';
+          if(chosen.includes(persona)){
+            btn.classList.add('active');
+          }
+          btn.addEventListener('click', ()=>{
+            let arr = [...chosen];
+            if(arr.includes(persona)){
+              // toggle off
+              arr = arr.filter(x=> x!==persona);
+            } else {
+              if(arr.length>=2) return; // limit
+              arr.push(persona);
+            }
+            // ensure order kept as chosen; submit if exactly two
+            fetch('/api/reporters', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ personas: arr })})
+              .then(r=>r.json()).then(j=>{ if(!j.ok){ toast(j.error||'Reporter error',{tone:'bad'});} else { toast('Reporters updated',{tone:'neutral'}); }});
+          });
+          cfgWrap.appendChild(btn);
+        });
+        const hint = document.createElement('div');
+        hint.style.flexBasis='100%';
+        hint.style.fontSize='.48rem';
+        hint.style.color='var(--text-dim)';
+        hint.textContent = chosen.length<2 ? 'Pick two reporter personas (order = pick order)' : 'Ready';
+        cfgWrap.appendChild(hint);
+      }
+    }
+    // Reporter comments
+    const rcUl = document.getElementById('reporterComments');
+    if(rcUl && Array.isArray(state.reporter_comments)){
+      // Backend only sends current round comments; replace list entirely each poll
+      const incomingIds = new Set(state.reporter_comments.map(c=> String(c.id)));
+      // Simple diff: if counts differ or any missing id -> re-render
+      const existingIds = Array.from(rcUl.children).map(li=> li.dataset.id);
+      let needsRender = existingIds.length !== state.reporter_comments.length || existingIds.some(id=> !incomingIds.has(id));
+      if(needsRender){
+        rcUl.innerHTML='';
+        state.reporter_comments.forEach(c=>{
+          const li = document.createElement('li');
+          li.className = 'reporter-comment';
+          li.dataset.id = c.id;
+          const nameLine = document.createElement('div');
+          nameLine.className = 'reporter-name';
+          nameLine.textContent = c.persona + ':';
+          const textLine = document.createElement('div');
+          textLine.className = 'reporter-text';
+          textLine.dir = 'rtl';
+          textLine.textContent = c.text;
+          li.appendChild(nameLine);
+          li.appendChild(textLine);
+          rcUl.appendChild(li);
+          li.animate([
+            { opacity:0, transform:'translateY(4px)' },
+            { opacity:1, transform:'translateY(0)' }
+          ], { duration:450, easing:'cubic-bezier(.55,.2,.2,1)' });
+        });
+        rcUl.scrollTop = rcUl.scrollHeight;
+      }
+    }
+  }
+
+  async function poll(){
+    try {
+      const state = await api('/api/state');
+      // On first poll, if we have a pending_reporters selection (from join) try to send it
+      if(!lastState){
+        try {
+          const pending = localStorage.getItem('pending_reporters');
+          if(pending){
+            const arr = JSON.parse(pending);
+            if(Array.isArray(arr) && arr.length===2){
+              await fetch('/api/reporters', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ personas: arr }) });
+            }
+            localStorage.removeItem('pending_reporters');
+          }
+        } catch(e){ /* ignore */ }
+      }
+      const delta = diffStates(lastState, state);
+      handleSounds(lastState, state);
+      if(delta.changes.includes('status:collecting>deciding')){
+        toast('All words received. Time to decide.', { tone:'good' });
+        animatePulse(document.getElementById('decidingPhase'));
+      }
+      if(delta.changes.includes('status:deciding>collecting')){
+        toast('Another round begins.', { tone:'neutral' });
+      }
+      if(delta.changes.includes('status:deciding>finished') || state.status==='finished' && lastState?.status!=='finished'){
+        toast('Perfect synchronization achieved!', { tone:'good', life:6000 });
+      }
+      if(delta.changes.includes('prompt')){
+        toast('Prompt updated.', { tone:'neutral' });
+        animatePulse(document.getElementById('promptText'));
+      }
+      lastState = state;
+      render(state);
+      renderRoomPlayers(state);
+    } catch(e){ console.error('poll error', e); }
+    setTimeout(poll, POLL_INTERVAL);
+  }
+
+  // forms & interactions
+  const wordForm = document.getElementById('wordForm');
+  wordForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const word = document.getElementById('wordInput').value.trim();
+    if(!word) return;
+    const r = await api('/api/submit_word','POST',{word});
+    if(r.ok){
+      const wi = document.getElementById('wordInput');
+      const btn = document.getElementById('submitWordBtn');
+      wi.value='';
+      btn.disabled = true; wi.disabled = true; // optimistic disable until next round
+      const help = document.getElementById('collectingHelp');
+      if(help) help.textContent = 'Submitted. Waiting for other players...';
+      toast('Word submitted ✔',{tone:'good'});
+    } else {
+      toast(r.error || 'Error', { tone:'bad' });
+    }
+  });
+
+  ['btnSame','btnAgain'].forEach(id=>{
+    document.getElementById(id).addEventListener('click', async e=>{
+      const decision = e.target.dataset.decision;
+      const r = await api('/api/decision','POST',{decision});
+      if(!r.ok){ toast(r.error || 'Decision error',{tone:'bad'}); }
+      else if(decision==='same'){ toast('You marked SAME',{tone:'good'}); }
+      else { toast('Continuing to next round',{tone:'neutral'}); }
+    });
+  });
+
+  const promptForm = document.getElementById('promptForm');
+  promptForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const v = document.getElementById('promptInput').value.trim();
+    if(!v) return; await api('/api/prompt','POST',{prompt:v}); document.getElementById('promptInput').value='';
+  });
+
+  const resetBtn = document.getElementById('resetBtn');
+  // Soft reset: preserves chat history
+  if(resetBtn) resetBtn.addEventListener('click', async ()=>{ const r = await api('/api/reset','POST'); if(r.ok){ toast('Game reset (chat kept)',{tone:'neutral'});} else { toast(r.error||'Reset error',{tone:'bad'});} });
+  // Hard reset: wipes game + chat
+  document.getElementById('hardReset').addEventListener('click', async ()=>{ const r = await api('/api/reset_hard','POST'); if(r.ok){ toast('Hard reset (chat cleared)',{tone:'warn'});} else { toast(r.error||'Hard reset error',{tone:'bad'});} });
+
+  // Exit button: remove player on server and redirect to join page
+  const exitBtn = document.getElementById('exitBtn');
+  exitBtn.addEventListener('click', async ()=>{
+    exitBtn.disabled = true;
+    try {
+      await api('/api/exit','POST');
+    } catch(e){ /* ignore */ }
+    // Small delay for UX then redirect
+    setTimeout(()=>{ window.location.href = '/join'; }, 150);
+  });
+
+  // NOTE: Removed automatic /api/exit on unload so that page refresh does NOT eject the player.
+  // Players are now removed only after server-side inactivity timeout (default 60s) or by clicking Exit.
+  // If you want to restore immediate leave on tab close, re-add sendBeacon logic here.
+
+  poll();
+
+  // Round limit slider logic
+  const roundLimitRange = document.getElementById('roundLimitRange');
+  const roundLimitLabel = document.getElementById('roundLimitLabel');
+  function updateRLDisplay(v){
+    if(!v || parseInt(v) === 0){ roundLimitLabel.textContent = '∞'; }
+    else { roundLimitLabel.textContent = v; }
+  }
+  roundLimitRange.addEventListener('input', e=>{ updateRLDisplay(roundLimitRange.value); });
+  let rlDebounce = null;
+  roundLimitRange.addEventListener('change', async ()=>{
+    const val = parseInt(roundLimitRange.value,10);
+    updateRLDisplay(val);
+    try {
+      const r = await api('/api/round_limit','POST',{ limit: val });
+      if(!r.ok){ toast(r.error || 'Limit error',{tone:'bad'}); }
+      else { toast('Round limit set to ' + (r.max_rounds || '∞'), { tone:'neutral' }); }
+    } catch(e){ toast('Limit set error',{tone:'bad'}); }
+  });
+  // Initialize label
+  updateRLDisplay(roundLimitRange.value);
+
+  // Reset Game button near slider (soft reset) to allow re-adjusting limit
+  const roundLimitResetBtn = document.getElementById('roundLimitResetBtn');
+  if(roundLimitResetBtn){
+    roundLimitResetBtn.addEventListener('click', async ()=>{
+      if(!confirm('Reset game? (Chat preserved)')) return;
+      const r = await api('/api/reset','POST');
+      if(r.ok){ toast('Game reset. You can adjust round limit again.', { tone:'neutral' }); }
+      else { toast(r.error || 'Reset error', { tone:'bad' }); }
+    });
+  }
+</script>
+<!-- Chat UI -->
+<div id="chatPanel" class="chat-panel collapsed">
+  <div class="chat-header">
+    <span>Chat</span>
+    <div style="display:flex; gap:.35rem; align-items:center;">
+  <button type="button" id="chatResetBtn" class="secondary outline" style="font-size:.6rem; padding:.35rem .55rem;" title="Globally clear chat for everyone">Reset</button>
+      <button type="button" class="chat-close" aria-label="Close chat" onclick="document.getElementById('chatToggle').click();">×</button>
+    </div>
+  </div>
+  <div class="chat-scroll">
+    <div class="chat-messages"></div>
+  </div>
+  <form id="chatForm" class="chat-form" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <!-- Persona Drawer -->
+    <div class="persona-bar">
+      <button type="button" class="persona-toggle outline secondary" id="personaToggle" title="Select LLM Persona">Persona ▾</button>
+      <div class="persona-drawer hidden" id="personaDrawer" data-active="">
+        <div class="persona-options"><!-- dynamically filled --></div>
+      </div>
+      <span class="persona-current" id="personaCurrent"></span>
+    </div>
+    <div class="reply-preview hidden">
+      <span class="rp-label">Replying to:</span>
+      <span class="rp-text"></span>
+      <button class="rp-cancel" title="Cancel reply" type="button">×</button>
+    </div>
+    <div class="chat-input-row">
+      <textarea placeholder="Type a message" maxlength="1000" rows="1" data-autosize="true" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" ></textarea>
+      <button type="submit" class="send-btn">Send</button>
+      <button type="button" id="llmTalkBtn" class="secondary" title="LLM پاسخ بده">🤖</button>
+    </div>
+  </form>
+</div>
+<button id="chatToggle" class="chat-toggle" aria-label="Toggle chat" title="Chat">
+  <span class="dot"></span>
+  💬
+</button>
+<script type="module" src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

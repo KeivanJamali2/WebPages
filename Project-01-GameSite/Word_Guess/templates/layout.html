@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}بازی حدس واژه{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Cozy fantasy font stack: Vazirmatn for Persian + Cinzel Decorative for headings -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Favicon & app icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('brand_file', filename='logo-site.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('brand_file', filename='logo-site.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('brand_file', filename='logo-site.png') }}">
+  <meta name="theme-color" content="#0d0f24">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <!-- Ambient layers -->
+  <canvas id="bg-embers" class="bg-embers" aria-hidden="true"></canvas>
+  <div id="parallax-mist" class="parallax-mist" aria-hidden="true"></div>
+  {# Celebration layer (can be disabled or set subtle via data attribute) #}
+  <div class="confetti-layer" id="confetti-layer" aria-hidden="true" data-celebration-mode="subtle"></div>
+
+  <header class="site-header" role="banner">
+    <div class="inner wrap">
+      <div class="logo" data-home-link data-home-url="{{ url_for('index') }}" tabindex="0" role="link" aria-label="بازگشت به لابی">
+        <img src="{{ url_for('brand_file', filename='logo-no-background.png') }}" alt="لوگوی بازی حدس واژه" class="site-logo-img" width="48" height="48" decoding="async" fetchpriority="high">
+        <span class="logo-text">سفر حدس واژه</span>
+      </div>
+      <nav class="main-nav" aria-label="اصلی">
+        <ul>
+          <li><a href="{{ url_for('index') }}" class="nav-link">تالار</a></li>
+          <li><button id="theme-toggle" type="button" class="nav-link toggle" aria-pressed="false" aria-label="تبدیل روشن/تاریک">تغییر تم</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page wrap" role="main">
+    <div class="flash-region" aria-live="polite" aria-atomic="true">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-wrapper">
+            {% for cat, msg in messages %}
+              <div class="flash {{ cat }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer wrap" role="contentinfo">
+    <p class="sig">ساخته شده با شوق داستان‌گویی و جادوی هوش مصنوعی ✨ - کیوان جمالی</p>
+  </footer>
+
+  <script>
+    // Theme toggle: dark (default) <-> light using html.light class
+    (function(){
+      const btn = document.getElementById('theme-toggle');
+      if(!btn) return;
+      const stored = localStorage.getItem('wg-theme');
+      if(stored === 'light') document.documentElement.classList.add('light');
+      update();
+      btn.addEventListener('click', ()=>{
+        const isLight = document.documentElement.classList.toggle('light');
+        localStorage.setItem('wg-theme', isLight ? 'light':'dark');
+        update();
+      });
+      function update(){
+        const light = document.documentElement.classList.contains('light');
+        btn.setAttribute('aria-pressed', light ? 'true':'false');
+        btn.textContent = light ? 'حالت تیره' : 'حالت روشن';
+      }
+    })();
+  </script>
+  <script src="{{ url_for('static', filename='js/effects.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/fantasy_background.js') }}"></script>
+  <script>
+    // Enforce no history / autocomplete on all inputs & forms (including dynamic ones)
+    (function(){
+      const ATTRS = {
+        autocomplete: 'off',
+        autocapitalize: 'off',
+        autocorrect: 'off',
+        spellcheck: 'false'
+      };
+      function harden(el){
+        if(!el) return;
+        for(const [k,v] of Object.entries(ATTRS)){
+          try { el.setAttribute(k,v); } catch(e){}
+        }
+        // Some browsers ignore autocomplete=off for passwords; use new-password trick
+        if(el.type === 'password'){
+          el.setAttribute('autocomplete','new-password');
+        }
+      }
+      function scan(root){
+        root.querySelectorAll('form[data-nohist], input[data-nohist], input:not([data-allow-autofill])').forEach(harden);
+      }
+      const obs = new MutationObserver(muts=>{
+        for(const m of muts){
+          m.addedNodes.forEach(n=>{ if(n.nodeType===1) { harden(n); scan(n); } });
+        }
+      });
+      scan(document);
+      obs.observe(document.documentElement,{subtree:true, childList:true});
+      // Also on focus to be extra sure
+      document.addEventListener('focus', e=>{
+        if(e.target && e.target.tagName==='INPUT') harden(e.target);
+      }, true);
+    })();
+  </script>
+  <script>
+    // Home logo navigation (keyboard accessible)
+    (function(){
+      const el = document.querySelector('[data-home-link]');
+      if(!el) return;
+      const homeUrl = el.getAttribute('data-home-url');
+      el.addEventListener('click', function(){ window.location.href = homeUrl; });
+      el.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); window.location.href = homeUrl; }});
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

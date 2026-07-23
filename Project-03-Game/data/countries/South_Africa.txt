@@ -1,0 +1,10 @@
+## Resources
+Platinum, 85.0, 2, 0.1
+Gold, 75.0, 3, 0.1
+Diamonds, 100.0, 1, 0.15
+
+## Capacity
+60
+
+## HouseWorth
+70000

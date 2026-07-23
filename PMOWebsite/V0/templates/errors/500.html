@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}500 - {{ _('errors.server_error') }}{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card" style="text-align: center;">
+        <h1 style="font-size: 72px; margin-bottom: 16px;">500</h1>
+        <h2 style="margin-bottom: 16px;">{{ _('errors.internal_error') }}</h2>
+        <p style="color: var(--color-text-secondary); margin-bottom: 32px;">
+            {{ _('errors.internal_error_desc') }}
+        </p>
+        <a href="{{ url_for('dashboard.home') if is_logged_in() else url_for('auth.login') }}" class="btn btn-primary">
+            {% if is_logged_in() %}
+            {{ _('errors.go_to_dashboard') }}
+            {% else %}
+            {{ _('errors.go_to_login') }}
+            {% endif %}
+        </a>
+    </div>
+</div>
+{% endblock %}

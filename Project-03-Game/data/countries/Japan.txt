@@ -1,0 +1,10 @@
+## Resources
+Electronics, 85.0, 10, 0.05
+Automotive, 80.0, 8, 0.05
+Fish, 20.0, 3, 0.15
+
+## Capacity
+124
+
+## HouseWorth
+200000

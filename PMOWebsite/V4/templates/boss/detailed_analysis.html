@@ -1,0 +1,1485 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ 'Detailed Analysis' if lang == 'en' else 'تحلیل جامع' }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Page Layout */
+    .analysis-page {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    /* Header */
+    .page-header-section {
+        margin-bottom: 24px;
+    }
+    
+    .page-header-section h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .page-header-section p {
+        color: var(--text-secondary);
+    }
+    
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        margin-bottom: 16px;
+        font-size: 14px;
+        transition: color 0.3s ease;
+    }
+    
+    .back-btn:hover {
+        color: var(--primary-color);
+    }
+    
+    /* Search and Filter Bar */
+    .toolbar {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    .toolbar-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+        position: relative;
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 12px 16px 12px 44px;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 15px;
+        background: var(--bg-color);
+        transition: all 0.3s ease;
+    }
+    
+    .search-box input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    .search-box::before {
+        content: "🔍";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        pointer-events: none;
+    }
+    
+    html[dir="rtl"] .search-box::before {
+        left: auto;
+        right: 14px;
+    }
+    
+    html[dir="rtl"] .search-box input {
+        padding: 12px 44px 12px 16px;
+    }
+    
+    /* Filter Pills */
+    .filter-pills {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 100px;
+        background: var(--bg-color);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+    
+    .filter-pill:hover {
+        border-color: var(--primary-color);
+        background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .filter-pill.active {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .filter-pill .pill-icon {
+        font-size: 16px;
+    }
+    
+    .filter-pill .pill-count {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    
+    /* Results Info */
+    .results-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding: 0 4px;
+    }
+    
+    .results-count {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .results-count strong {
+        color: var(--text-primary);
+    }
+    
+    .view-toggle {
+        display: flex;
+        gap: 4px;
+        background: var(--bg-secondary);
+        padding: 4px;
+        border-radius: 8px;
+    }
+    
+    .view-btn {
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .view-btn.active {
+        background: var(--card-bg);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Analysis List - List View */
+    .analysis-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .analysis-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .analysis-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+        transform: translateY(-1px);
+    }
+    
+    .analysis-item.loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    .analysis-item.hidden {
+        display: none;
+    }
+    
+    .item-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    
+    .item-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .item-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .item-category {
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .item-category-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    
+    .item-arrow {
+        font-size: 18px;
+        color: var(--text-secondary);
+        transition: transform 0.2s ease;
+    }
+    
+    .analysis-item:hover .item-arrow {
+        transform: translateX(4px);
+        color: var(--primary-color);
+    }
+    
+    html[dir="rtl"] .analysis-item:hover .item-arrow {
+        transform: translateX(-4px);
+    }
+    
+    /* Grid View */
+    .analysis-list.grid-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+    
+    .analysis-list.grid-view .analysis-item {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+        position: relative;
+    }
+    
+    .analysis-list.grid-view .item-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 24px;
+        margin-bottom: 12px;
+    }
+    
+    .analysis-list.grid-view .item-content {
+        width: 100%;
+    }
+    
+    .analysis-list.grid-view .item-title {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+    
+    .analysis-list.grid-view .item-arrow {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+    }
+    
+    html[dir="rtl"] .analysis-list.grid-view .item-arrow {
+        right: auto;
+        left: 16px;
+    }
+    
+    /* No Results */
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+    
+    .no-results-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+    
+    .no-results h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    /* No Data State */
+    .no-data-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .no-data-icon {
+        font-size: 72px;
+        margin-bottom: 20px;
+    }
+    
+    /* Modal Styles */
+    .analysis-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        padding: 20px;
+    }
+    
+    .analysis-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .analysis-modal {
+        background: var(--card-bg);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 900px;
+        max-height: 90vh;
+        overflow: hidden;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .analysis-modal-overlay.active .analysis-modal {
+        transform: translateY(0) scale(1);
+    }
+    
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+    }
+    
+    .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        margin: 0;
+    }
+    
+    .modal-title-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    
+    .modal-close {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: var(--border-color);
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-close:hover {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    
+    .modal-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+    
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Analysis Content Styles */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .metric-box {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .metric-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .metric-box.success { background: #dcfce7; }
+    .metric-box.success .metric-value { color: #166534; }
+    
+    .metric-box.warning { background: #fef3c7; }
+    .metric-box.warning .metric-value { color: #92400e; }
+    
+    .metric-box.danger { background: #fee2e2; }
+    .metric-box.danger .metric-value { color: #991b1b; }
+    
+    .metric-box.info { background: #dbeafe; }
+    .metric-box.info .metric-value { color: #1e40af; }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 24px;
+    }
+    
+    /* Progress Bars */
+    .progress-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .progress-item {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 16px;
+    }
+    
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .progress-label {
+        font-weight: 500;
+    }
+    
+    .progress-value {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .progress-bar-wrapper {
+        background: var(--border-color);
+        border-radius: 6px;
+        height: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        background: var(--primary-color);
+        transition: width 0.5s ease;
+    }
+    
+    .progress-bar-fill.success { background: #10b981; }
+    .progress-bar-fill.warning { background: #f59e0b; }
+    .progress-bar-fill.danger { background: #ef4444; }
+    
+    /* Data Table */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .data-table th {
+        background: var(--bg-secondary);
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+    
+    .data-table tbody tr:hover {
+        background: var(--bg-secondary);
+    }
+    
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .status-badge.good { background: #dcfce7; color: #166534; }
+    .status-badge.warning { background: #fef3c7; color: #92400e; }
+    .status-badge.critical { background: #fee2e2; color: #991b1b; }
+    
+    /* Gauge Chart */
+    .gauge-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+    }
+    
+    .gauge-value {
+        font-size: 48px;
+        font-weight: 700;
+        margin-top: -80px;
+    }
+    
+    .gauge-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-top: 8px;
+    }
+    
+    /* KPI Cards */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    
+    .kpi-card {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .kpi-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+    
+    .kpi-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .kpi-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    
+    /* Streak Counter */
+    .streak-container {
+        text-align: center;
+        padding: 40px;
+    }
+    
+    .streak-number {
+        font-size: 72px;
+        font-weight: 800;
+        color: #10b981;
+        line-height: 1;
+    }
+    
+    .streak-label {
+        font-size: 18px;
+        color: var(--text-secondary);
+        margin-top: 8px;
+    }
+    
+    /* Error Message */
+    .error-message {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+    }
+    
+    .error-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .toolbar-row {
+            flex-direction: column;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+        
+        .filter-pills {
+            width: 100%;
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .analysis-modal {
+            max-height: 100vh;
+            border-radius: 0;
+        }
+        
+        .analysis-list.grid-view {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* RTL Support */
+    html[dir="rtl"] .back-btn {
+        flex-direction: row-reverse;
+    }
+    
+    html[dir="rtl"] .item-arrow {
+        transform: rotate(180deg);
+    }
+    
+    html[dir="rtl"] .analysis-item:hover .item-arrow {
+        transform: rotate(180deg) translateX(4px);
+    }
+    
+    html[dir="rtl"] .data-table th,
+    html[dir="rtl"] .data-table td {
+        text-align: right;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-page">
+    <div class="page-header-section">
+        <a href="{{ url_for('boss.analysis', project_id=project.id) }}" class="back-btn">
+            ← {{ 'Back to Dashboard' if lang == 'en' else 'بازگشت به داشبورد' }}
+        </a>
+        <h1>
+            <span>📊</span>
+            {{ 'Detailed Analysis' if lang == 'en' else 'تحلیل جامع' }}
+        </h1>
+        <p>{{ project.name }} - {{ 'Browse and search through all available analyses' if lang == 'en' else 'مرور و جستجو در تمام تحلیل‌های موجود' }}</p>
+    </div>
+
+    {% if not has_data %}
+    <div class="no-data-state">
+        <div class="no-data-icon">📋</div>
+        <h2>{{ 'No Data Available' if lang == 'en' else 'داده‌ای موجود نیست' }}</h2>
+        <p>{{ 'Submit daily forms to see analysis.' if lang == 'en' else 'برای مشاهده تحلیل‌ها، فرم‌های روزانه ثبت کنید.' }}</p>
+    </div>
+    {% else %}
+    
+    <!-- Search & Filter Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-row">
+            <div class="search-box">
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="{{ 'Search analyses...' if lang == 'en' else 'جستجوی تحلیل‌ها...' }}"
+                       oninput="filterAnalyses()">
+            </div>
+            <div class="filter-pills" id="filterPills">
+                <div class="filter-pill active" data-category="all" onclick="setFilter('all')">
+                    <span class="pill-icon">📊</span>
+                    <span>{{ 'All' if lang == 'en' else 'همه' }}</span>
+                    <span class="pill-count" id="countAll">0</span>
+                </div>
+                {% for category in categories %}
+                <div class="filter-pill" data-category="{{ category.id }}" onclick="setFilter('{{ category.id }}')">
+                    <span class="pill-icon">{{ category.icon }}</span>
+                    <span>{{ category.title }}</span>
+                    <span class="pill-count">{{ category.analyses|length }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Info -->
+    <div class="results-info">
+        <div class="results-count">
+            {{ 'Showing' if lang == 'en' else 'نمایش' }} <strong id="resultsCount">0</strong> {{ 'analyses' if lang == 'en' else 'تحلیل' }}
+        </div>
+        <div class="view-toggle">
+            <button class="view-btn active" id="listViewBtn" onclick="setView('list')" title="{{ 'List view' if lang == 'en' else 'نمای لیست' }}">☰</button>
+            <button class="view-btn" id="gridViewBtn" onclick="setView('grid')" title="{{ 'Grid view' if lang == 'en' else 'نمای شبکه' }}">▦</button>
+        </div>
+    </div>
+    
+    <!-- Analysis List -->
+    <div class="analysis-list" id="analysisList">
+        {% for category in categories %}
+            {% for analysis in category.analyses %}
+            <div class="analysis-item" 
+                 data-analysis-id="{{ analysis.id }}"
+                 data-category-id="{{ category.id }}"
+                 data-category-color="{{ category.color }}"
+                 data-title="{{ analysis.title }}"
+                 data-category-title="{{ category.title }}"
+                 onclick="loadAnalysis('{{ analysis.id }}', '{{ analysis.title }}', '{{ category.icon }}', '{{ category.color }}')">
+                <div class="item-icon" style="background: {{ category.color }}15; color: {{ category.color }};">
+                    {{ category.icon }}
+                </div>
+                <div class="item-content">
+                    <div class="item-title">{{ analysis.title }}</div>
+                    <div class="item-category">
+                        <span class="item-category-dot" style="background: {{ category.color }};"></span>
+                        {{ category.title }}
+                    </div>
+                </div>
+                <span class="item-arrow">→</span>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    
+    <!-- No Results Message -->
+    <div class="no-results" id="noResults" style="display: none;">
+        <div class="no-results-icon">🔍</div>
+        <h3>{{ 'No analyses found' if lang == 'en' else 'تحلیلی یافت نشد' }}</h3>
+        <p>{{ 'Try a different search term or filter' if lang == 'en' else 'عبارت جستجو یا فیلتر دیگری را امتحان کنید' }}</p>
+    </div>
+    
+    <!-- Analysis Modal -->
+    <div class="analysis-modal-overlay" id="analysisModal">
+        <div class="analysis-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <div class="modal-title-icon" id="modalTitleIcon">📊</div>
+                    <span id="modalTitle">{{ 'Analysis' if lang == 'en' else 'تحلیل' }}</span>
+                </h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="modal-loading">
+                    <div class="spinner"></div>
+                    <span>{{ 'Loading analysis...' if lang == 'en' else 'در حال بارگذاری تحلیل...' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const PROJECT_ID = {{ project.id }};
+const LANG = '{{ lang }}';
+let currentChart = null;
+let currentFilter = 'all';
+let currentView = 'list';
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateCounts();
+    filterAnalyses();
+    
+    // Close modal on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+    
+    // Close modal on overlay click
+    document.getElementById('analysisModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+});
+
+// Update counts
+function updateCounts() {
+    const items = document.querySelectorAll('.analysis-item');
+    document.getElementById('countAll').textContent = items.length;
+}
+
+// Set filter
+function setFilter(categoryId) {
+    currentFilter = categoryId;
+    
+    // Update active pill
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.category === categoryId);
+    });
+    
+    filterAnalyses();
+}
+
+// Set view
+function setView(view) {
+    currentView = view;
+    const list = document.getElementById('analysisList');
+    
+    if (view === 'grid') {
+        list.classList.add('grid-view');
+        document.getElementById('gridViewBtn').classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+    } else {
+        list.classList.remove('grid-view');
+        document.getElementById('listViewBtn').classList.add('active');
+        document.getElementById('gridViewBtn').classList.remove('active');
+    }
+}
+
+// Filter analyses
+function filterAnalyses() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const items = document.querySelectorAll('.analysis-item');
+    let visibleCount = 0;
+    
+    items.forEach(item => {
+        const title = item.dataset.title.toLowerCase();
+        const categoryTitle = item.dataset.categoryTitle.toLowerCase();
+        const categoryId = item.dataset.categoryId;
+        
+        const matchesSearch = title.includes(searchTerm) || categoryTitle.includes(searchTerm);
+        const matchesFilter = currentFilter === 'all' || categoryId === currentFilter;
+        
+        if (matchesSearch && matchesFilter) {
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    // Update count
+    document.getElementById('resultsCount').textContent = visibleCount;
+    
+    // Show/hide no results message
+    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+    document.getElementById('analysisList').style.display = visibleCount === 0 ? 'none' : '';
+}
+
+// Load analysis
+async function loadAnalysis(analysisId, title, icon, color) {
+    const modal = document.getElementById('analysisModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalTitleIcon = document.getElementById('modalTitleIcon');
+    
+    // Show modal
+    modal.classList.add('active');
+    modalTitle.textContent = title;
+    modalTitleIcon.textContent = icon;
+    modalTitleIcon.style.background = color + '15';
+    modalTitleIcon.style.color = color;
+    
+    // Show loading
+    modalBody.innerHTML = `
+        <div class="modal-loading">
+            <div class="spinner"></div>
+            <span>${LANG === 'en' ? 'Loading analysis...' : 'در حال بارگذاری تحلیل...'}</span>
+        </div>
+    `;
+    
+    // Destroy existing chart
+    if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+    }
+    
+    try {
+        const response = await fetch(`/boss/api/${PROJECT_ID}/detailed/${analysisId}`);
+        const result = await response.json();
+        
+        if (result.success && result.data.success) {
+            renderAnalysis(result.data);
+        } else {
+            const errorMsg = result.data?.error || (LANG === 'en' ? 'No data available' : 'داده‌ای موجود نیست');
+            modalBody.innerHTML = `
+                <div class="error-message">
+                    <div class="error-icon">📭</div>
+                    <p>${errorMsg}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        modalBody.innerHTML = `
+            <div class="error-message">
+                <div class="error-icon">⚠️</div>
+                <p>${LANG === 'en' ? 'Error loading analysis' : 'خطا در بارگذاری تحلیل'}</p>
+            </div>
+        `;
+    }
+}
+
+// Close modal
+function closeModal() {
+    const modal = document.getElementById('analysisModal');
+    modal.classList.remove('active');
+    
+    if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+    }
+}
+
+// Format number
+function formatNumber(num) {
+    if (num === null || num === undefined) return '-';
+    if (typeof num !== 'number') num = parseFloat(num);
+    if (isNaN(num)) return '-';
+    return num.toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en-US', { maximumFractionDigits: 2 });
+}
+
+// Render analysis based on chart type
+function renderAnalysis(data) {
+    const modalBody = document.getElementById('modalBody');
+    const chartType = data.chart_type;
+    const chartData = data.data;
+    
+    switch (chartType) {
+        case 'horizontal_bar':
+            renderHorizontalBar(modalBody, chartData);
+            break;
+        case 'line_chart':
+            renderLineChart(modalBody, chartData);
+            break;
+        case 'pie_chart':
+            renderPieChart(modalBody, chartData);
+            break;
+        case 'gauge':
+        case 'compliance_gauge':
+            renderGauge(modalBody, chartData);
+            break;
+        case 'progress_bars':
+            renderProgressBars(modalBody, chartData);
+            break;
+        case 'metric_cards':
+        case 'kpi_dashboard':
+            renderMetricCards(modalBody, chartData);
+            break;
+        case 'table':
+        case 'inventory_table':
+            renderTable(modalBody, chartData);
+            break;
+        case 'bar_chart':
+            renderBarChart(modalBody, chartData);
+            break;
+        case 'evm_chart':
+            renderEvmChart(modalBody, chartData);
+            break;
+        case 'health_gauge':
+            renderHealthGauge(modalBody, chartData);
+            break;
+        case 'streak_counter':
+            renderStreakCounter(modalBody, chartData);
+            break;
+        case 'incident_rate':
+            renderIncidentRate(modalBody, chartData);
+            break;
+        case 'near_miss_tracking':
+            renderNearMissTracking(modalBody, chartData);
+            break;
+        case 'completion_forecast':
+            renderCompletionForecast(modalBody, chartData);
+            break;
+        case 'weekly_comparison':
+            renderWeeklyComparison(modalBody, chartData);
+            break;
+        default:
+            renderGeneric(modalBody, chartData);
+    }
+}
+
+// Render functions
+function renderHorizontalBar(container, data) {
+    const items = data.items || [];
+    let html = '<div class="progress-list">';
+    
+    items.forEach(item => {
+        const percent = Math.min(item.progress || item.percent || 0, 100);
+        const colorClass = percent >= 80 ? 'success' : (percent >= 50 ? 'warning' : 'danger');
+        
+        html += `
+            <div class="progress-item">
+                <div class="progress-header">
+                    <span class="progress-label">${item.name || item.label}</span>
+                    <span class="progress-value">${formatNumber(percent)}%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar-fill ${colorClass}" style="width: ${percent}%"></div>
+                </div>
+                ${item.actual !== undefined ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${LANG === 'en' ? 'Actual' : 'واقعی'}: ${formatNumber(item.actual)} / ${LANG === 'en' ? 'Planned' : 'برنامه'}: ${formatNumber(item.planned)}</div>` : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderLineChart(container, data) {
+    container.innerHTML = `
+        <div class="chart-container">
+            <canvas id="modalChart"></canvas>
+        </div>
+    `;
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    const labels = data.labels || data.trend?.map(t => t.date || t.month) || [];
+    const values = data.values || data.trend?.map(t => t.value || t.progress) || [];
+    
+    currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: data.label || '',
+                data: values,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function renderPieChart(container, data) {
+    const items = data.items || Object.entries(data).filter(([k]) => !['success', 'title', 'chart_type'].includes(k)).map(([k, v]) => ({name: k, value: v}));
+    
+    container.innerHTML = `
+        <div class="chart-container" style="max-width: 400px; margin: 0 auto;">
+            <canvas id="modalChart"></canvas>
+        </div>
+    `;
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+    
+    currentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: items.map(i => i.name),
+            datasets: [{
+                data: items.map(i => i.value),
+                backgroundColor: colors.slice(0, items.length)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function renderGauge(container, data) {
+    const value = data.compliance_rate || data.rate || data.value || 0;
+    const status = data.status || (value >= 90 ? 'good' : (value >= 70 ? 'warning' : 'critical'));
+    const statusColors = { good: '#10b981', warning: '#f59e0b', critical: '#ef4444' };
+    
+    container.innerHTML = `
+        <div class="gauge-container">
+            <canvas id="modalChart" width="250" height="150"></canvas>
+            <div class="gauge-value" style="color: ${statusColors[status]}">${formatNumber(value)}%</div>
+            <div class="gauge-label">${data.label || (LANG === 'en' ? 'Compliance Rate' : 'نرخ انطباق')}</div>
+        </div>
+        <div class="metric-grid">
+            ${data.total_days ? `<div class="metric-box"><div class="metric-value">${formatNumber(data.total_days)}</div><div class="metric-label">${LANG === 'en' ? 'Total Days' : 'کل روزها'}</div></div>` : ''}
+            ${data.total_inspections !== undefined ? `<div class="metric-box"><div class="metric-value">${formatNumber(data.total_inspections)}</div><div class="metric-label">${LANG === 'en' ? 'Inspections' : 'بازرسی‌ها'}</div></div>` : ''}
+            ${data.no_incidents !== undefined ? `<div class="metric-box success"><div class="metric-value">${formatNumber(data.no_incidents)}</div><div class="metric-label">${LANG === 'en' ? 'Safe Days' : 'روزهای ایمن'}</div></div>` : ''}
+        </div>
+    `;
+    
+    // Draw gauge
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    const centerX = 125, centerY = 120, radius = 90;
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, Math.PI, 2 * Math.PI);
+    ctx.lineWidth = 20;
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, Math.PI, Math.PI + (Math.PI * value / 100));
+    ctx.lineWidth = 20;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = statusColors[status];
+    ctx.stroke();
+}
+
+function renderProgressBars(container, data) {
+    renderHorizontalBar(container, data);
+}
+
+function renderMetricCards(container, data) {
+    let html = '<div class="metric-grid">';
+    
+    const metrics = data.metrics || data.kpis || Object.entries(data).filter(([k]) => !['success', 'chart_type', 'title'].includes(k));
+    
+    if (Array.isArray(metrics)) {
+        metrics.forEach(m => {
+            const statusClass = m.status || '';
+            html += `
+                <div class="metric-box ${statusClass}">
+                    <div class="metric-value">${formatNumber(m.value)}${m.unit || ''}</div>
+                    <div class="metric-label">${m.label || m.name}</div>
+                </div>
+            `;
+        });
+    } else {
+        metrics.forEach(([key, value]) => {
+            if (typeof value === 'object') return;
+            html += `
+                <div class="metric-box">
+                    <div class="metric-value">${formatNumber(value)}</div>
+                    <div class="metric-label">${key}</div>
+                </div>
+            `;
+        });
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderTable(container, data) {
+    const rows = data.rows || data.items || [];
+    const columns = data.columns || Object.keys(rows[0] || {});
+    
+    let html = `
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead><tr>
+                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                </tr></thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            ${columns.map(col => {
+                                let val = row[col];
+                                if (typeof val === 'number') val = formatNumber(val);
+                                if (val === 'good' || val === 'warning' || val === 'critical') {
+                                    return `<td><span class="status-badge ${val}">${val}</span></td>`;
+                                }
+                                return `<td>${val ?? '-'}</td>`;
+                            }).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function renderBarChart(container, data) {
+    container.innerHTML = `<div class="chart-container"><canvas id="modalChart"></canvas></div>`;
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    const labels = data.labels || Object.keys(data.by_category || data);
+    const values = data.values || Object.values(data.by_category || data);
+    
+    currentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: data.label || '',
+                data: values,
+                backgroundColor: '#6366f1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function renderEvmChart(container, data) {
+    container.innerHTML = `
+        <div class="metric-grid">
+            <div class="metric-box ${data.cpi >= 1 ? 'success' : 'danger'}">
+                <div class="metric-value">${formatNumber(data.cpi)}</div>
+                <div class="metric-label">CPI</div>
+            </div>
+            <div class="metric-box ${data.spi >= 1 ? 'success' : 'danger'}">
+                <div class="metric-value">${formatNumber(data.spi)}</div>
+                <div class="metric-label">SPI</div>
+            </div>
+            <div class="metric-box info">
+                <div class="metric-value">${formatNumber(data.earned_value)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Earned Value' : 'ارزش کسب شده'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.actual_cost)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Actual Cost' : 'هزینه واقعی'}</div>
+            </div>
+        </div>
+        <div class="chart-container"><canvas id="modalChart"></canvas></div>
+    `;
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels || [],
+            datasets: [
+                { label: 'PV', data: data.pv_trend || [], borderColor: '#6366f1', fill: false },
+                { label: 'EV', data: data.ev_trend || [], borderColor: '#10b981', fill: false },
+                { label: 'AC', data: data.ac_trend || [], borderColor: '#ef4444', fill: false }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+function renderHealthGauge(container, data) {
+    const score = data.score || data.health_score || 0;
+    const grade = data.grade || (score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F');
+    const gradeColors = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#f97316', F: '#ef4444' };
+    
+    container.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <div style="font-size: 96px; font-weight: 800; color: ${gradeColors[grade]};">${formatNumber(score)}</div>
+            <div style="font-size: 48px; font-weight: 700; color: ${gradeColors[grade]}; background: ${gradeColors[grade]}20; display: inline-block; padding: 8px 24px; border-radius: 12px; margin-top: 16px;">${grade}</div>
+            <div style="margin-top: 16px; color: var(--text-secondary);">${LANG === 'en' ? 'Project Health Score' : 'امتیاز سلامت پروژه'}</div>
+        </div>
+        ${data.breakdown ? `
+        <div class="metric-grid">
+            ${Object.entries(data.breakdown).map(([k, v]) => `
+                <div class="metric-box">
+                    <div class="metric-value">${formatNumber(v)}</div>
+                    <div class="metric-label">${k}</div>
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+    `;
+}
+
+function renderStreakCounter(container, data) {
+    const days = data.days || data.streak || data.days_without_incident || 0;
+    
+    container.innerHTML = `
+        <div class="streak-container">
+            <div class="streak-number">${formatNumber(days)}</div>
+            <div class="streak-label">${LANG === 'en' ? 'Days Without Incident' : 'روز بدون حادثه'}</div>
+        </div>
+        ${data.last_incident ? `
+        <div style="text-align: center; color: var(--text-secondary); font-size: 14px;">
+            ${LANG === 'en' ? 'Last incident' : 'آخرین حادثه'}: ${data.last_incident}
+        </div>
+        ` : ''}
+    `;
+}
+
+function renderIncidentRate(container, data) {
+    container.innerHTML = `
+        <div class="metric-grid">
+            <div class="metric-box ${data.total_incidents === 0 ? 'success' : 'danger'}">
+                <div class="metric-value">${formatNumber(data.total_incidents)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Total Incidents' : 'کل حوادث'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.incident_rate)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Rate per 1000 days' : 'نرخ در 1000 روز'}</div>
+            </div>
+            <div class="metric-box info">
+                <div class="metric-value">${formatNumber(data.total_manhours)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Total Man-Hours' : 'کل نفر-ساعت'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.trir)}</div>
+                <div class="metric-label">TRIR</div>
+            </div>
+        </div>
+        ${data.by_type && Object.keys(data.by_type).length > 0 ? `
+        <h4 style="margin: 24px 0 12px;">${LANG === 'en' ? 'By Type' : 'بر اساس نوع'}</h4>
+        <div class="progress-list">
+            ${Object.entries(data.by_type).map(([type, count]) => `
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">${type}</span>
+                        <span class="progress-value">${formatNumber(count)}</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+    `;
+}
+
+function renderNearMissTracking(container, data) {
+    container.innerHTML = `
+        <div class="metric-grid">
+            <div class="metric-box warning">
+                <div class="metric-value">${formatNumber(data.total_near_misses)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Total Near Misses' : 'کل وقایع نزدیک به حادثه'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.rate_per_day)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Rate per Day' : 'نرخ روزانه'}</div>
+            </div>
+        </div>
+        ${data.trend && data.trend.length > 0 ? `
+        <div class="chart-container"><canvas id="modalChart"></canvas></div>
+        ` : ''}
+    `;
+    
+    if (data.trend && data.trend.length > 0) {
+        const ctx = document.getElementById('modalChart').getContext('2d');
+        currentChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.trend.map(t => t.month),
+                datasets: [{
+                    label: LANG === 'en' ? 'Near Misses' : 'وقایع',
+                    data: data.trend.map(t => t.count),
+                    backgroundColor: '#f59e0b'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+}
+
+function renderCompletionForecast(container, data) {
+    container.innerHTML = `
+        <div class="metric-grid">
+            <div class="metric-box info">
+                <div class="metric-value">${data.estimated_date || '-'}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Estimated Completion' : 'تخمین تکمیل'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.days_remaining)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Days Remaining' : 'روزهای باقیمانده'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.current_progress)}%</div>
+                <div class="metric-label">${LANG === 'en' ? 'Current Progress' : 'پیشرفت فعلی'}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderWeeklyComparison(container, data) {
+    container.innerHTML = `
+        <div class="metric-grid">
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.current_week?.work_output || 0)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'This Week' : 'این هفته'}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-value">${formatNumber(data.previous_week?.work_output || 0)}</div>
+                <div class="metric-label">${LANG === 'en' ? 'Last Week' : 'هفته گذشته'}</div>
+            </div>
+            <div class="metric-box ${data.change >= 0 ? 'success' : 'danger'}">
+                <div class="metric-value">${data.change >= 0 ? '+' : ''}${formatNumber(data.change)}%</div>
+                <div class="metric-label">${LANG === 'en' ? 'Change' : 'تغییر'}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderGeneric(container, data) {
+    // Try to render as metric cards
+    if (typeof data === 'object' && !Array.isArray(data)) {
+        let html = '<div class="metric-grid">';
+        
+        Object.entries(data).forEach(([key, value]) => {
+            if (typeof value !== 'object' && key !== 'success' && key !== 'chart_type' && key !== 'title') {
+                html += `
+                    <div class="metric-box">
+                        <div class="metric-value">${typeof value === 'number' ? formatNumber(value) : value}</div>
+                        <div class="metric-label">${key.replace(/_/g, ' ')}</div>
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = `<pre style="overflow: auto; padding: 16px; background: var(--bg-secondary); border-radius: 8px;">${JSON.stringify(data, null, 2)}</pre>`;
+    }
+}
+</script>
+{% endblock %}

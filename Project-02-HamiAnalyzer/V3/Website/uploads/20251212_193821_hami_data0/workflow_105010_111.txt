@@ -1,0 +1,12 @@
+parent_id: None
+id: f3a9cf4f-6fcf-4fe6-92dd-c03c59a5cadf
+date: دوشنبه، 2 تیر 1404 11:40
+name: کارشناسی پیوسته_حقوق_یزد_4021
+email: sf-105-20803-4-4021@iau.ir
+--------------------------------------------------
+parent_id: f3a9cf4f-6fcf-4fe6-92dd-c03c59a5cadf
+id: ae409e66-503e-4249-9bf0-5032aaf9b4e9
+date: شنبه، 7 تیر 1404 10:28
+name: Zeinab  Poordehghan
+email: 2981533916@iau.ir
+--------------------------------------------------

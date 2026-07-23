@@ -1,0 +1,19 @@
+# Available Analysis Functions Configuration
+# Each line defines an analysis function that will be shown in the website
+# Format: function_name | Display Name | Description
+# Lines starting with # are comments and will be ignored
+
+total_requests_per_hami | Total Requests per Hami | Bar chart showing request counts by Hami ID
+message_date_distribution_per_month | Message Date Distribution (Monthly) | Timeline of messages per month
+message_date_distribution_per_day | Message Date Distribution (Daily) | Timeline of messages per day
+request_date_distribution_per_month | Request Date Distribution (Monthly) | Timeline of requests per month
+top_communicators_employee | Top Employee Communicators | Most active employees in messaging
+top_communicators_student | Top Student Communicators | Most active students in messaging
+top_communicators_place | Top Place Communicators | Most active places/departments
+communication_network | Communication Network | Heatmap of communication patterns
+total_messages_per_student | Messages per Student Distribution | Histogram of student message counts
+common_titles | Common Request Titles | Most frequent request subjects
+response_time_per_person | Response Time Analysis | Average response times per person
+place_by_field | Place Analysis by Field/Major | Grouped analysis of places by academic field
+place_by_year | Place Analysis by Year | Grouped analysis of places by year
+place_by_edu_level | Place Analysis by Education Level | Grouped analysis of places by education level

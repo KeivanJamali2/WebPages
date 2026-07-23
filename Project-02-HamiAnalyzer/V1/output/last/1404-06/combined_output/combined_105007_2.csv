@@ -1,0 +1,9 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-30 11:22:00,<empty>,seyed mohammad mahdi tavakoli,کارشناسی پیوسته_پرستاری_یزد_4011,sm-105-10401-4-4011@iau.ir,<empty>,0ce1415c-9928-43e0-8219-b96680fa35c8,True
+1404-06-30 11:41:00,"موضوع: 'درخواست ریز نمرات در حین تحصیل'
+با سلام . احتراما درخواست دانشجو ارسال می گردد",کارشناسی پیوسته_پرستاری_یزد_4011,بی بی فاطمه خدائی یزدی,336765@iau.ir,0ce1415c-9928-43e0-8219-b96680fa35c8,f4b664b3-f8b3-4f50-94de-eaa7b36a0820,True
+1404-06-30 11:41:30,با سلام . احتراما درخواست دانشجو ارسال می گردد,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-31 02:00:55,با سلام . انجام شده است .,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-31 13:53:00,"موضوع: 'پاسخ: درخواست ریز نمرات در حین تحصیل'
+سلام -به دانشجوتحویل دلده شد",بی بی فاطمه خدائی یزدی,کارشناسی پیوسته_پرستاری_یزد_4011,sm-105-10401-4-4011@iau.ir,f4b664b3-f8b3-4f50-94de-eaa7b36a0820,09a4ae50-ca93-46c8-bfcf-eeae7f3c7a6f,True
+1404-06-31 14:01:00,There is nothing about this message in the Emails.,کارشناسی پیوسته_پرستاری_یزد_4011,seyed mohammad mahdi tavakoli,2560506726@iau.ir,09a4ae50-ca93-46c8-bfcf-eeae7f3c7a6f,943d2728-a2f4-42c9-8195-dc72b41990d8,False

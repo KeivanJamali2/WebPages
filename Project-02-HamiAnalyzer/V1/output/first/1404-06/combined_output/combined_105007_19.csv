@@ -1,0 +1,12 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-11 09:14:00,<empty>,mohammadreza dashti,دکتری عمومی_پزشکی_یزد_3961,sm-105-10101-6-3961@iau.ir,<empty>,3b0dee5c-7f1e-4a95-9865-a83451588639,True
+1404-06-11 09:38:00,"موضوع: 'درخواست ویرایش پژوهشیار'
+با سلام 
+احتراما درخواست دانشجو ارسال می گردد .",دکتری عمومی_پزشکی_یزد_3961,فاطمه جعفری ندوشن,336774@iau.ir,3b0dee5c-7f1e-4a95-9865-a83451588639,d14255a9-fbba-4966-a372-f2dfff028a78,True
+1404-06-11 09:38:04,"با سلام 
+احتراما درخواست دانشجو ارسال می گردد .",Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-11 09:49:00,"موضوع: 'پاسخ: درخواست ویرایش پژوهشیار'
+سلام انجام شد",فاطمه جعفری ندوشن,دکتری عمومی_پزشکی_یزد_3961,sm-105-10101-6-3961@iau.ir,d14255a9-fbba-4966-a372-f2dfff028a78,8cd17c51-0f8a-4f8b-b013-94e437e5510c,True
+1404-06-11 09:51:54,با سلام . انجام شده است .,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-11 09:52:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_3961,mohammadreza dashti,4420855959@iau.ir,8cd17c51-0f8a-4f8b-b013-94e437e5510c,39bf6c18-003c-4436-bb84-c559984982db,False
+1500-01-01 00:00:00,لطفا دسترسی به پژوهشیار برای ویرایش پروپوزال را باز بفرمایید.,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False

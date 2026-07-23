@@ -1,0 +1,12 @@
+parent_id: None
+id: 4b50fad4-af69-4aa8-bcc6-d8b5423ffc0e
+date: چهارشنبه، 4 تیر 1404 17:19
+name: دکتری عمومی_پزشکی_یزد_4011
+email: sm-105-10101-6-4011@iau.ir
+--------------------------------------------------
+parent_id: 4b50fad4-af69-4aa8-bcc6-d8b5423ffc0e
+id: fbffea45-e07f-44fc-bb5e-200073b7decf
+date: شنبه، 5 تیر 1404 07:19
+name: Sajad Ansari
+email: 4220726187@iau.ir
+--------------------------------------------------

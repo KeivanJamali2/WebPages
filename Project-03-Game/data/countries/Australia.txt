@@ -1,0 +1,10 @@
+## Resources
+Iron, 70.0, 4, 0.06
+Coal, 60.0, 3, 0.08
+Gold, 80.0, 2, 0.1
+
+## Capacity
+26
+
+## HouseWorth
+350000

@@ -1,0 +1,40 @@
+## Basic
+Iran, 2026-04-10T10:00:00, 2026-04-10T12:30:00
+
+## Location
+Iran
+
+## Money
+2450
+
+## Skills
+programming, 3
+driving, 2
+trading, 1
+
+## Job
+hacker, 2
+
+## Energy
+35
+
+## Health
+92
+
+## Transportation
+walk
+truck, 76
+lamborghini, 90
+motorcycle, 40
+
+## Houses
+Iran, 100000, 2, 1, True
+France, 80000, 1, 0, False
+
+## Log
+[created at 2026-04-10T10:00:00]
+[earned 500 from hacking job]
+[bought truck]
+[moved to France]
+[returned to Germany]
+[worked as hacker level 2]

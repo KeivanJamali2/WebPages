@@ -1,0 +1,9 @@
+# Projects Data File
+# Format: project_id|name|description|status|start_date|end_date
+# Status: active, completed, on-hold, cancelled
+
+PRJ001|Website Redesign|Complete redesign of company website with modern UI/UX|active|2025-01-15|2025-06-30
+PRJ002|Mobile App Development|Develop internal mobile app for employee management|active|2025-02-01|2025-08-31
+PRJ003|Database Migration|Migrate legacy database to new cloud infrastructure|active|2025-03-01|2025-05-31
+PRJ004|Security Audit|Comprehensive security audit and improvements|on-hold|2025-04-01|
+PRJ005|Training Program|Employee training program for new systems|active|2025-01-10|2025-12-31

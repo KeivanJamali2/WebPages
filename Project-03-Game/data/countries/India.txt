@@ -1,0 +1,10 @@
+## Resources
+Software, 60.0, 40, 0.04
+Textiles, 15.0, 80, 0.02
+Spices, 10.0, 20, 0.1
+
+## Capacity
+1428
+
+## HouseWorth
+40000

@@ -1,0 +1,177 @@
+<!-- share.html -->
+{% extends "layout.html" %}
+{% block content %}
+
+  <h2 data-i18n="share_files_title">Share Files</h2>
+  <form method="POST" enctype="multipart/form-data" action="{{ url_for('share_files') }}">
+    <div>
+      <label for="files" data-i18n="select_files_upload">Select Files to Upload:</label>
+      <input type="file" name="files[]" id="files" multiple required>
+    </div>
+    <input type="submit" value="Upload Files" data-i18n-attr="value" data-i18n="upload_files">
+  </form>
+  
+  <div class="share-header">
+    <h2 data-i18n="available_files">Available Files</h2>
+    <button type="button" class="btn-manage" id="toggleManageBtn" onclick="toggleManageMode()">
+      <span data-i18n="manage_files">🗑️ Manage Files</span>
+    </button>
+  </div>
+
+  <!-- Delete controls (hidden by default) -->
+  <div id="manageControls" class="manage-controls" style="display:none;">
+    <div class="manage-bar">
+      <label class="select-all-label">
+        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+        <span data-i18n="select_all">Select All</span>
+      </label>
+      <button type="button" class="btn-delete" id="deleteSelectedBtn" onclick="deleteSelected()" disabled>
+        <span data-i18n="delete_selected">Delete Selected</span>
+        (<span id="selectedCount">0</span>)
+      </button>
+    </div>
+  </div>
+
+  <div class="file-list">
+    {% if files %}
+    <table class="share-file-table">
+      <thead>
+        <tr>
+          <th class="manage-col" style="display:none;"></th>
+          <th class="file-col-name" data-i18n="file_name">File Name</th>
+          <th class="file-col-type" data-i18n="file_type">Type</th>
+          <th class="file-col-size" data-i18n="file_size">Size</th>
+          <th class="file-col-date" data-i18n="upload_date">Upload Date</th>
+          <th class="file-col-action" data-i18n="download">Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for file in files %}
+        <tr>
+          <td class="manage-col" style="display:none;">
+            <input type="checkbox" class="file-checkbox" value="{{ file.name }}" onchange="updateSelectedCount()">
+          </td>
+          <td class="file-name-cell">{{ file.name }}</td>
+          <td><span class="file-type-badge">{{ file.type }}</span></td>
+          <td class="file-size-cell">{{ file.size }}</td>
+          <td class="file-date-cell">{{ file.date }}</td>
+          <td>
+            <a href="{{ url_for('download_file', filename=file.name, folder='UPLOAD_FOLDER_SHARE') }}" class="btn-download-sm">
+              ⬇
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="no-files-msg" data-i18n="no_files_available">No files available.</p>
+    {% endif %}
+  </div>
+
+  <!-- Password Modal -->
+  <div id="passwordModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <h3 data-i18n="enter_privilege_password">Enter Privilege Password</h3>
+      <p class="modal-info" data-i18n="delete_password_info">To delete files, please enter the privilege password.</p>
+      <input type="password" id="deletePassword" class="modal-input" placeholder="Password" data-i18n-attr="placeholder" data-i18n="password">
+      <p id="modalError" class="modal-error" style="display:none;"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-confirm" onclick="confirmDelete()" data-i18n="confirm_delete">Confirm Delete</button>
+        <button type="button" class="btn-cancel-modal" onclick="closeModal()" data-i18n="cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let manageMode = false;
+
+    function toggleManageMode() {
+      manageMode = !manageMode;
+      const cols = document.querySelectorAll('.manage-col');
+      const controls = document.getElementById('manageControls');
+      const btn = document.getElementById('toggleManageBtn');
+      
+      if (manageMode) {
+        cols.forEach(c => c.style.display = '');
+        controls.style.display = 'block';
+        btn.classList.add('active');
+      } else {
+        cols.forEach(c => c.style.display = 'none');
+        controls.style.display = 'none';
+        btn.classList.remove('active');
+        // Uncheck all
+        document.querySelectorAll('.file-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('selectAllCheckbox').checked = false;
+        updateSelectedCount();
+      }
+    }
+
+    function toggleSelectAll(el) {
+      document.querySelectorAll('.file-checkbox').forEach(cb => cb.checked = el.checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.file-checkbox:checked').length;
+      document.getElementById('selectedCount').textContent = checked;
+      document.getElementById('deleteSelectedBtn').disabled = checked === 0;
+    }
+
+    function deleteSelected() {
+      const checked = document.querySelectorAll('.file-checkbox:checked');
+      if (checked.length === 0) return;
+      // Show password modal
+      document.getElementById('passwordModal').style.display = 'flex';
+      document.getElementById('deletePassword').value = '';
+      document.getElementById('modalError').style.display = 'none';
+      document.getElementById('deletePassword').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('passwordModal').style.display = 'none';
+    }
+
+    function confirmDelete() {
+      const password = document.getElementById('deletePassword').value;
+      if (!password) {
+        document.getElementById('modalError').textContent = 'Please enter a password';
+        document.getElementById('modalError').style.display = 'block';
+        return;
+      }
+
+      const checked = document.querySelectorAll('.file-checkbox:checked');
+      const filenames = Array.from(checked).map(cb => cb.value);
+
+      fetch('{{ url_for("share_delete_file") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: password, filenames: filenames})
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        if (data.success) {
+          closeModal();
+          location.reload();
+        } else {
+          document.getElementById('modalError').textContent = data.message || 'Delete failed';
+          document.getElementById('modalError').style.display = 'block';
+        }
+      })
+      .catch(err => {
+        document.getElementById('modalError').textContent = 'Network error';
+        document.getElementById('modalError').style.display = 'block';
+      });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+    // Confirm on Enter key within password field
+    document.getElementById('deletePassword')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') confirmDelete();
+    });
+  </script>
+
+{% endblock %}

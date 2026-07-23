@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('forms.title') }} - PMO Website{% endblock %}
+
+{% block extra_css %}
+<style>
+.forms-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.forms-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.forms-header h1 {
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+}
+
+.forms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.form-card {
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--color-text);
+    display: block;
+}
+
+.form-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.form-icon {
+    font-size: 48px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-primary);
+}
+
+.form-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+    color: var(--color-text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="forms-container">
+    <div class="forms-header">
+        <h1>{{ _('forms.available') }}</h1>
+        <p>{{ total_forms }} {{ _('forms.title') }}</p>
+    </div>
+    
+    {% if forms %}
+    <div class="forms-grid">
+        {% for form in forms %}
+        <a href="{{ url_for('forms.show_form', form_id=form.form_id) }}" class="form-card">
+            <div class="form-icon">{{ form.icon }}</div>
+            <div class="form-title">{{ form.title }}</div>
+            {% if form.requires_project %}
+            <span class="form-badge">{{ _('forms.select_project') }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>{{ _('forms.no_forms') }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

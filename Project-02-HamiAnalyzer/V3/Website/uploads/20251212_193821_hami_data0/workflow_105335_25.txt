@@ -1,0 +1,24 @@
+parent_id: None
+id: 86efb69e-8d02-450c-9b20-1cbbfd8ab685
+date: چهارشنبه، 17 اردیبهشت 1404 18:21
+name: کاردانی پیوسته_مکاترونیک صنعتی_یزد_4021
+email: sm-105-40945-1-4021@iau.ir
+--------------------------------------------------
+parent_id: 86efb69e-8d02-450c-9b20-1cbbfd8ab685
+id: d594ea23-0926-4655-a693-02a71e59fc80
+date: شنبه، 11 خرداد 1404 08:28
+name: morteza Alasarpanaii
+email: 4421237191@iau.ir
+--------------------------------------------------
+parent_id: 86efb69e-8d02-450c-9b20-1cbbfd8ab685
+id: 1ab0ed04-a330-459e-848d-bdabca5b1757
+date: شنبه، 11 خرداد 1404 08:30
+name: morteza Alasarpanaii
+email: 4421237191@iau.ir
+--------------------------------------------------
+parent_id: 86efb69e-8d02-450c-9b20-1cbbfd8ab685
+id: f675a0c7-e06b-438e-8346-78b591fdd4eb
+date: چهارشنبه، 8 مرداد 1404 20:23
+name: morteza Alasarpanaii
+email: 4421237191@iau.ir
+--------------------------------------------------

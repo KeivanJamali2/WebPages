@@ -1,0 +1,2393 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ 'Analysis' if lang == 'en' else 'تحلیل' }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<!-- Persian (Jalali) date picker CSS -->
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<style>
+/* ================================================================
+   ANALYSIS PAGE — Sidebar + Content
+   ================================================================ */
+
+/* wrapper sits below the main navbar */
+.analysis-wrapper {
+    display: flex;
+    min-height: calc(100vh - 64px);
+}
+
+/* ── Sidebar ── */
+.analysis-sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--card-bg, #fff);
+    border-{{ 'left' if lang == 'fa' else 'right' }}: 1px solid var(--border-color, #e5e7eb);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.sidebar-header {
+    padding: 0 16px 16px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #374151);
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: {{ 'right' if lang == 'fa' else 'left' }};
+    transition: background .15s, color .15s;
+    border-{{ 'right' if lang == 'fa' else 'left' }}: 3px solid transparent;
+}
+.sidebar-item:hover {
+    background: #f3f4f6;
+}
+.sidebar-item.active {
+    background: #eff6ff;
+    color: var(--primary-color, #3b82f6);
+    font-weight: 600;
+    border-{{ 'right' if lang == 'fa' else 'left' }}-color: var(--primary-color, #3b82f6);
+}
+.sidebar-item .icon { font-size: 18px; width: 24px; text-align: center; }
+.sidebar-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Content Area ── */
+.analysis-content {
+    flex: 1;
+    padding: 24px 28px;
+    overflow-y: auto;
+    max-height: calc(100vh - 64px);
+}
+
+/* ── Shared analysis styles ── */
+.section-header { margin-bottom: 20px; }
+.section-header h1 { font-size: 22px; margin: 0 0 4px 0; }
+.section-header .subtitle { color: var(--text-secondary); font-size: 13px; }
+
+.filters-bar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
+}
+.filters-bar label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.filters-bar select,
+.filters-bar input[type="text"] {
+    padding: 5px 10px; border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 6px; font-size: 12px; background: #fff;
+}
+.filters-bar input[type="text"].jalali-input {
+    width: 120px; text-align: center; direction: ltr;
+}
+.filters-bar .btn-apply {
+    padding: 5px 16px; border: none; border-radius: 6px;
+    background: var(--primary-color, #3b82f6); color: #fff;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.filters-bar .btn-apply:hover { opacity: .9; }
+
+.card {
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px; padding: 18px; margin-bottom: 20px;
+}
+.card h2 { font-size: 16px; margin: 0 0 12px 0; }
+
+.tbl-wrap { overflow-x: auto; }
+.data-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-tbl th, .data-tbl td {
+    padding: 7px 10px; border-bottom: 1px solid var(--border-color, #e5e7eb);
+    text-align: {{ 'right' if lang == 'fa' else 'left' }};
+    white-space: nowrap;
+}
+.data-tbl th {
+    background: #f9fafb; font-weight: 600; position: sticky; top: 0;
+    font-size: 11px; color: var(--text-secondary);
+    cursor: pointer; user-select: none;
+}
+.data-tbl th:hover { background: #f0f1f3; }
+.data-tbl th .sort-icon { font-size: 9px; margin-{{ 'right' if lang == 'fa' else 'left' }}: 3px; opacity: 0.4; }
+.data-tbl th.sorted-asc .sort-icon,
+.data-tbl th.sorted-desc .sort-icon { opacity: 1; color: var(--primary-color, #3b82f6); }
+.data-tbl tr:hover td { background: #f8fafc; }
+.data-tbl .num { text-align: center; }
+.data-tbl .total-row td { font-weight: 700; border-top: 2px solid var(--border-color); }
+
+/* Presence rate colors */
+.rate-good { color: #10b981; font-weight: 600; }
+.rate-warning { color: #f59e0b; font-weight: 600; }
+.rate-poor { color: #ef4444; font-weight: 600; }
+
+.prog-bar { display: inline-block; width: 70px; height: 7px; background: #e5e7eb; border-radius: 4px; vertical-align: middle; }
+.prog-bar .fill { height: 100%; border-radius: 4px; background: #3b82f6; display: block; }
+
+/* Checkbox column in summary table */
+.data-tbl .chk-col { width: 32px; text-align: center !important; }
+.data-tbl .chk-col input[type="checkbox"] { cursor: pointer; width: 15px; height: 15px; }
+
+/* Full-width chart box */
+.chart-full {
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px; padding: 18px; margin-bottom: 20px;
+}
+.chart-full .chart-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.chart-full .chart-header h3 { font-size: 15px; margin: 0; }
+
+/* Dynamic height for completion chart only (based on filtered items) */
+#completionChartWrap { position: relative; }
+#completionChartWrap canvas { width: 100% !important; height: 100% !important; }
+
+/* Fixed height for daily output chart */
+.chart-full #chartDaily { width: 100% !important; height: 400px !important; }
+
+/* Help tooltip button */
+.help-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #e5e7eb; color: #6b7280; font-size: 12px; font-weight: 700;
+    cursor: pointer; border: none; position: relative;
+}
+.help-btn:hover { background: #d1d5db; }
+.help-tooltip {
+    display: none; position: absolute; top: 28px; {{ 'right' if lang == 'fa' else 'left' }}: 0;
+    background: #1f2937; color: #fff; padding: 12px 14px;
+    border-radius: 8px; font-size: 11px; line-height: 1.6;
+    width: 320px; z-index: 100; font-weight: 400;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.help-btn:hover .help-tooltip { display: block; }
+
+/* Half-width charts grid */
+.charts-half-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+@media (max-width: 900px) { .charts-half-grid { grid-template-columns: 1fr; } }
+.charts-half-grid .chart-box {
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px; padding: 14px;
+}
+.charts-half-grid .chart-box h3 { font-size: 13px; margin: 0 0 8px 0; }
+.charts-half-grid .chart-box canvas { width: 100% !important; max-height: 300px; }
+
+/* Projection / forecast table alignment fix */
+.forecast-tbl th, .forecast-tbl td { text-align: center !important; padding: 8px 12px !important; }
+.forecast-tbl th:first-child, .forecast-tbl td:first-child { text-align: {{ 'right' if lang == 'fa' else 'left' }} !important; }
+
+/* Roadmap gridlines */
+.roadmap-ruler { position: relative; border-bottom: 1px solid #e5e7eb; height: 18px; font-size: 9px; color: #9ca3af; }
+.roadmap-ruler .tick { position: absolute; top: 0; border-{{ 'left' if lang == 'fa' else 'left' }}: 1px dashed #d1d5db; height: 100%; }
+.roadmap-ruler .tick-label { position: absolute; top: 2px; transform: translateX(-50%); white-space: nowrap; }
+.roadmap-bar-row td { position: relative; }
+.roadmap-gridline { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed #e5e7eb; z-index: 0; }
+
+.loading-overlay {
+    display: flex; align-items: center; justify-content: center;
+    padding: 80px 20px; text-align: center; color: var(--text-secondary);
+}
+.spinner {
+    display: inline-block; width: 28px; height: 28px;
+    border: 3px solid #e5e7eb; border-top-color: var(--primary-color, #3b82f6);
+    border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive: collapse sidebar on small screens ── */
+@media (max-width: 768px) {
+    .analysis-sidebar { width: 56px; min-width: 56px; }
+    .sidebar-header, .sidebar-item span:not(.icon) { display: none; }
+    .sidebar-item { justify-content: center; padding: 10px 0; }
+    .analysis-content { padding: 16px 12px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-wrapper">
+
+    <!-- ═══════ SIDEBAR ═══════ -->
+    <nav class="analysis-sidebar">
+        <div class="sidebar-header">{{ 'Analysis' if lang == 'en' else 'تحلیل' }}</div>
+
+        <button class="sidebar-item active" data-section="activities" onclick="switchSection('activities')">
+            <span class="icon">📐</span>
+            <span>{{ 'Activities' if lang == 'en' else 'فعالیت‌ها' }}</span>
+        </button>
+        <button class="sidebar-item" data-section="hr" onclick="switchSection('hr')">
+            <span class="icon">👷</span>
+            <span>{{ 'Human Resources' if lang == 'en' else 'نیروی انسانی' }}</span>
+        </button>
+        <button class="sidebar-item" data-section="tools" onclick="switchSection('tools')">
+            <span class="icon">🚜</span>
+            <span>{{ 'Equipment' if lang == 'en' else 'تجهیزات' }}</span>
+        </button>
+        <button class="sidebar-item" data-section="materials" onclick="switchSection('materials')">
+            <span class="icon">📦</span>
+            <span>{{ 'Materials' if lang == 'en' else 'مصالح' }}</span>
+        </button>
+        <button class="sidebar-item" data-section="problems" onclick="switchSection('problems')">
+            <span class="icon">⚠️</span>
+            <span>{{ 'Issues & Safety' if lang == 'en' else 'مشکلات و ایمنی' }}</span>
+        </button>
+        <button class="sidebar-item" data-section="weather" onclick="switchSection('weather')">
+            <span class="icon">🌤️</span>
+            <span>{{ 'Weather' if lang == 'en' else 'آب و هوا' }}</span>
+        </button>
+        <button class="sidebar-item" data-section="employees" onclick="switchSection('employees')">
+            <span class="icon">📊</span>
+            <span>{{ 'Performance' if lang == 'en' else 'عملکرد' }}</span>
+        </button>
+    </nav>
+
+    <!-- ═══════ CONTENT AREA ═══════ -->
+    <div class="analysis-content" id="analysisContent">
+
+        {% if not has_data %}
+        <div class="loading-overlay">
+            <div>
+                <div style="font-size:48px; margin-bottom:12px;">📭</div>
+                <p>{{ 'No approved data yet. Submit and approve daily forms first.' if lang == 'en' else 'هنوز داده تأیید شده‌ای نیست. ابتدا فرم‌های روزانه را ثبت و تأیید کنید.' }}</p>
+            </div>
+        </div>
+        {% else %}
+        <!-- Activities section is loaded by default -->
+        <div id="sectionContent">
+            <div class="loading-overlay"><div><div class="spinner"></div><p>{{ 'Loading...' if lang == 'en' else 'در حال بارگذاری...' }}</p></div></div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Persian (Jalali) date picker JS (loaded after jQuery from base.html) -->
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+{% if has_data %}
+<script>
+(function() {
+    /* ================================================================
+       GLOBAL CONFIG
+       ================================================================ */
+    const PROJECT_ID = {{ project.id }};
+    const LANG = '{{ lang }}';
+    const BASE_COLORS = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16',
+                    '#f97316','#14b8a6','#a855f7','#e11d48','#0ea5e9','#65a30d','#d946ef','#0891b2',
+                    '#dc2626','#059669','#7c3aed','#db2777','#0284c7','#4f46e5','#ca8a04','#16a34a'];
+    let activeCharts = {};
+    let currentSection = 'activities';
+    let lastActivitiesData = null;   // cached for re-render on sort
+    let sortState = { col: null, dir: 'asc' };
+    let sortStateHR = { col: null, dir: 'asc' };  // for HR table sorting
+
+    /* Activity → color map (built once per data load for consistency) */
+    let activityColorMap = {};
+
+    function buildColorMap(data) {
+        activityColorMap = {};
+        /* Collect all activity names from summary (the master list) */
+        var names = [];
+        if (data.summary && data.summary.rows) {
+            names = data.summary.rows.map(function(r){return r.activity;});
+        }
+        names.forEach(function(name, i) {
+            activityColorMap[name] = BASE_COLORS[i % BASE_COLORS.length];
+        });
+    }
+
+    function colorFor(activity) {
+        if (activityColorMap[activity]) return activityColorMap[activity];
+        /* Fallback: hash-based */
+        var keys = Object.keys(activityColorMap);
+        activityColorMap[activity] = BASE_COLORS[keys.length % BASE_COLORS.length];
+        return activityColorMap[activity];
+    }
+
+    /* Checked activities filter (null = all) */
+    let checkedActivities = null;  // Set when checkboxes are used
+
+    function isActivityChecked(name) {
+        if (checkedActivities === null) return true;
+        return checkedActivities.has(name);
+    }
+
+    /* ================================================================
+       JALALI (SHAMSI) DATE CONVERSION
+       ================================================================ */
+    function gregorianToJalali(gy, gm, gd) {
+        var g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+        var jy = (gy <= 1600) ? 0 : 979;
+        gy -= (gy <= 1600) ? 621 : 1600;
+        var gy2 = (gm > 2) ? (gy + 1) : gy;
+        var days = (365 * gy) + (Math.floor((gy2 + 3) / 4)) - (Math.floor((gy2 + 99) / 100))
+                   + (Math.floor((gy2 + 399) / 400)) - 80 + gd + g_d_m[gm - 1];
+        jy += 33 * (Math.floor(days / 12053));
+        days %= 12053;
+        jy += 4 * (Math.floor(days / 1461));
+        days %= 1461;
+        if (days > 365) {
+            jy += Math.floor((days - 1) / 365);
+            days = (days - 1) % 365;
+        }
+        var jm = (days < 186) ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+        var jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+        return [jy, jm, jd];
+    }
+
+    function toJalali(isoDate) {
+        if (!isoDate) return '-';
+        var parts = isoDate.split('-');
+        if (parts.length < 3) return isoDate;
+        var j = gregorianToJalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+        return j[0] + '/' + String(j[1]).padStart(2,'0') + '/' + String(j[2]).padStart(2,'0');
+    }
+
+    /* Normalize Persian/Arabic digits to ASCII */
+    function normDigits(s) {
+        if (!s) return s;
+        return s.replace(/[\u06F0-\u06F9]/g, function(c){ return String(c.charCodeAt(0) - 0x06F0); })
+               .replace(/[\u0660-\u0669]/g, function(c){ return String(c.charCodeAt(0) - 0x0660); });
+    }
+
+    async function parseJalaliStr(str) {
+        if (!str) return null;
+        var s = normDigits(str).replace(/\//g, '-').trim();
+        var p = s.split('-');
+        if (p.length !== 3) return null;
+        var jy = parseInt(p[0]), jm = parseInt(p[1]), jd = parseInt(p[2]);
+        if (isNaN(jy) || isNaN(jm) || isNaN(jd)) return null;
+        
+        // Call API to convert Jalali to Gregorian
+        try {
+            var resp = await fetch('/boss/api/convert-date', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jy: jy, jm: jm, jd: jd })
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            var data = await resp.json();
+            if (!data.success) throw new Error(data.error || 'Conversion failed');
+            return data.gregorian;
+        } catch (err) {
+            console.error('Date conversion error:', err);
+            return null;
+        }
+    }
+
+    /* ================================================================
+       SIDEBAR NAVIGATION
+       ================================================================ */
+    window.switchSection = function(section) {
+        var btn = document.querySelector('[data-section="'+section+'"]');
+        if (btn && btn.classList.contains('disabled')) return;
+        document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        currentSection = section;
+        if (section === 'activities') loadActivities();
+        if (section === 'hr') loadHR();
+        if (section === 'tools') loadTools();
+        if (section === 'materials') loadMaterials();
+        if (section === 'problems') loadProblems();
+        if (section === 'weather') loadWeather();
+        if (section === 'employees') loadEmployees();
+    };
+
+    /* ================================================================
+       ACTIVITIES & ROADMAP SECTION
+       ================================================================ */
+    const API_ACTIVITIES = '{{ url_for("boss.api_activities", project_id=project.id) }}';
+
+    const T = {
+        activity:      LANG==='fa' ? 'فعالیت' : 'Activity',
+        unit:          LANG==='fa' ? 'واحد' : 'Unit',
+        totalDone:     LANG==='fa' ? 'مقدار انجام‌شده' : 'Total Done',
+        planned:       LANG==='fa' ? 'مقدار برنامه' : 'Planned',
+        progress:      LANG==='fa' ? 'پیشرفت' : 'Progress',
+        costDone:      LANG==='fa' ? 'هزینه انجام‌شده' : 'Cost Done',
+        plannedCost:   LANG==='fa' ? 'هزینه برنامه' : 'Planned Cost',
+        firstDate:     LANG==='fa' ? 'اولین تاریخ' : 'First Date',
+        lastDate:      LANG==='fa' ? 'آخرین تاریخ' : 'Last Date',
+        daysActive:    LANG==='fa' ? 'روز فعال' : 'Days Active',
+        avgAmount:     LANG==='fa' ? 'میانگین مقدار' : 'Avg Amount',
+        total:         LANG==='fa' ? 'جمع کل' : 'Total',
+        select:        LANG==='fa' ? 'انتخاب' : 'Select',
+        summaryTitle:  LANG==='fa' ? 'خلاصه فعالیت‌ها' : 'Activities Summary',
+        cumulTitle:    LANG==='fa' ? 'پیشرفت تجمعی' : 'Cumulative Progress',
+        completionTitle: LANG==='fa' ? 'درصد تکمیل فعالیت‌ها' : 'Activity Completion %',
+        dailyTitle:    LANG==='fa' ? 'خروجی روزانه' : 'Daily Work Output',
+        weeklyTitle:   LANG==='fa' ? 'خروجی هفتگی' : 'Weekly Work Output',
+        monthlyTitle:  LANG==='fa' ? 'خروجی ماهانه' : 'Monthly Work Output',
+        hourlyTitle:   LANG==='fa' ? 'خروجی ساعتی' : 'Hourly Work Output',
+        costTitle:     LANG==='fa' ? 'ترکیب هزینه' : 'Cost Breakdown',
+        activeDaysTitle: LANG==='fa' ? 'روزهای فعال' : 'Active Days',
+        projTitle:     LANG==='fa' ? 'پیش‌بینی تکمیل' : 'Completion Forecast',
+        roadmapTitle:  LANG==='fa' ? 'پوشش نقشه مسیر' : 'Roadmap Coverage',
+        projRate:      LANG==='fa' ? 'نرخ فعلی/روز' : 'Rate/Day',
+        projRemain:    LANG==='fa' ? 'باقی‌مانده' : 'Remaining',
+        projDays:      LANG==='fa' ? 'روز تا پایان' : 'Days Left',
+        projEnd:       LANG==='fa' ? 'تاریخ پیش‌بینی' : 'Projected End',
+        na:            'N/A',
+        unitLabel:     LANG==='fa' ? 'واحد' : 'Unit',
+        from:          LANG==='fa' ? 'از' : 'From',
+        to:            LANG==='fa' ? 'تا' : 'To',
+        apply:         LANG==='fa' ? 'اعمال' : 'Apply',
+        perDay:        LANG==='fa' ? 'روزانه' : 'Per Day',
+        perWeek:       LANG==='fa' ? 'هفتگی' : 'Per Week',
+        perMonth:      LANG==='fa' ? 'ماهانه' : 'Per Month',
+        perHour:       LANG==='fa' ? 'ساعتی' : 'Per Hour',
+        loading:       LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+        title:         LANG==='fa' ? 'فعالیت‌ها و نقشه مسیر' : 'Activities & Roadmap',
+    };
+
+    function getOutputTitle() {
+        var unit = document.getElementById('unitSelect') ? document.getElementById('unitSelect').value : 'per_day';
+        switch(unit) {
+            case 'per_week':  return T.weeklyTitle;
+            case 'per_month': return T.monthlyTitle;
+            case 'per_hour':  return T.hourlyTitle;
+            default:          return T.dailyTitle;
+        }
+    }
+
+    function loadActivities() {
+        const container = document.getElementById('sectionContent');
+        container.innerHTML = `
+            <div class="section-header">
+                <h1>📐 ${T.title}</h1>
+                <p class="subtitle">{{ project.name }}</p>
+            </div>
+            <div class="filters-bar">
+                <label>${T.unitLabel}:</label>
+                <select id="unitSelect">
+                    <option value="per_day" selected>${T.perDay}</option>
+                    <option value="per_week">${T.perWeek}</option>
+                    <option value="per_month">${T.perMonth}</option>
+                    <option value="per_hour">${T.perHour}</option>
+                </select>
+                <label>${T.from}:</label>
+                <input type="text" id="fromDate" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <label>${T.to}:</label>
+                <input type="text" id="toDate" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <button class="btn-apply" id="btnApply">${T.apply}</button>
+            </div>
+            <div id="activitiesData">
+                <div class="loading-overlay"><div><div class="spinner"></div><p>${T.loading}</p></div></div>
+            </div>
+        `;
+        if (typeof $ !== 'undefined' && $.fn.persianDatepicker) {
+            $('#fromDate').persianDatepicker({
+                format: 'YYYY/MM/DD', autoClose: true, initialValue: false,
+                calendar: { persian: { locale: 'fa' } }
+            });
+            $('#toDate').persianDatepicker({
+                format: 'YYYY/MM/DD', autoClose: true, initialValue: false,
+                calendar: { persian: { locale: 'fa' } }
+            });
+        }
+        document.getElementById('btnApply').addEventListener('click', fetchActivities);
+        fetchActivities();
+    }
+
+    async function fetchActivities() {
+        var unit = document.getElementById('unitSelect').value;
+        var fromVal = document.getElementById('fromDate').value;
+        var toVal   = document.getElementById('toDate').value;
+        
+        // Convert Jalali to Gregorian using API
+        var fromGreg = await parseJalaliStr(fromVal);
+        var toGreg   = await parseJalaliStr(toVal);
+
+        console.log('Date filter - Jalali:', fromVal, toVal);
+        console.log('Date filter - Gregorian:', fromGreg, toGreg);
+
+        var url = API_ACTIVITIES + '?unit=' + unit;
+        if (fromGreg) url += '&from_date=' + fromGreg;
+        if (toGreg)   url += '&to_date=' + toGreg;
+
+        console.log('API URL:', url);
+
+        document.getElementById('activitiesData').innerHTML =
+            '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T.loading+'</p></div></div>';
+
+        fetch(url).then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }).then(res => {
+            console.log('API Response:', res);
+            if (!res.success) throw new Error(res.error || 'API error');
+            lastActivitiesData = res.data;
+            console.log('Data loaded - summary rows:', res.data.summary.rows.length);
+            
+            /* Store date range hint for "no data" message */
+            if (res.data.summary && res.data.summary.rows && res.data.summary.rows.length > 0) {
+                var allDates = [];
+                res.data.summary.rows.forEach(function(r) {
+                    if (r.first_date) allDates.push(r.first_date);
+                    if (r.last_date) allDates.push(r.last_date);
+                });
+                if (allDates.length) {
+                    var sorted = allDates.sort();
+                    window.dataDateRange = { from: toJalali(sorted[0]), to: toJalali(sorted[sorted.length-1]) };
+                }
+            }
+            
+            buildColorMap(res.data);
+            checkedActivities = null;  // reset: all checked by default
+            renderActivities(res.data);
+        }).catch(function(err) {
+            console.error('Activities API error:', err);
+            document.getElementById('activitiesData').innerHTML =
+                '<div class="loading-overlay"><p style="color:#ef4444;">Error loading data: ' + err.message + '</p></div>';
+        });
+    }
+
+    function renderActivities(data) {
+        Object.values(activeCharts).forEach(c => c.destroy());
+        activeCharts = {};
+
+        /* Check if there's any data */
+        if (!data.summary || !data.summary.rows || data.summary.rows.length === 0) {
+            var hint = '';
+            if (window.dataDateRange) {
+                hint = '<br><small style="color:#6b7280;">' 
+                    + (LANG==='fa' 
+                        ? 'داده‌ها در بازه: ' + window.dataDateRange.from + ' تا ' + window.dataDateRange.to + ' موجود است'
+                        : 'Data available from: ' + window.dataDateRange.from + ' to ' + window.dataDateRange.to)
+                    + '</small>';
+            }
+            document.getElementById('activitiesData').innerHTML =
+                '<div class="loading-overlay"><div><div style="font-size:48px; margin-bottom:12px;">📭</div>'
+                + '<p>' + (LANG==='fa' ? 'هیچ داده‌ای برای این بازه زمانی یافت نشد.' : 'No data found for this time period.')
+                + hint + '</p></div></div>';
+            return;
+        }
+
+        var outputTitle = getOutputTitle();
+
+        var cumulHelp = LANG==='fa'
+            ? 'این نمودار پیشرفت تجمعی هر فعالیت را در طول زمان نشان می‌دهد. خط پیوسته مقدار واقعی انجام شده و خط‌چین مقدار برنامه‌ریزی شده است.<br><br><b>مثال:</b> اگر فعالیت «خاکریزی» در روز اول ۱۰۰ متر مکعب و در روز دوم ۱۵۰ متر مکعب انجام شده باشد، نمودار تجمعی مقادیر ۱۰۰ و ۲۵۰ را نشان می‌دهد.'
+            : 'This chart shows the cumulative progress of each activity over time. The solid line is the actual total done, and the dashed line is the planned target.<br><br><b>Example:</b> If "Earthwork" had 100 m³ on day 1 and 150 m³ on day 2, the cumulative chart shows 100 and 250.';
+
+        var completionHelp = LANG==='fa'
+            ? 'این نمودار درصد تکمیل هر فعالیت نسبت به مقدار برنامه‌ریزی شده را نشان می‌دهد.<br><br><b>مثال:</b> اگر از ۱۰۰۰ متر مکعب خاکریزی برنامه‌ریزی شده، ۴۵۰ متر مکعب انجام شده باشد، درصد تکمیل ۴۵٪ خواهد بود.'
+            : 'This chart shows the completion percentage of each activity compared to its planned amount.<br><br><b>Example:</b> If 450 out of 1000 m³ of earthwork is done, completion is 45%.';
+
+        var html = renderSummaryTable(data.summary)
+            + '<div class="chart-full"><div class="chart-header"><h3>'+T.cumulTitle+'</h3>'
+            + '<button class="help-btn">?<div class="help-tooltip">'+cumulHelp+'</div></button>'
+            + '</div><div style="position: relative; height: 400px; width: 100%;"><canvas id="chartCumul"></canvas></div></div>'
+            + '<div class="chart-full"><div class="chart-header"><h3>'+T.completionTitle+'</h3>'
+            + '<button class="help-btn">?<div class="help-tooltip">'+completionHelp+'</div></button>'
+            + '</div><div id="completionChartWrap"><canvas id="chartCompletion"></canvas></div></div>'
+            + '<div class="chart-full"><div class="chart-header"><h3 id="outputChartTitle">'+outputTitle+'</h3></div>'
+            + '<canvas id="chartDaily"></canvas></div>'
+            + '<div class="charts-half-grid">'
+            + '  <div class="chart-box"><h3>'+T.costTitle+'</h3><canvas id="chartCost"></canvas></div>'
+            + '  <div class="chart-box"><h3>'+T.activeDaysTitle+'</h3><canvas id="chartActiveDays"></canvas></div>'
+            + '</div>'
+            + renderRoadmap(data.roadmap)
+            + renderProjectionTable(data.projection);
+
+        document.getElementById('activitiesData').innerHTML = html;
+        drawCumulative(data.daily_output, data.summary.rows);
+        drawCompletion(data.summary);
+        drawDailyOutput(data.daily_output);
+        drawCostPie(data.cost_breakdown);
+        drawActiveDaysPie(data.summary);
+        attachCheckboxHandlers();
+    }
+
+    /* ================================================================
+       CHECKBOX FILTER — apply to charts
+       ================================================================ */
+    function attachCheckboxHandlers() {
+        setTimeout(function() {
+            var chkAll = document.getElementById('chkAll');
+            var chks = document.querySelectorAll('.activity-chk');
+            if (chkAll) {
+                chkAll.addEventListener('change', function() {
+                    chks.forEach(function(c){c.checked = chkAll.checked;});
+                });
+            }
+        }, 60);
+    }
+
+    function applyCheckboxFilter() {
+        var chks = document.querySelectorAll('.activity-chk');
+        if (!chks.length) { checkedActivities = null; return; }
+        var selected = new Set();
+        chks.forEach(function(c){ if(c.checked) selected.add(c.value); });
+        checkedActivities = selected.size === chks.length ? null : selected;
+        if (lastActivitiesData) renderActivities(lastActivitiesData);
+    }
+
+    /* ================================================================
+       SORTABLE TABLE WITH CHECKBOXES
+       ================================================================ */
+    function renderSummaryTable(summary) {
+        var rows = summary.rows;
+        if (!rows.length) return '<div class="card"><p>'+T.na+'</p></div>';
+
+        var cols = [
+            ['activity',       T.activity,    'alpha'],
+            ['unit_label',     T.unit,        'alpha'],
+            ['total_amount',   T.totalDone,   'num'],
+            ['planned_amount', T.planned,     'num'],
+            ['progress',       T.progress,    'num'],
+            ['cost_done',      T.costDone,    'num'],
+            ['planned_cost',   T.plannedCost, 'num'],
+            ['first_date',     T.firstDate,   'alpha'],
+            ['last_date',      T.lastDate,    'alpha'],
+            ['days_active',    T.daysActive,  'num'],
+            ['avg_amount',     T.avgAmount,   'num'],
+        ];
+
+        if (sortState.col !== null) {
+            var sc = sortState.col;
+            var sd = sortState.dir;
+            rows = rows.slice().sort(function(a, b) {
+                var va = a[sc], vb = b[sc];
+                if (va === null || va === undefined) va = sd==='asc' ? Infinity : -Infinity;
+                if (vb === null || vb === undefined) vb = sd==='asc' ? Infinity : -Infinity;
+                if (typeof va === 'string') {
+                    return sd==='asc' ? va.localeCompare(vb, 'fa') : vb.localeCompare(va, 'fa');
+                }
+                return sd==='asc' ? va - vb : vb - va;
+            });
+        }
+
+        /* Checkbox header */
+        var thChk = '<th class="chk-col"><input type="checkbox" id="chkAll" checked title="'+T.select+'"></th>';
+
+        var ths = thChk + cols.map(function(c) {
+            var icon = '⇅';
+            var cls = '';
+            if (sortState.col === c[0]) {
+                cls = sortState.dir === 'asc' ? ' sorted-asc' : ' sorted-desc';
+                icon = sortState.dir === 'asc' ? '▲' : '▼';
+            }
+            return '<th class="' + cls + '" data-sortcol="'+c[0]+'" data-sorttype="'+c[2]+'">'
+                + c[1] + ' <span class="sort-icon">'+icon+'</span></th>';
+        }).join('');
+
+        var trs = rows.map(function(r) {
+            var prog = r.progress !== null ? r.progress.toFixed(1)+'%' : T.na;
+            var progW = r.progress !== null ? Math.min(r.progress, 100) : 0;
+            var checked = isActivityChecked(r.activity) ? ' checked' : '';
+            return '<tr>'
+                +'<td class="chk-col"><input type="checkbox" class="activity-chk" value="'+r.activity+'"'+checked+'></td>'
+                +'<td>'+r.activity+'</td>'
+                +'<td class="num">'+r.unit_label+'</td>'
+                +'<td class="num">'+fmt(r.total_amount)+'</td>'
+                +'<td class="num">'+fmt(r.planned_amount)+'</td>'
+                +'<td class="num">'+prog+' <span class="prog-bar"><span class="fill" style="width:'+progW+'%"></span></span></td>'
+                +'<td class="num">'+fmt(r.cost_done)+'</td>'
+                +'<td class="num">'+fmt(r.planned_cost)+'</td>'
+                +'<td class="num">'+toJalali(r.first_date)+'</td>'
+                +'<td class="num">'+toJalali(r.last_date)+'</td>'
+                +'<td class="num">'+r.days_active+'</td>'
+                +'<td class="num">'+fmt(r.avg_amount)+'</td>'
+                +'</tr>';
+        }).join('');
+        trs += '<tr class="total-row">'
+            +'<td></td>'
+            +'<td colspan="5">'+T.total+'</td>'
+            +'<td class="num">'+fmt(summary.total_cost_done)+'</td>'
+            +'<td class="num">'+fmt(summary.total_planned_cost)+'</td>'
+            +'<td colspan="4"></td></tr>';
+
+        var tableId = 'summaryTbl';
+        var html = '<div class="card"><h2>'+T.summaryTitle+'</h2>'
+            +'<div style="margin-bottom:10px;"><button class="btn-apply" onclick="applyCheckboxFilter()" style="font-size:11px; padding:4px 14px;">'
+            + (LANG==='fa' ? 'فیلتر نمودارها بر اساس انتخاب' : 'Filter charts by selection') + '</button></div>'
+            +'<div class="tbl-wrap"><table class="data-tbl" id="'+tableId+'"><thead><tr>'
+            + ths
+            +'</tr></thead><tbody>'+trs+'</tbody></table></div></div>';
+
+        setTimeout(function() {
+            var tbl = document.getElementById(tableId);
+            if (!tbl) return;
+            tbl.querySelectorAll('th[data-sortcol]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sortcol');
+                    if (sortState.col === col) {
+                        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortState.col = col;
+                        sortState.dir = 'asc';
+                    }
+                    if (lastActivitiesData) renderActivities(lastActivitiesData);
+                });
+            });
+        }, 50);
+
+        return html;
+    }
+
+    /* Make applyCheckboxFilter globally accessible */
+    window.applyCheckboxFilter = applyCheckboxFilter;
+
+    /* ── Roadmap Coverage with gridlines ── */
+    function renderRoadmap(segments) {
+        if (!segments.length) return '';
+        var fSegments = checkedActivities ? segments.filter(function(s){return isActivityChecked(s.operation_type);}) : segments;
+        if (!fSegments.length) return '';
+
+        var types = [...new Set(fSegments.map(function(s){return s.operation_type;}))];
+        var minM = Math.min.apply(null, fSegments.map(function(s){return s.start_m;}));
+        var maxM = Math.max.apply(null, fSegments.map(function(s){return s.end_m;}));
+        var range = maxM - minM || 1;
+
+        /* Build gridline ticks (every ~10% of range or nice interval) */
+        var step = Math.pow(10, Math.floor(Math.log10(range)));
+        if (range / step < 4) step = step / 2;
+        if (range / step > 12) step = step * 2;
+        var ticks = [];
+        var t = Math.ceil(minM / step) * step;
+        while (t <= maxM) {
+            ticks.push(t);
+            t += step;
+        }
+
+        var rulerHtml = ticks.map(function(tk) {
+            var pct = ((tk - minM) / range * 100).toFixed(2);
+            return '<div class="tick" style="left:'+pct+'%"></div>'
+                 + '<div class="tick-label" style="left:'+pct+'%">'+tk+'m</div>';
+        }).join('');
+
+        var gridlinesHtml = ticks.map(function(tk) {
+            var pct = ((tk - minM) / range * 100).toFixed(2);
+            return '<div class="roadmap-gridline" style="left:'+pct+'%"></div>';
+        }).join('');
+
+        var rowsHtml = types.map(function(typ) {
+            var segs = fSegments.filter(function(s){return s.operation_type===typ;});
+            var color = colorFor(typ);
+            var bars = segs.map(function(s) {
+                var left = ((s.start_m - minM) / range * 100).toFixed(2);
+                var width = ((s.end_m - s.start_m) / range * 100).toFixed(2);
+                return '<div title="'+toJalali(s.date)+'\n'+s.start_station+' → '+s.end_station+'\nAmount: '+s.amount+'\nCost: '+fmt(s.cost)+'"'
+                    +' style="position:absolute; left:'+left+'%; width:'+Math.max(parseFloat(width),0.5)+'%;'
+                    +' height:20px; background:'+color+'; opacity:0.7; border-radius:3px; top:2px; z-index:1;"></div>';
+            }).join('');
+            return '<tr class="roadmap-bar-row"><td style="width:140px; font-size:11px; white-space:nowrap;">'+typ+'</td>'
+                +'<td style="position:relative; height:24px;">'+gridlinesHtml+bars+'</td></tr>';
+        }).join('');
+
+        return '<div class="card"><h2>'+T.roadmapTitle+'</h2>'
+            +'<div style="position:relative; margin-bottom:4px; margin-left:140px; height:18px;" class="roadmap-ruler">'
+            +rulerHtml+'</div>'
+            +'<div class="tbl-wrap"><table style="width:100%; table-layout:fixed;">'
+            +'<tbody>'+rowsHtml+'</tbody></table></div></div>';
+    }
+
+    /* ── Projection Table with fixed alignment ── */
+    function renderProjectionTable(proj) {
+        if (!proj.length) return '';
+        var fProj = checkedActivities ? proj.filter(function(r){return isActivityChecked(r.activity);}) : proj;
+        if (!fProj.length) return '';
+
+        var trs = fProj.map(function(r) {
+            return '<tr>'
+                +'<td>'+r.activity+'</td>'
+                +'<td>'+fmt(r.total_done)+' / '+fmt(r.planned_amount)+'</td>'
+                +'<td>'+fmt(r.current_rate)+'</td>'
+                +'<td>'+fmt(r.remaining)+'</td>'
+                +'<td>'+(r.days_to_finish !== null ? r.days_to_finish : T.na)+'</td>'
+                +'<td>'+(r.projected_end ? toJalali(r.projected_end) : T.na)+'</td>'
+                +'</tr>';
+        }).join('');
+        return '<div class="card"><h2>'+T.projTitle+'</h2>'
+            +'<div class="tbl-wrap"><table class="data-tbl forecast-tbl"><thead><tr>'
+            +'<th>'+T.activity+'</th><th>'+T.totalDone+' / '+T.planned+'</th>'
+            +'<th>'+T.projRate+'</th><th>'+T.projRemain+'</th>'
+            +'<th>'+T.projDays+'</th><th>'+T.projEnd+'</th>'
+            +'</tr></thead><tbody>'+trs+'</tbody></table></div></div>';
+    }
+
+    /* ================================================================
+       CHARTS
+       ================================================================ */
+
+    /* ── Doughnut percent label plugin (only for doughnut charts) ── */
+    const percentLabelPlugin = {
+        id: 'pctLabel',
+        afterDatasetsDraw(chart) {
+            if (chart.config.type !== 'doughnut') return;
+            var ctx2 = chart.ctx;
+            chart.data.datasets.forEach(function(ds, dsIdx) {
+                var meta = chart.getDatasetMeta(dsIdx);
+                var total = ds.data.reduce(function(a,b){return a+b;},0);
+                if (total <= 0) return;
+                meta.data.forEach(function(arc, idx) {
+                    var pct = Math.round(ds.data[idx] / total * 100);
+                    if (pct < 1) return;  // skip tiny slices
+                    var pos = arc.tooltipPosition();
+                    ctx2.save();
+                    ctx2.fillStyle = '#fff';
+                    ctx2.font = 'bold 11px sans-serif';
+                    ctx2.textAlign = 'center';
+                    ctx2.textBaseline = 'middle';
+                    ctx2.fillText(pct + '%', pos.x, pos.y);
+                    ctx2.restore();
+                });
+            });
+        }
+    };
+
+    /* ── Chart: Cumulative Progress (stacked area, fixed height) ── */
+    function drawCumulative(dailyOutput, summaryRows) {
+        var ctx = document.getElementById('chartCumul');
+        if (!ctx || !dailyOutput.length) return;
+
+        /* Build cumulative data from daily output */
+        var activityCumulative = {};  /* {activity: {date: cumulative_amount, ...}, ...} */
+        var allActivities = new Set();
+        
+        dailyOutput.forEach(function(day) {
+            Object.keys(day.activities).forEach(function(act) {
+                if (!activityCumulative[act]) activityCumulative[act] = {};
+                allActivities.add(act);
+            });
+        });
+        
+        /* Compute cumulative amounts per activity */
+        var cumulTotals = {};  /* {activity: running_total, ...} */
+        dailyOutput.forEach(function(day) {
+            [...allActivities].forEach(function(act) {
+                if (!cumulTotals[act]) cumulTotals[act] = 0;
+                cumulTotals[act] += day.activities[act] || 0;
+                activityCumulative[act][day.date] = Math.round(cumulTotals[act] * 100) / 100;
+            });
+        });
+
+        /* Filter by checked activities and sort */
+        var acts = [...allActivities]
+            .filter(function(a) { return isActivityChecked(a); })
+            .sort();
+        
+        var dates = dailyOutput.map(function(d) { return toJalali(d.date); });
+        
+        /* Build datasets for stacked area */
+        var datasets = acts.map(function(act) {
+            var data = dailyOutput.map(function(day) {
+                return activityCumulative[act][day.date] || 0;
+            });
+            return {
+                label: act,
+                data: data,
+                backgroundColor: colorFor(act) + '80',  /* 50% opacity for stacking */
+                borderColor: colorFor(act),
+                borderWidth: 1,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 2,
+                pointBackgroundColor: colorFor(act),
+            };
+        });
+        
+        activeCharts.cumul = new Chart(ctx, {
+            type: 'line',
+            data: { labels: dates, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14 } }
+                },
+                scales: {
+                    x: { type: 'category' },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: (LANG === 'fa' ? 'مقدار تجمعی' : 'Cumulative Amount') }
+                    }
+                }
+            }
+        });
+    }
+
+    /* ── Chart: Activity Completion % (horizontal bar, full-width, dynamic height) ── */
+    function drawCompletion(summary) {
+        var ctx = document.getElementById('chartCompletion');
+        if (!ctx || !summary.rows.length) return;
+        var rows = summary.rows
+            .filter(function(r){return isActivityChecked(r.activity) && r.planned_amount > 0;})
+            .slice().sort(function(a,b){return (a.progress||0)-(b.progress||0);});
+
+        /* Dynamic height based on filtered rows */
+        var minHeight = 40 + rows.length * 20;
+        var wrap = document.getElementById('completionChartWrap');
+        if (wrap) wrap.style.height = minHeight + 'px';
+
+        var labels = rows.map(function(r){return r.activity;});
+        var values = rows.map(function(r){return r.progress !== null ? parseFloat(r.progress.toFixed(1)) : 0;});
+        var colors = rows.map(function(r){
+            var p = r.progress || 0;
+            if (p >= 90) return '#10b981';
+            if (p >= 60) return '#3b82f6';
+            if (p >= 30) return '#f59e0b';
+            return '#ef4444';
+        });
+
+        /* Fixed height, same as cumulative */
+
+        activeCharts.completion = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        anchor: 'end', align: 'end', color: '#374151',
+                        font: { size: 11, weight: 'bold' },
+                        formatter: function(v) { return Math.round(v) + '%'; },
+                        clamp: true,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var r = rows[ctx.dataIndex];
+                                return fmt(r.total_amount) + ' / ' + fmt(r.planned_amount) + ' (' + ctx.parsed.x.toFixed(1) + '%)';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true, max: 100, title: { display: true, text: '%' },
+                         grid: { color: '#e5e7eb' } },
+                    y: { grid: { display: false } }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    /* ── Chart: Work Output (stacked bar, full-width, synced with unit filter) ── */
+    function drawDailyOutput(daily) {
+        var ctx = document.getElementById('chartDaily');
+        if (!ctx) return;
+        var allActs = new Set();
+        daily.forEach(function(d){Object.keys(d.activities).forEach(function(a){
+            if (isActivityChecked(a)) allActs.add(a);
+        });});
+        var acts = [...allActs];
+        var labels = daily.map(function(d){return toJalali(d.date);});
+        var datasets = acts.map(function(a) {
+            return {
+                label: a,
+                data: daily.map(function(d){return d.activities[a] || 0;}),
+                backgroundColor: colorFor(a) + 'cc',
+            };
+        });
+        activeCharts.daily = new Chart(ctx, {
+            type: 'bar', data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14 } },
+                           datalabels: { display: false } },
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+            }
+        });
+    }
+
+    /* ── Chart: Cost Doughnut (no legend, % on slices) ── */
+    function drawCostPie(costData) {
+        var ctx = document.getElementById('chartCost');
+        if (!ctx) return;
+        var fData = checkedActivities ? costData.filter(function(c){return isActivityChecked(c.activity);}) : costData;
+        activeCharts.cost = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: fData.map(function(c){return c.activity;}),
+                datasets: [{ data: fData.map(function(c){return c.total_cost;}),
+                    backgroundColor: fData.map(function(c){return colorFor(c.activity);}) }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var label = ctx.label || '';
+                                var value = fmt(ctx.parsed);
+                                var total = ctx.dataset.data.reduce(function(a,b){return a+b;}, 0);
+                                var pct = total > 0 ? Math.round(ctx.parsed / total * 100) + '%' : '';
+                                return label + ': ' + value + ' (' + pct + ')';
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [percentLabelPlugin]
+        });
+    }
+
+    /* ── Chart: Active Days Doughnut (no legend, % on slices) ── */
+    function drawActiveDaysPie(summary) {
+        var ctx = document.getElementById('chartActiveDays');
+        if (!ctx || !summary.rows.length) return;
+        var rows = summary.rows.filter(function(r){return r.days_active > 0 && isActivityChecked(r.activity);});
+        activeCharts.activeDays = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: rows.map(function(r){return r.activity;}),
+                datasets: [{ data: rows.map(function(r){return r.days_active;}),
+                    backgroundColor: rows.map(function(r){return colorFor(r.activity);}) }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var label = ctx.label || '';
+                                var value = ctx.parsed;
+                                var total = ctx.dataset.data.reduce(function(a,b){return a+b;}, 0);
+                                var pct = total > 0 ? Math.round(ctx.parsed / total * 100) + '%' : '';
+                                return label + ': ' + value + (LANG==='fa' ? ' روز' : ' days') + ' (' + pct + ')';
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [percentLabelPlugin]
+        });
+    }
+
+    /* ================================================================
+       HUMAN RESOURCES SECTION
+       ================================================================ */
+    const API_HR = '{{ url_for("boss.api_human_resources", project_id=project.id) }}';
+    
+    const T_HR = {
+        title:         LANG==='fa' ? 'نیروی انسانی' : 'Human Resources',
+        position:      LANG==='fa' ? 'پست سازمانی' : 'Position',
+        daysPresent:   LANG==='fa' ? 'روزهای حضور' : 'Days Present',
+        peopleDays:    LANG==='fa' ? 'نفر-روز' : 'People·Days',
+        totalHours:    LANG==='fa' ? 'کل ساعات کار' : 'Total Hours',
+        avgHours:      LANG==='fa' ? 'میانگین ساعات' : 'Avg Hours',
+        expectedDays:  LANG==='fa' ? 'روزهای مورد انتظار' : 'Expected Days',
+        presenceRate:  LANG==='fa' ? 'درصد حضور' : 'Presence Rate',
+        summaryTitle:  LANG==='fa' ? 'خلاصه نیروی انسانی' : 'HR Summary',
+        hoursByPosTitle: LANG==='fa' ? 'ساعات کار به تفکیک پست' : 'Hours by Position',
+        headcountTitle: LANG==='fa' ? 'تعداد نیرو در طول زمان' : 'Headcount Over Time',
+        presenceTitle: LANG==='fa' ? 'درصد حضور به تفکیک پست' : 'Presence Rate by Position',
+        hoursDistTitle: LANG==='fa' ? 'توزیع ساعات کار' : 'Hours Distribution',
+        hoursTrendTitle: LANG==='fa' ? 'روند ساعات کار روزانه' : 'Daily Hours Trend',
+        count:         LANG==='fa' ? 'تعداد' : 'Count',
+        workingHours:  LANG==='fa' ? 'ساعات کار' : 'Working Hours',
+        dailyHours:    LANG==='fa' ? 'ساعات روزانه' : 'Daily Hours',
+        notes:         LANG==='fa' ? 'یادداشت' : 'Notes',
+        others:        LANG==='fa' ? 'سایر' : 'Others',
+        unitLabel:     LANG==='fa' ? 'واحد' : 'Unit',
+        from:          LANG==='fa' ? 'از' : 'From',
+        to:            LANG==='fa' ? 'تا' : 'To',
+        apply:         LANG==='fa' ? 'اعمال' : 'Apply',
+        perDay:        LANG==='fa' ? 'روزانه' : 'Per Day',
+        perWeek:       LANG==='fa' ? 'هفتگی' : 'Per Week',
+        perMonth:      LANG==='fa' ? 'ماهانه' : 'Per Month',
+        perHour:       LANG==='fa' ? 'ساعتی' : 'Per Hour',
+        loading:       LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+        total:         LANG==='fa' ? 'جمع کل' : 'Total',
+        date:          LANG==='fa' ? 'تاریخ' : 'Date',
+    };
+
+    let lastHRData = null;
+
+    function loadHR() {
+        const container = document.getElementById('sectionContent');
+        container.innerHTML = `
+            <div class="section-header">
+                <h1>👷 ${T_HR.title}</h1>
+                <p class="subtitle">{{ project.name }}</p>
+            </div>
+            <div class="filters-bar">
+                <label>${T_HR.unitLabel}:</label>
+                <select id="unitSelectHR">
+                    <option value="per_day" selected>${T_HR.perDay}</option>
+                    <option value="per_week">${T_HR.perWeek}</option>
+                    <option value="per_month">${T_HR.perMonth}</option>
+                   <option value="per_hour">${T_HR.perHour}</option>
+                </select>
+                <label>${T_HR.from}:</label>
+                <input type="text" id="fromDateHR" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <label>${T_HR.to}:</label>
+                <input type="text" id="toDateHR" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <button class="btn-apply" id="btnApplyHR">${T_HR.apply}</button>
+            </div>
+            <div id="hrData">
+                <div class="loading-overlay"><div><div class="spinner"></div><p>${T_HR.loading}</p></div></div>
+            </div>
+        `;
+        
+        if (typeof $ !== 'undefined' && $.fn.persianDatepicker) {
+            $('#fromDateHR').persianDatepicker({
+                format: 'YYYY/MM/DD', autoClose: true, initialValue: false,
+                calendar: { persian: { locale: 'fa' } }
+            });
+            $('#toDateHR').persianDatepicker({
+                format: 'YYYY/MM/DD', autoClose: true, initialValue: false,
+                calendar: { persian: { locale: 'fa' } }
+            });
+        }
+        
+        document.getElementById('unitSelectHR').addEventListener('change', fetchHR);
+        document.getElementById('btnApplyHR').addEventListener('click', fetchHR);
+        fetchHR();
+    }
+
+    async function fetchHR() {
+        var unit = document.getElementById('unitSelectHR').value;
+        var fromVal = document.getElementById('fromDateHR').value;
+        var toVal = document.getElementById('toDateHR').value;
+        
+        var fromGreg = await parseJalaliStr(fromVal);
+        var toGreg = await parseJalaliStr(toVal);
+
+        var url = API_HR + '?unit=' + unit;
+        if (fromGreg) url += '&from_date=' + fromGreg;
+        if (toGreg) url += '&to_date=' + toGreg;
+
+        document.getElementById('hrData').innerHTML =
+            '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T_HR.loading+'</p></div></div>';
+
+        fetch(url).then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }).then(res => {
+            if (!res.success) throw new Error(res.error || 'API error');
+            lastHRData = res.data;
+            renderHR(res.data);
+        }).catch(function(err) {
+            console.error('HR API error:', err);
+            document.getElementById('hrData').innerHTML =
+                '<div class="loading-overlay"><p style="color:#ef4444;">Error loading data: ' + err.message + '</p></div>';
+        });
+    }
+
+    function renderHR(data) {
+        var html = '';
+        
+        // Columns definition for sorting
+        var cols = [
+            ['post',           T_HR.position,      'alpha'],
+            ['days_present',   T_HR.daysPresent,   'num'],
+            ['people_days',    T_HR.peopleDays,    'num'],
+            ['total_hours',    T_HR.totalHours,    'num'],
+            ['avg_hours',      T_HR.avgHours,      'num'],
+            ['expected_days',  T_HR.expectedDays,  'num'],
+            ['presence_rate',  T_HR.presenceRate,  'num']
+        ];
+        
+        var rows = data.summary.rows || [];
+        
+        // Apply sorting if active
+        if (sortStateHR.col !== null) {
+            var sc = sortStateHR.col;
+            var sd = sortStateHR.dir;
+            rows = rows.slice().sort(function(a, b) {
+                var va = a[sc], vb = b[sc];
+                if (va === null || va === undefined) va = sd==='asc' ? Infinity : -Infinity;
+                if (vb === null || vb === undefined) vb = sd==='asc' ? Infinity : -Infinity;
+                if (typeof va === 'string') {
+                    return sd==='asc' ? va.localeCompare(vb, 'fa') : vb.localeCompare(va, 'fa');
+                }
+                return sd==='asc' ? va - vb : vb - va;
+            });
+        }
+        
+        // Summary table - using exact same structure as Activities with sortable headers
+        html += '<div class="card"><h2>' + T_HR.summaryTitle + '</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl" id="hrSummaryTbl"><thead><tr>';
+        html += '<th>#</th>';
+        
+        // Generate sortable column headers
+        cols.forEach(function(c) {
+            var icon = '⇅';
+            var cls = '';
+            if (sortStateHR.col === c[0]) {
+                cls = sortStateHR.dir === 'asc' ? ' sorted-asc' : ' sorted-desc';
+                icon = sortStateHR.dir === 'asc' ? '▲' : '▼';
+            }
+            var thClass = (c[2] === 'num' ? 'num ' : '') + cls;
+            html += '<th class="' + thClass + '" data-sortcol="'+c[0]+'" data-sorttype="'+c[2]+'">'
+                + c[1] + (c[2] === 'num' && c[1] !== T_HR.presenceRate ? '' : '') 
+                + ' <span class="sort-icon">'+icon+'</span></th>';
+        });
+        
+        // Add % for presence rate header specifically
+        html = html.replace(T_HR.presenceRate + ' <span', T_HR.presenceRate + ' % <span');
+        
+        html += '</tr></thead><tbody>';
+        
+        rows.forEach(function(r, i) {
+            html += '<tr>';
+            html += '<td class="num">'+(i+1)+'</td>';
+            html += '<td>'+r.post+'</td>';
+            html += '<td class="num">'+fmt(r.days_present)+'</td>';
+            html += '<td class="num">'+fmt(r.people_days)+'</td>';
+            html += '<td class="num">'+fmt(r.total_hours)+'</td>';
+            html += '<td class="num">'+fmt(r.avg_hours)+'</td>';
+            html += '<td class="num">'+fmt(r.expected_days)+'</td>';
+            var rateClass = r.presence_rate >= 90 ? 'rate-good' : r.presence_rate >= 70 ? 'rate-warning' : 'rate-poor';
+            html += '<td class="num '+rateClass+'">'+fmt(r.presence_rate)+'</td>';
+            html += '</tr>';
+        });
+        
+        // Totals row
+        var totals = data.summary.totals || {};
+        html += '<tr class="total-row">';
+        html += '<td colspan="2">'+T_HR.total+'</td>';
+        html += '<td class="num">-</td>';
+        html += '<td class="num">'+fmt(totals.people_days)+'</td>';
+        html += '<td class="num">'+fmt(totals.total_hours)+'</td>';
+        html += '<td class="num" colspan="3">-</td>';
+        html += '</tr>';
+        
+        html += '</tbody></table></div></div>';
+        
+        // Charts - using exact same structure as Activities
+        // Chart 1: Total hours by position (horizontal bar)
+        html += '<div class="chart-full"><div class="chart-header"><h3>'+T_HR.hoursByPosTitle+'</h3></div>';
+        html += '<div style="position: relative; height: 400px; width: 100%;"><canvas id="hrHoursChart"></canvas></div></div>';
+        
+        // Chart 2: Headcount over time (stacked area)
+        html += '<div class="chart-full"><div class="chart-header"><h3>'+T_HR.headcountTitle+'</h3></div>';
+        html += '<div style="position: relative; height: 400px; width: 100%;"><canvas id="hrHeadcountChart"></canvas></div></div>';
+        
+        // Chart 3: Presence rate (horizontal bar with colors)
+        html += '<div class="chart-full"><div class="chart-header"><h3>'+T_HR.presenceTitle+'</h3></div>';
+        html += '<div style="position: relative; height: 400px; width: 100%;"><canvas id="hrPresenceChart"></canvas></div></div>';
+        
+        // Charts 4 & 5: Hours distribution and trend (half-width grid like Activities)
+        html += '<div class="charts-half-grid">';
+        html += '  <div class="chart-box"><h3>'+T_HR.hoursDistTitle+'</h3><canvas id="hrHoursDistChart"></canvas></div>';
+        html += '  <div class="chart-box"><h3>'+T_HR.hoursTrendTitle+'</h3><canvas id="hrHoursTrendChart"></canvas></div>';
+        html += '</div>';
+        
+        document.getElementById('hrData').innerHTML = html;
+        
+        // Add click handlers for sortable columns
+        setTimeout(function() {
+            var tbl = document.getElementById('hrSummaryTbl');
+            if (!tbl) return;
+            tbl.querySelectorAll('th[data-sortcol]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sortcol');
+                    if (sortStateHR.col === col) {
+                        sortStateHR.dir = sortStateHR.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortStateHR.col = col;
+                        sortStateHR.dir = 'asc';
+                    }
+                    if (lastHRData) renderHR(lastHRData);
+                });
+            });
+        }, 50);
+        
+        // Draw charts
+        drawHRCharts(data);
+    }
+
+    function drawHRCharts(data) {
+        // Chart 1: Total hours by position (horizontal bar)
+        var hoursData = data.hours_by_position || [];
+        if (hoursData.length > 0) {
+            var ctx = document.getElementById('hrHoursChart');
+            if (ctx) {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: hoursData.map(d => d.post),
+                        datasets: [{
+                            label: T_HR.totalHours,
+                            data: hoursData.map(d => d.total_hours),
+                            backgroundColor: '#3b82f6'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, title: { display: true, text: T_HR.totalHours } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Chart 2: Headcount over time (stacked area)
+        var headcountData = data.headcount_over_time || [];
+        if (headcountData.length > 0) {
+            var dates = headcountData.map(d => toJalali(d.date));
+            var positions = new Set();
+            headcountData.forEach(d => {
+                Object.keys(d).forEach(k => {
+                    if (k !== 'date') positions.add(k);
+                });
+            });
+            
+            var datasets = [];
+            positions.forEach((pos, idx) => {
+                datasets.push({
+                    label: pos,
+                    data: headcountData.map(d => d[pos] || 0),
+                    backgroundColor: getColorForIndex(idx) + '80',
+                    borderColor: getColorForIndex(idx),
+                    borderWidth: 1,
+                    fill: true,
+                    tension: 0.4
+                });
+            });
+            
+            var ctx = document.getElementById('hrHeadcountChart');
+            if (ctx) {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true, position: 'bottom' } },
+                        scales: {
+                            x: { title: { display: true, text: T_HR.date } },
+                            y: { stacked: true, beginAtZero: true, title: { display: true, text: T_HR.count } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Chart 3: Presence rate (horizontal bar with colors)
+        var presenceData = data.presence_analysis || [];
+        if (presenceData.length > 0) {
+            var ctx = document.getElementById('hrPresenceChart');
+            if (ctx) {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: presenceData.map(d => d.post),
+                        datasets: [{
+                            label: T_HR.presenceRate,
+                            data: presenceData.map(d => d.presence_rate),
+                            backgroundColor: presenceData.map(d => 
+                                d.presence_rate >= 90 ? '#10b981' : 
+                                d.presence_rate >= 70 ? '#f59e0b' : '#ef4444'
+                            )
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, max: 120, title: { display: true, text: T_HR.presenceRate + ' %' } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Chart 4: Hours distribution (doughnut) - uses chart-box size
+        if (hoursData.length > 0) {
+            var ctx = document.getElementById('hrHoursDistChart');
+            if (ctx) {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: hoursData.map(d => d.post),
+                        datasets: [{
+                            data: hoursData.map(d => d.total_hours),
+                            backgroundColor: hoursData.map((_, i) => getColorForIndex(i))
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        var total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                                        var pct = ((ctx.parsed / total) * 100).toFixed(1);
+                                        return ctx.label + ': ' + pct + '%';
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: [percentLabelPlugin]
+                });
+            }
+        }
+        
+        // Chart 5: Daily hours trend (line) - uses chart-box size
+        var trendData = data.daily_hours_trend || [];
+        if (trendData.length > 0) {
+            var ctx = document.getElementById('hrHoursTrendChart');
+            if (ctx) {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: trendData.map(d => toJalali(d.date)),
+                        datasets: [{
+                            label: T_HR.dailyHours,
+                            data: trendData.map(d => d.total_hours),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { title: { display: true, text: T_HR.date } },
+                            y: { beginAtZero: true, title: { display: true, text: T_HR.dailyHours } }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    function getColorForIndex(i) {
+        var colors = [
+            '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+            '#14b8a6', '#eab308', '#a855f7', '#22c55e', '#fb923c'
+        ];
+        return colors[i % colors.length];
+    }
+
+    /* ================================================================
+       TOOLS & EQUIPMENT SECTION
+       ================================================================ */
+    const API_TOOLS = '{{ url_for("boss.api_tools_equipment", project_id=project.id) }}';
+
+    const T_TOOLS = {
+        title:         LANG==='fa' ? 'ماشین‌آلات و تجهیزات' : 'Tools & Equipment',
+        equipment:     LANG==='fa' ? 'تجهیزات' : 'Equipment',
+        totalDays:     LANG==='fa' ? 'روز گزارش' : 'Days Reported',
+        daysActive:    LANG==='fa' ? 'روز فعال' : 'Active',
+        daysInactive:  LANG==='fa' ? 'روز غیرفعال' : 'Inactive',
+        daysRepair:    LANG==='fa' ? 'روز تعمیر' : 'Repair',
+        activePct:     LANG==='fa' ? 'فعال %' : 'Active %',
+        unitsDays:     LANG==='fa' ? 'دستگاه·روز' : 'Units·Days',
+        totalHours:    LANG==='fa' ? 'کل ساعات' : 'Total Hours',
+        avgHours:      LANG==='fa' ? 'میانگین ساعات' : 'Avg Hours',
+        plannedQty:    LANG==='fa' ? 'تعداد برنامه' : 'Planned Qty',
+        utilPct:       LANG==='fa' ? 'بهره‌وری %' : 'Utilisation %',
+        summaryTitle:  LANG==='fa' ? 'خلاصه تجهیزات' : 'Equipment Summary',
+        total:         LANG==='fa' ? 'جمع کل' : 'Total',
+        unitLabel:     LANG==='fa' ? 'واحد' : 'Unit',
+        from:          LANG==='fa' ? 'از' : 'From',
+        to:            LANG==='fa' ? 'تا' : 'To',
+        apply:         LANG==='fa' ? 'اعمال' : 'Apply',
+        perDay:        LANG==='fa' ? 'روزانه' : 'Per Day',
+        perWeek:       LANG==='fa' ? 'هفتگی' : 'Per Week',
+        perMonth:      LANG==='fa' ? 'ماهانه' : 'Per Month',
+        perHour:       LANG==='fa' ? 'ساعتی' : 'Per Hour',
+        loading:       LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+    };
+
+    let lastToolsData = null;
+    let sortStateTools = { col: null, dir: 'asc' };
+
+    function loadTools() {
+        const container = document.getElementById('sectionContent');
+        container.innerHTML = `
+            <div class="section-header">
+                <h1>🚜 ${T_TOOLS.title}</h1>
+                <p class="subtitle">{{ project.name }}</p>
+            </div>
+            <div class="filters-bar">
+                <label>${T_TOOLS.unitLabel}:</label>
+                <select id="unitSelectTools">
+                    <option value="per_day" selected>${T_TOOLS.perDay}</option>
+                    <option value="per_week">${T_TOOLS.perWeek}</option>
+                    <option value="per_month">${T_TOOLS.perMonth}</option>
+                    <option value="per_hour">${T_TOOLS.perHour}</option>
+                </select>
+                <label>${T_TOOLS.from}:</label>
+                <input type="text" id="fromDateTools" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <label>${T_TOOLS.to}:</label>
+                <input type="text" id="toDateTools" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <button class="btn-apply" id="btnApplyTools">${T_TOOLS.apply}</button>
+            </div>
+            <div id="toolsData">
+                <div class="loading-overlay"><div><div class="spinner"></div><p>${T_TOOLS.loading}</p></div></div>
+            </div>
+        `;
+        if (typeof $ !== 'undefined' && $.fn.persianDatepicker) {
+            $('#fromDateTools').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+            $('#toDateTools').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+        }
+        document.getElementById('unitSelectTools').addEventListener('change', fetchTools);
+        document.getElementById('btnApplyTools').addEventListener('click', fetchTools);
+        fetchTools();
+    }
+
+    async function fetchTools() {
+        var unit = document.getElementById('unitSelectTools').value;
+        var fromVal = document.getElementById('fromDateTools').value;
+        var toVal = document.getElementById('toDateTools').value;
+        var fromGreg = await parseJalaliStr(fromVal);
+        var toGreg = await parseJalaliStr(toVal);
+        var url = API_TOOLS + '?unit=' + unit;
+        if (fromGreg) url += '&from_date=' + fromGreg;
+        if (toGreg) url += '&to_date=' + toGreg;
+        document.getElementById('toolsData').innerHTML = '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T_TOOLS.loading+'</p></div></div>';
+        fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(res => { if (!res.success) throw new Error(res.error || 'API error'); lastToolsData = res.data; renderTools(res.data); })
+        .catch(err => { document.getElementById('toolsData').innerHTML = '<div class="loading-overlay"><p style="color:#ef4444;">Error: '+err.message+'</p></div>'; });
+    }
+
+    function renderTools(data) {
+        var cols = [
+            ['equipment_name', T_TOOLS.equipment,   'alpha'],
+            ['total_days',     T_TOOLS.totalDays,    'num'],
+            ['days_active',    T_TOOLS.daysActive,   'num'],
+            ['days_inactive',  T_TOOLS.daysInactive, 'num'],
+            ['days_repair',    T_TOOLS.daysRepair,   'num'],
+            ['active_pct',     T_TOOLS.activePct,    'num'],
+            ['total_units_days', T_TOOLS.unitsDays,  'num'],
+            ['total_hours',    T_TOOLS.totalHours,   'num'],
+            ['avg_hours',      T_TOOLS.avgHours,     'num'],
+            ['planned_qty',    T_TOOLS.plannedQty,   'num'],
+            ['utilisation_pct', T_TOOLS.utilPct,      'num'],
+        ];
+        var rows = data.summary.rows || [];
+        if (sortStateTools.col !== null) {
+            var sc = sortStateTools.col, sd = sortStateTools.dir;
+            rows = rows.slice().sort(function(a, b) {
+                var va = a[sc], vb = b[sc];
+                if (va == null) va = sd==='asc' ? Infinity : -Infinity;
+                if (vb == null) vb = sd==='asc' ? Infinity : -Infinity;
+                if (typeof va === 'string') return sd==='asc' ? va.localeCompare(vb,'fa') : vb.localeCompare(va,'fa');
+                return sd==='asc' ? va - vb : vb - va;
+            });
+        }
+        var html = '<div class="card"><h2>'+T_TOOLS.summaryTitle+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl" id="toolsSummaryTbl"><thead><tr><th>#</th>';
+        cols.forEach(function(c) {
+            var icon = '⇅', cls = '';
+            if (sortStateTools.col === c[0]) { cls = sortStateTools.dir==='asc' ? ' sorted-asc' : ' sorted-desc'; icon = sortStateTools.dir==='asc' ? '▲' : '▼'; }
+            html += '<th class="'+(c[2]==='num'?'num ':'')+cls+'" data-sortcol="'+c[0]+'" data-sorttype="'+c[2]+'">'+c[1]+' <span class="sort-icon">'+icon+'</span></th>';
+        });
+        html += '</tr></thead><tbody>';
+        rows.forEach(function(r, i) {
+            var actCls = r.active_pct >= 80 ? 'rate-good' : r.active_pct >= 50 ? 'rate-warning' : 'rate-poor';
+            html += '<tr><td class="num">'+(i+1)+'</td>';
+            html += '<td>'+r.equipment_name+'</td>';
+            html += '<td class="num">'+fmt(r.total_days)+'</td>';
+            html += '<td class="num">'+fmt(r.days_active)+'</td>';
+            html += '<td class="num">'+fmt(r.days_inactive)+'</td>';
+            html += '<td class="num">'+fmt(r.days_repair)+'</td>';
+            html += '<td class="num '+actCls+'">'+fmt(r.active_pct)+'</td>';
+            html += '<td class="num">'+fmt(r.total_units_days)+'</td>';
+            html += '<td class="num">'+fmt(r.total_hours)+'</td>';
+            html += '<td class="num">'+fmt(r.avg_hours)+'</td>';
+            html += '<td class="num">'+fmt(r.planned_qty)+'</td>';
+            html += '<td class="num">'+fmt(r.utilisation_pct)+'</td></tr>';
+        });
+        var totals = data.summary.totals || {};
+        html += '<tr class="total-row"><td colspan="2">'+T_TOOLS.total+'</td>';
+        html += '<td class="num" colspan="5">-</td>';
+        html += '<td class="num">'+fmt(totals.total_units_days)+'</td>';
+        html += '<td class="num">'+fmt(totals.total_hours)+'</td>';
+        html += '<td class="num" colspan="3">-</td></tr>';
+        html += '</tbody></table></div></div>';
+
+        document.getElementById('toolsData').innerHTML = html;
+        setTimeout(function() {
+            var tbl = document.getElementById('toolsSummaryTbl');
+            if (!tbl) return;
+            tbl.querySelectorAll('th[data-sortcol]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sortcol');
+                    if (sortStateTools.col === col) sortStateTools.dir = sortStateTools.dir==='asc' ? 'desc' : 'asc';
+                    else { sortStateTools.col = col; sortStateTools.dir = 'asc'; }
+                    if (lastToolsData) renderTools(lastToolsData);
+                });
+            });
+        }, 50);
+    }
+
+    /* ================================================================
+       MATERIALS & RESOURCES SECTION
+       ================================================================ */
+    const API_MATERIALS = '{{ url_for("boss.api_materials", project_id=project.id) }}';
+
+    const T_MAT = {
+        title:         LANG==='fa' ? 'مصالح و منابع' : 'Materials & Resources',
+        material:      LANG==='fa' ? 'مصالح' : 'Material',
+        matUnit:       LANG==='fa' ? 'واحد' : 'Unit',
+        totalIn:       LANG==='fa' ? 'کل ورودی' : 'Total Incoming',
+        totalUsed:     LANG==='fa' ? 'کل مصرف' : 'Total Used',
+        stock:         LANG==='fa' ? 'موجودی' : 'Stock',
+        plannedTotal:  LANG==='fa' ? 'مقدار برنامه' : 'Planned',
+        inPctPlan:     LANG==='fa' ? 'ورودی/برنامه %' : 'In/Plan %',
+        usePctIn:      LANG==='fa' ? 'مصرف/ورودی %' : 'Used/In %',
+        avgIn:         LANG==='fa' ? 'میانگین ورودی' : 'Avg Incoming',
+        avgUsed:       LANG==='fa' ? 'میانگین مصرف' : 'Avg Used',
+        summaryTitle:  LANG==='fa' ? 'خلاصه مصالح' : 'Materials Summary',
+        total:         LANG==='fa' ? 'جمع کل' : 'Total',
+        unitLabel:     LANG==='fa' ? 'واحد' : 'Unit',
+        from:          LANG==='fa' ? 'از' : 'From',
+        to:            LANG==='fa' ? 'تا' : 'To',
+        apply:         LANG==='fa' ? 'اعمال' : 'Apply',
+        perDay:        LANG==='fa' ? 'روزانه' : 'Per Day',
+        perWeek:       LANG==='fa' ? 'هفتگی' : 'Per Week',
+        perMonth:      LANG==='fa' ? 'ماهانه' : 'Per Month',
+        perHour:       LANG==='fa' ? 'ساعتی' : 'Per Hour',
+        loading:       LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+    };
+
+    let lastMaterialsData = null;
+    let sortStateMat = { col: null, dir: 'asc' };
+
+    function loadMaterials() {
+        const container = document.getElementById('sectionContent');
+        container.innerHTML = `
+            <div class="section-header">
+                <h1>📦 ${T_MAT.title}</h1>
+                <p class="subtitle">{{ project.name }}</p>
+            </div>
+            <div class="filters-bar">
+                <label>${T_MAT.unitLabel}:</label>
+                <select id="unitSelectMat">
+                    <option value="per_day" selected>${T_MAT.perDay}</option>
+                    <option value="per_week">${T_MAT.perWeek}</option>
+                    <option value="per_month">${T_MAT.perMonth}</option>
+                    <option value="per_hour">${T_MAT.perHour}</option>
+                </select>
+                <label>${T_MAT.from}:</label>
+                <input type="text" id="fromDateMat" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <label>${T_MAT.to}:</label>
+                <input type="text" id="toDateMat" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <button class="btn-apply" id="btnApplyMat">${T_MAT.apply}</button>
+            </div>
+            <div id="matData">
+                <div class="loading-overlay"><div><div class="spinner"></div><p>${T_MAT.loading}</p></div></div>
+            </div>
+        `;
+        if (typeof $ !== 'undefined' && $.fn.persianDatepicker) {
+            $('#fromDateMat').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+            $('#toDateMat').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+        }
+        document.getElementById('unitSelectMat').addEventListener('change', fetchMaterials);
+        document.getElementById('btnApplyMat').addEventListener('click', fetchMaterials);
+        fetchMaterials();
+    }
+
+    async function fetchMaterials() {
+        var unit = document.getElementById('unitSelectMat').value;
+        var fromVal = document.getElementById('fromDateMat').value;
+        var toVal = document.getElementById('toDateMat').value;
+        var fromGreg = await parseJalaliStr(fromVal);
+        var toGreg = await parseJalaliStr(toVal);
+        var url = API_MATERIALS + '?unit=' + unit;
+        if (fromGreg) url += '&from_date=' + fromGreg;
+        if (toGreg) url += '&to_date=' + toGreg;
+        document.getElementById('matData').innerHTML = '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T_MAT.loading+'</p></div></div>';
+        fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(res => { if (!res.success) throw new Error(res.error || 'API error'); lastMaterialsData = res.data; renderMaterials(res.data); })
+        .catch(err => { document.getElementById('matData').innerHTML = '<div class="loading-overlay"><p style="color:#ef4444;">Error: '+err.message+'</p></div>'; });
+    }
+
+    function renderMaterials(data) {
+        var cols = [
+            ['material',          T_MAT.material,    'alpha'],
+            ['unit',              T_MAT.matUnit,     'alpha'],
+            ['total_incoming',    T_MAT.totalIn,     'num'],
+            ['total_used',        T_MAT.totalUsed,   'num'],
+            ['current_stock',     T_MAT.stock,       'num'],
+            ['usage_pct_incoming',T_MAT.usePctIn,    'num'],
+            ['avg_incoming',      T_MAT.avgIn,       'num'],
+            ['avg_used',          T_MAT.avgUsed,     'num'],
+        ];
+        var rows = data.summary.rows || [];
+        if (sortStateMat.col !== null) {
+            var sc = sortStateMat.col, sd = sortStateMat.dir;
+            rows = rows.slice().sort(function(a, b) {
+                var va = a[sc], vb = b[sc];
+                if (va == null) va = sd==='asc' ? Infinity : -Infinity;
+                if (vb == null) vb = sd==='asc' ? Infinity : -Infinity;
+                if (typeof va === 'string') return sd==='asc' ? va.localeCompare(vb,'fa') : vb.localeCompare(va,'fa');
+                return sd==='asc' ? va - vb : vb - va;
+            });
+        }
+        var html = '<div class="card"><h2>'+T_MAT.summaryTitle+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl" id="matSummaryTbl"><thead><tr><th>#</th>';
+        cols.forEach(function(c) {
+            var icon = '⇅', cls = '';
+            if (sortStateMat.col === c[0]) { cls = sortStateMat.dir==='asc' ? ' sorted-asc' : ' sorted-desc'; icon = sortStateMat.dir==='asc' ? '▲' : '▼'; }
+            html += '<th class="'+(c[2]==='num'?'num ':'')+cls+'" data-sortcol="'+c[0]+'" data-sorttype="'+c[2]+'">'+c[1]+' <span class="sort-icon">'+icon+'</span></th>';
+        });
+        html += '</tr></thead><tbody>';
+        rows.forEach(function(r, i) {
+            var stockCls = r.current_stock <= 0 ? 'rate-poor' : r.current_stock < r.total_incoming * 0.1 ? 'rate-warning' : '';
+            html += '<tr><td class="num">'+(i+1)+'</td>';
+            html += '<td>'+r.material+'</td>';
+            html += '<td class="num">'+r.unit+'</td>';
+            html += '<td class="num">'+fmt(r.total_incoming)+'</td>';
+            html += '<td class="num">'+fmt(r.total_used)+'</td>';
+            html += '<td class="num '+stockCls+'">'+fmt(r.current_stock)+'</td>';
+            html += '<td class="num">'+fmt(r.usage_pct_incoming)+'</td>';
+            html += '<td class="num">'+fmt(r.avg_incoming)+'</td>';
+            html += '<td class="num">'+fmt(r.avg_used)+'</td></tr>';
+        });
+        var totals = data.summary.totals || {};
+        html += '<tr class="total-row"><td colspan="2">'+T_MAT.total+'</td>';
+        html += '<td class="num">-</td>';
+        html += '<td class="num">'+fmt(totals.total_incoming)+'</td>';
+        html += '<td class="num">'+fmt(totals.total_used)+'</td>';
+        html += '<td class="num">'+fmt(totals.current_stock)+'</td>';
+        html += '<td class="num" colspan="3">-</td></tr>';
+        html += '</tbody></table></div></div>';
+
+        document.getElementById('matData').innerHTML = html;
+        setTimeout(function() {
+            var tbl = document.getElementById('matSummaryTbl');
+            if (!tbl) return;
+            tbl.querySelectorAll('th[data-sortcol]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sortcol');
+                    if (sortStateMat.col === col) sortStateMat.dir = sortStateMat.dir==='asc' ? 'desc' : 'asc';
+                    else { sortStateMat.col = col; sortStateMat.dir = 'asc'; }
+                    if (lastMaterialsData) renderMaterials(lastMaterialsData);
+                });
+            });
+        }, 50);
+    }
+
+    /* ================================================================
+       PROBLEMS & SAFETY SECTION
+       ================================================================ */
+    const API_PROBLEMS = '{{ url_for("boss.api_problems_safety", project_id=project.id) }}';
+
+    const T_PROB = {
+        title:          LANG==='fa' ? 'مشکلات و ایمنی' : 'Issues & Safety',
+        // Issues
+        issuesTitle:    LANG==='fa' ? 'خلاصه مشکلات پروژه' : 'Project Issues Summary',
+        issueType:      LANG==='fa' ? 'نوع مشکل' : 'Issue Type',
+        occurrences:    LANG==='fa' ? 'دفعات' : 'Occurrences',
+        daysWithIssue:  LANG==='fa' ? 'روزهای با مشکل' : 'Days w/ Issue',
+        pctAllDays:     LANG==='fa' ? '% کل روزها' : '% of All Days',
+        avgDuration:    LANG==='fa' ? 'میانگین مدت' : 'Avg Duration',
+        lastOccurrence: LANG==='fa' ? 'آخرین وقوع' : 'Last Occurrence',
+        // Safety
+        safetyTitle:    LANG==='fa' ? 'خلاصه ایمنی' : 'Safety Summary',
+        metric:         LANG==='fa' ? 'شاخص' : 'Metric',
+        value:          LANG==='fa' ? 'مقدار' : 'Value',
+        totalDays:      LANG==='fa' ? 'کل روزهای گزارش' : 'Total Reporting Days',
+        incidentDays:   LANG==='fa' ? 'روز حادثه' : 'Incident Days',
+        nearMissDays:   LANG==='fa' ? 'روز شبه حادثه' : 'Near-Miss Days',
+        noIncidentDays: LANG==='fa' ? 'روز بدون حادثه' : 'No-Incident Days',
+        incidentRate:   LANG==='fa' ? 'نرخ حادثه %' : 'Incident Rate %',
+        nearMissRate:   LANG==='fa' ? 'نرخ شبه حادثه %' : 'Near-Miss Rate %',
+        safeRate:       LANG==='fa' ? 'نرخ روز ایمن %' : 'Safe Days Rate %',
+        daysSince:      LANG==='fa' ? 'روز از آخرین حادثه' : 'Days Since Last Incident',
+        inspections:    LANG==='fa' ? 'بازرسی‌های انجام‌شده' : 'Inspections Done',
+        inspectionRate: LANG==='fa' ? 'نرخ بازرسی %' : 'Inspection Rate %',
+        total:          LANG==='fa' ? 'جمع کل' : 'Total',
+        from:           LANG==='fa' ? 'از' : 'From',
+        to:             LANG==='fa' ? 'تا' : 'To',
+        apply:          LANG==='fa' ? 'اعمال' : 'Apply',
+        loading:        LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+    };
+
+    let lastProblemsData = null;
+    let sortStateIssues = { col: null, dir: 'asc' };
+
+    function loadProblems() {
+        const container = document.getElementById('sectionContent');
+        container.innerHTML = `
+            <div class="section-header">
+                <h1>⚠️ ${T_PROB.title}</h1>
+                <p class="subtitle">{{ project.name }}</p>
+            </div>
+            <div class="filters-bar">
+                <label>${T_PROB.from}:</label>
+                <input type="text" id="fromDateProb" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <label>${T_PROB.to}:</label>
+                <input type="text" id="toDateProb" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <button class="btn-apply" id="btnApplyProb">${T_PROB.apply}</button>
+            </div>
+            <div id="probData">
+                <div class="loading-overlay"><div><div class="spinner"></div><p>${T_PROB.loading}</p></div></div>
+            </div>
+        `;
+        if (typeof $ !== 'undefined' && $.fn.persianDatepicker) {
+            $('#fromDateProb').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+            $('#toDateProb').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+        }
+        document.getElementById('btnApplyProb').addEventListener('click', fetchProblems);
+        fetchProblems();
+    }
+
+    async function fetchProblems() {
+        var fromVal = document.getElementById('fromDateProb').value;
+        var toVal = document.getElementById('toDateProb').value;
+        var fromGreg = await parseJalaliStr(fromVal);
+        var toGreg = await parseJalaliStr(toVal);
+        var url = API_PROBLEMS;
+        var sep = '?';
+        if (fromGreg) { url += sep + 'from_date=' + fromGreg; sep = '&'; }
+        if (toGreg) { url += sep + 'to_date=' + toGreg; }
+        document.getElementById('probData').innerHTML = '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T_PROB.loading+'</p></div></div>';
+        fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(res => { if (!res.success) throw new Error(res.error || 'API error'); lastProblemsData = res.data; renderProblems(res.data); })
+        .catch(err => { document.getElementById('probData').innerHTML = '<div class="loading-overlay"><p style="color:#ef4444;">Error: '+err.message+'</p></div>'; });
+    }
+
+    function renderProblems(data) {
+        var html = '';
+
+        // ── SECTION A: Issues Summary Table ──
+        var issuesCols = [
+            ['issue_type',       T_PROB.issueType,      'alpha'],
+            ['occurrences',      T_PROB.occurrences,     'num'],
+            ['days_with_issue',  T_PROB.daysWithIssue,   'num'],
+            ['pct_of_all_days',  T_PROB.pctAllDays,      'num'],
+            ['avg_duration',     T_PROB.avgDuration,     'alpha'],
+            ['last_occurrence',  T_PROB.lastOccurrence,  'alpha'],
+        ];
+        var issueRows = (data.issues_summary && data.issues_summary.rows) || [];
+        if (sortStateIssues.col !== null) {
+            var sc = sortStateIssues.col, sd = sortStateIssues.dir;
+            issueRows = issueRows.slice().sort(function(a, b) {
+                var va = a[sc], vb = b[sc];
+                if (va == null) va = sd==='asc' ? Infinity : -Infinity;
+                if (vb == null) vb = sd==='asc' ? Infinity : -Infinity;
+                if (typeof va === 'string') return sd==='asc' ? va.localeCompare(vb,'fa') : vb.localeCompare(va,'fa');
+                return sd==='asc' ? va - vb : vb - va;
+            });
+        }
+
+        html += '<div class="card"><h2>'+T_PROB.issuesTitle+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl" id="issuesSummaryTbl"><thead><tr><th>#</th>';
+        issuesCols.forEach(function(c) {
+            var icon = '⇅', cls = '';
+            if (sortStateIssues.col === c[0]) { cls = sortStateIssues.dir==='asc' ? ' sorted-asc' : ' sorted-desc'; icon = sortStateIssues.dir==='asc' ? '▲' : '▼'; }
+            html += '<th class="'+(c[2]==='num'?'num ':'')+cls+'" data-sortcol="'+c[0]+'" data-sorttype="'+c[2]+'">'+c[1]+' <span class="sort-icon">'+icon+'</span></th>';
+        });
+        html += '</tr></thead><tbody>';
+        issueRows.forEach(function(r, i) {
+            html += '<tr><td class="num">'+(i+1)+'</td>';
+            html += '<td>'+r.issue_type+'</td>';
+            html += '<td class="num">'+fmt(r.occurrences)+'</td>';
+            html += '<td class="num">'+fmt(r.days_with_issue)+'</td>';
+            html += '<td class="num">'+fmt(r.pct_of_all_days)+'</td>';
+            html += '<td class="num">'+(r.avg_duration || '-')+'</td>';
+            html += '<td class="num">'+(r.last_occurrence ? toJalali(r.last_occurrence) : '-')+'</td></tr>';
+        });
+        var issTotal = data.issues_summary || {};
+        html += '<tr class="total-row"><td colspan="2">'+T_PROB.total+'</td>';
+        html += '<td class="num">'+fmt(issTotal.total_issues)+'</td>';
+        html += '<td class="num" colspan="4">-</td></tr>';
+        html += '</tbody></table></div></div>';
+
+        // ── SECTION B: Safety Summary Table ──
+        var sf = data.safety_summary || {};
+        var safetyRows = [
+            [T_PROB.totalDays,      sf.total_days],
+            [T_PROB.incidentDays,   sf.incident_days],
+            [T_PROB.nearMissDays,   sf.near_miss_days],
+            [T_PROB.noIncidentDays, sf.no_incident_days],
+            [T_PROB.incidentRate,   sf.incident_rate],
+            [T_PROB.nearMissRate,   sf.near_miss_rate],
+            [T_PROB.safeRate,       sf.safe_rate],
+            [T_PROB.daysSince,      sf.days_since_last_incident],
+            [T_PROB.inspections,    sf.inspection_count],
+            [T_PROB.inspectionRate, sf.inspection_rate],
+        ];
+        html += '<div class="card"><h2>'+T_PROB.safetyTitle+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>';
+        html += '<th>'+T_PROB.metric+'</th><th class="num">'+T_PROB.value+'</th>';
+        html += '</tr></thead><tbody>';
+        safetyRows.forEach(function(r) {
+            var val = r[1];
+            var cls = '';
+            // Color-code rates
+            if (r[0] === T_PROB.incidentRate && val > 0) cls = 'rate-poor';
+            if (r[0] === T_PROB.safeRate) cls = val >= 90 ? 'rate-good' : val >= 70 ? 'rate-warning' : 'rate-poor';
+            if (r[0] === T_PROB.inspectionRate) cls = val >= 90 ? 'rate-good' : val >= 70 ? 'rate-warning' : 'rate-poor';
+            html += '<tr><td>'+r[0]+'</td><td class="num '+cls+'">'+(val !== null && val !== undefined ? fmt(val) : '-')+'</td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+
+        document.getElementById('probData').innerHTML = html;
+        setTimeout(function() {
+            var tbl = document.getElementById('issuesSummaryTbl');
+            if (!tbl) return;
+            tbl.querySelectorAll('th[data-sortcol]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sortcol');
+                    if (sortStateIssues.col === col) sortStateIssues.dir = sortStateIssues.dir==='asc' ? 'desc' : 'asc';
+                    else { sortStateIssues.col = col; sortStateIssues.dir = 'asc'; }
+                    if (lastProblemsData) renderProblems(lastProblemsData);
+                });
+            });
+        }, 50);
+    }
+
+    /* ================================================================
+       WEATHER & CLIMATE SECTION
+       ================================================================ */
+    const API_WEATHER = '{{ url_for("boss.api_weather", project_id=project.id) }}';
+
+    const T_WTH = {
+        title:          LANG==='fa' ? 'آب و هوا و تأثیر اقلیمی' : 'Weather & Climate Impact',
+        // Summary stats labels
+        statsTitle:     LANG==='fa' ? 'آمار کلی آب و هوا' : 'Weather Statistics',
+        metric:         LANG==='fa' ? 'شاخص' : 'Metric',
+        value:          LANG==='fa' ? 'مقدار' : 'Value',
+        totalDays:      LANG==='fa' ? 'کل روزهای گزارش' : 'Total Reporting Days',
+        avgMinTemp:     LANG==='fa' ? 'میانگین حداقل دما °C' : 'Avg Min Temp °C',
+        avgMaxTemp:     LANG==='fa' ? 'میانگین حداکثر دما °C' : 'Avg Max Temp °C',
+        minRecorded:    LANG==='fa' ? 'حداقل دما ثبت‌شده °C' : 'Min Temp Recorded °C',
+        maxRecorded:    LANG==='fa' ? 'حداکثر دما ثبت‌شده °C' : 'Max Temp Recorded °C',
+        avgHumidity:    LANG==='fa' ? 'میانگین رطوبت %' : 'Avg Humidity %',
+        impactPct:      LANG==='fa' ? '% روزهای تأثیرگذار بر کار' : '% Days Impacting Work',
+        // Weather table
+        weatherTitle:   LANG==='fa' ? 'وضعیت هوا به تفکیک نوع' : 'Weather by Type',
+        weatherType:    LANG==='fa' ? 'نوع هوا' : 'Weather Type',
+        days:           LANG==='fa' ? 'روز' : 'Days',
+        pctTotal:       LANG==='fa' ? '% کل' : '% Total',
+        noEffect:       LANG==='fa' ? 'بی‌اثر' : 'No Effect',
+        slowProgress:   LANG==='fa' ? 'کندی' : 'Slow',
+        stopped:        LANG==='fa' ? 'توقف' : 'Stopped',
+        avgMin:         LANG==='fa' ? 'میانگین حداقل دما' : 'Avg Min',
+        avgMax:         LANG==='fa' ? 'میانگین حداکثر دما' : 'Avg Max',
+        avgHum:         LANG==='fa' ? 'میانگین رطوبت' : 'Avg Hum',
+        total:          LANG==='fa' ? 'جمع کل' : 'Total',
+        from:           LANG==='fa' ? 'از' : 'From',
+        to:             LANG==='fa' ? 'تا' : 'To',
+        apply:          LANG==='fa' ? 'اعمال' : 'Apply',
+        loading:        LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+    };
+
+    const WEATHER_LABELS = {
+        'clear':   LANG==='fa' ? 'صاف ☀️' : 'Clear ☀️',
+        'cloudy':  LANG==='fa' ? 'ابری ☁️' : 'Cloudy ☁️',
+        'rainy':   LANG==='fa' ? 'بارانی 🌧️' : 'Rainy 🌧️',
+        'foggy':   LANG==='fa' ? 'مه‌آلود 🌫️' : 'Foggy 🌫️',
+        'snowy':   LANG==='fa' ? 'برفی ❄️' : 'Snowy ❄️',
+        'unknown': LANG==='fa' ? 'نامشخص' : 'Unknown',
+    };
+
+    let lastWeatherData = null;
+    let sortStateWeather = { col: null, dir: 'asc' };
+
+    function loadWeather() {
+        const container = document.getElementById('sectionContent');
+        container.innerHTML = `
+            <div class="section-header">
+                <h1>🌤️ ${T_WTH.title}</h1>
+                <p class="subtitle">{{ project.name }}</p>
+            </div>
+            <div class="filters-bar">
+                <label>${T_WTH.from}:</label>
+                <input type="text" id="fromDateWth" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <label>${T_WTH.to}:</label>
+                <input type="text" id="toDateWth" class="jalali-input" placeholder="YYYY/MM/DD" autocomplete="off">
+                <button class="btn-apply" id="btnApplyWth">${T_WTH.apply}</button>
+            </div>
+            <div id="wthData">
+                <div class="loading-overlay"><div><div class="spinner"></div><p>${T_WTH.loading}</p></div></div>
+            </div>
+        `;
+        if (typeof $ !== 'undefined' && $.fn.persianDatepicker) {
+            $('#fromDateWth').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+            $('#toDateWth').persianDatepicker({ format: 'YYYY/MM/DD', autoClose: true, initialValue: false, calendar: { persian: { locale: 'fa' } } });
+        }
+        document.getElementById('btnApplyWth').addEventListener('click', fetchWeather);
+        fetchWeather();
+    }
+
+    async function fetchWeather() {
+        var fromVal = document.getElementById('fromDateWth').value;
+        var toVal = document.getElementById('toDateWth').value;
+        var fromGreg = await parseJalaliStr(fromVal);
+        var toGreg = await parseJalaliStr(toVal);
+        var url = API_WEATHER;
+        var sep = '?';
+        if (fromGreg) { url += sep + 'from_date=' + fromGreg; sep = '&'; }
+        if (toGreg) { url += sep + 'to_date=' + toGreg; }
+        document.getElementById('wthData').innerHTML = '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T_WTH.loading+'</p></div></div>';
+        fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(res => { if (!res.success) throw new Error(res.error || 'API error'); lastWeatherData = res.data; renderWeather(res.data); })
+        .catch(err => { document.getElementById('wthData').innerHTML = '<div class="loading-overlay"><p style="color:#ef4444;">Error: '+err.message+'</p></div>'; });
+    }
+
+    function renderWeather(data) {
+        var html = '';
+
+        // ── Summary Statistics Table (key-value) ──
+        var ss = data.summary_stats || {};
+        var statsRows = [
+            [T_WTH.totalDays,    ss.total_days],
+            [T_WTH.avgMinTemp,   ss.avg_min_temp],
+            [T_WTH.avgMaxTemp,   ss.avg_max_temp],
+            [T_WTH.minRecorded,  ss.min_temp_recorded !== null ? ss.min_temp_recorded + (ss.min_temp_date ? ' ('+toJalali(ss.min_temp_date)+')' : '') : null],
+            [T_WTH.maxRecorded,  ss.max_temp_recorded !== null ? ss.max_temp_recorded + (ss.max_temp_date ? ' ('+toJalali(ss.max_temp_date)+')' : '') : null],
+            [T_WTH.avgHumidity,  ss.avg_humidity],
+            [T_WTH.impactPct,    ss.impact_pct],
+        ];
+        html += '<div class="card"><h2>'+T_WTH.statsTitle+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>';
+        html += '<th>'+T_WTH.metric+'</th><th class="num">'+T_WTH.value+'</th>';
+        html += '</tr></thead><tbody>';
+        statsRows.forEach(function(r) {
+            var val = r[1];
+            var cls = '';
+            if (r[0] === T_WTH.impactPct) cls = val <= 10 ? 'rate-good' : val <= 30 ? 'rate-warning' : 'rate-poor';
+            html += '<tr><td>'+r[0]+'</td><td class="num '+cls+'">'+(val !== null && val !== undefined ? (typeof val === 'number' ? fmt(val) : val) : '-')+'</td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+
+        // ── Weather by Type Table ──
+        var wCols = [
+            ['weather_type', T_WTH.weatherType, 'alpha'],
+            ['days',         T_WTH.days,        'num'],
+            ['pct_of_total', T_WTH.pctTotal,    'num'],
+            ['no_effect',    T_WTH.noEffect,    'num'],
+            ['slow_progress',T_WTH.slowProgress, 'num'],
+            ['stopped',      T_WTH.stopped,     'num'],
+            ['avg_min_temp', T_WTH.avgMin,      'num'],
+            ['avg_max_temp', T_WTH.avgMax,      'num'],
+            ['avg_humidity', T_WTH.avgHum,      'num'],
+        ];
+        var wRows = (data.weather_table && data.weather_table.rows) || [];
+        if (sortStateWeather.col !== null) {
+            var sc = sortStateWeather.col, sd = sortStateWeather.dir;
+            wRows = wRows.slice().sort(function(a, b) {
+                var va = a[sc], vb = b[sc];
+                if (va == null) va = sd==='asc' ? Infinity : -Infinity;
+                if (vb == null) vb = sd==='asc' ? Infinity : -Infinity;
+                if (typeof va === 'string') return sd==='asc' ? va.localeCompare(vb,'fa') : vb.localeCompare(va,'fa');
+                return sd==='asc' ? va - vb : vb - va;
+            });
+        }
+        html += '<div class="card"><h2>'+T_WTH.weatherTitle+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl" id="wthSummaryTbl"><thead><tr><th>#</th>';
+        wCols.forEach(function(c) {
+            var icon = '⇅', cls = '';
+            if (sortStateWeather.col === c[0]) { cls = sortStateWeather.dir==='asc' ? ' sorted-asc' : ' sorted-desc'; icon = sortStateWeather.dir==='asc' ? '▲' : '▼'; }
+            html += '<th class="'+(c[2]==='num'?'num ':'')+cls+'" data-sortcol="'+c[0]+'" data-sorttype="'+c[2]+'">'+c[1]+' <span class="sort-icon">'+icon+'</span></th>';
+        });
+        html += '</tr></thead><tbody>';
+        wRows.forEach(function(r, i) {
+            var label = WEATHER_LABELS[r.weather_type] || r.weather_type;
+            html += '<tr><td class="num">'+(i+1)+'</td>';
+            html += '<td>'+label+'</td>';
+            html += '<td class="num">'+fmt(r.days)+'</td>';
+            html += '<td class="num">'+fmt(r.pct_of_total)+'</td>';
+            html += '<td class="num">'+fmt(r.no_effect)+'</td>';
+            html += '<td class="num">'+fmt(r.slow_progress)+'</td>';
+            html += '<td class="num">'+(r.stopped > 0 ? '<span class="rate-poor">'+fmt(r.stopped)+'</span>' : fmt(r.stopped))+'</td>';
+            html += '<td class="num">'+fmt(r.avg_min_temp)+'</td>';
+            html += '<td class="num">'+fmt(r.avg_max_temp)+'</td>';
+            html += '<td class="num">'+fmt(r.avg_humidity)+'</td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+
+        document.getElementById('wthData').innerHTML = html;
+        setTimeout(function() {
+            var tbl = document.getElementById('wthSummaryTbl');
+            if (!tbl) return;
+            tbl.querySelectorAll('th[data-sortcol]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sortcol');
+                    if (sortStateWeather.col === col) sortStateWeather.dir = sortStateWeather.dir==='asc' ? 'desc' : 'asc';
+                    else { sortStateWeather.col = col; sortStateWeather.dir = 'asc'; }
+                    if (lastWeatherData) renderWeather(lastWeatherData);
+                });
+            });
+        }, 50);
+    }
+
+    /* ── Helpers ── */
+    function fmt(n) {
+        if (n === null || n === undefined) return '-';
+        return Number(n).toLocaleString(undefined, {maximumFractionDigits:2});
+    }
+
+    /* ================================================================
+       EMPLOYEE PERFORMANCE SECTION
+       ================================================================ */
+    const API_EMPLOYEES = '{{ url_for("boss.api_employees", project_id=project.id) }}';
+    const API_EMP_PERF_BASE = '/boss/api/{{ project.id }}/employee-performance/';
+
+    const T_EMP = {
+        title:            LANG==='fa' ? 'عملکرد کارمندان' : 'Employee Performance',
+        selectEmployee:   LANG==='fa' ? 'انتخاب کارمند' : 'Select Employee',
+        formsOverview:    LANG==='fa' ? 'نمای کلی فرم‌ها' : 'Forms Overview',
+        approved:         LANG==='fa' ? 'تأیید شده' : 'Approved',
+        pending:          LANG==='fa' ? 'در انتظار' : 'Pending',
+        draft:            LANG==='fa' ? 'پیش‌نویس' : 'Draft',
+        rejected:         LANG==='fa' ? 'برگشت خورده' : 'Returned',
+        totalForms:       LANG==='fa' ? 'کل فرم‌ها' : 'Total Forms',
+        approvalRate:     LANG==='fa' ? 'نرخ تأیید' : 'Approval Rate',
+        rejectionCount:   LANG==='fa' ? 'دفعات برگشت' : 'Times Returned',
+        monthlyChart:     LANG==='fa' ? 'ارسال ماهانه' : 'Monthly Submissions',
+        accuracyChart:    LANG==='fa' ? 'نمودار دقت' : 'Accuracy Chart',
+        formHistory:      LANG==='fa' ? 'تاریخچه فرم‌ها' : 'Form History',
+        docCode:          LANG==='fa' ? 'کد سند' : 'Document Code',
+        formDate:         LANG==='fa' ? 'تاریخ فرم' : 'Form Date',
+        status:           LANG==='fa' ? 'وضعیت' : 'Status',
+        submittedAt:      LANG==='fa' ? 'تاریخ ارسال' : 'Submitted At',
+        reviewedAt:       LANG==='fa' ? 'تاریخ بازبینی' : 'Reviewed At',
+        reviewer:         LANG==='fa' ? 'بازبین' : 'Reviewer',
+        returns:          LANG==='fa' ? 'برگشت' : 'Returns',
+        actions:          LANG==='fa' ? 'عملیات' : 'Actions',
+        viewDetails:      LANG==='fa' ? 'جزئیات' : 'Details',
+        reviewComments:   LANG==='fa' ? 'نظرات بازبین' : 'Review Comments',
+        noComments:       LANG==='fa' ? 'بدون نظر' : 'No comments',
+        noEmployee:       LANG==='fa' ? 'یک کارمند انتخاب کنید تا عملکرد او نمایش داده شود' : 'Select an employee to view their performance',
+        loading:          LANG==='fa' ? 'در حال بارگذاری...' : 'Loading...',
+        view:             LANG==='fa' ? 'مشاهده' : 'View',
+    };
+
+    var empPerformanceCharts = {};
+
+    function loadEmployees() {
+        var $c = document.getElementById('analysisContent');
+        $c.innerHTML = '<div class="section-header"><h1><span class="icon">📊</span> '+T_EMP.title+'</h1></div>' +
+            '<div class="filters-bar"><label>'+T_EMP.selectEmployee+'</label>' +
+            '<select id="empSelect" onchange="loadEmployeePerformance(this.value)" style="min-width:200px;">' +
+            '<option value="">-- '+T_EMP.selectEmployee+' --</option></select></div>' +
+            '<div id="empContent"><div class="card" style="text-align:center;padding:40px;color:var(--text-secondary);">' +
+            '<div style="font-size:48px;margin-bottom:12px;">👤</div><p>'+T_EMP.noEmployee+'</p></div></div>';
+
+        fetch(API_EMPLOYEES)
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (!res.success) return;
+                var sel = document.getElementById('empSelect');
+                res.employees.forEach(function(emp) {
+                    var opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = emp.display_name;
+                    sel.appendChild(opt);
+                });
+            });
+    }
+
+    function loadEmployeePerformance(empId) {
+        if (!empId) return;
+        var $c = document.getElementById('empContent');
+        $c.innerHTML = '<div class="loading-overlay"><div><div class="spinner"></div><p>'+T_EMP.loading+'</p></div></div>';
+
+        fetch(API_EMP_PERF_BASE + empId)
+            .then(function(r) { if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+            .then(function(res) {
+                if (!res.success) throw new Error(res.error || 'Error');
+                renderEmployeePerformance(res.data);
+            })
+            .catch(function(err) {
+                $c.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:#ef4444;">Error: '+err.message+'</div>';
+            });
+    }
+
+    function renderEmployeePerformance(data) {
+        var stats = data.stats;
+        var forms = data.forms;
+        var monthly = data.monthly;
+        var $c = document.getElementById('empContent');
+
+        // ─── Stat cards ───
+        var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">';
+        html += statCard('✅', T_EMP.approved, stats.approved, 'var(--success-color,#22c55e)');
+        html += statCard('⏳', T_EMP.pending, stats.pending, 'var(--warning-color,#f59e0b)');
+        html += statCard('📝', T_EMP.draft, stats.draft, 'var(--text-secondary,#6b7280)');
+        html += statCard('🔄', T_EMP.rejectionCount, stats.rejection_count, 'var(--danger-color,#ef4444)');
+        html += statCard('📋', T_EMP.totalForms, stats.total, 'var(--primary-color,#3b82f6)');
+        html += statCard('📈', T_EMP.approvalRate, stats.approval_rate + '%', stats.approval_rate>=80?'var(--success-color,#22c55e)':stats.approval_rate>=50?'var(--warning-color,#f59e0b)':'var(--danger-color,#ef4444)');
+        html += '</div>';
+
+        // ─── Charts row ───
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">';
+        html += '<div class="card"><h2>'+T_EMP.accuracyChart+'</h2><div style="max-height:280px;"><canvas id="empAccuracyChart"></canvas></div></div>';
+        html += '<div class="card"><h2>'+T_EMP.monthlyChart+'</h2><div style="max-height:280px;"><canvas id="empMonthlyChart"></canvas></div></div>';
+        html += '</div>';
+
+        // ─── Forms table ───
+        html += '<div class="card"><h2>'+T_EMP.formHistory+'</h2>';
+        html += '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>';
+        html += '<th>#</th><th>'+T_EMP.docCode+'</th><th>'+T_EMP.formDate+'</th>';
+        html += '<th>'+T_EMP.status+'</th><th>'+T_EMP.submittedAt+'</th>';
+        html += '<th>'+T_EMP.reviewedAt+'</th><th>'+T_EMP.reviewer+'</th>';
+        html += '<th>'+T_EMP.returns+'</th><th>'+T_EMP.actions+'</th>';
+        html += '</tr></thead><tbody>';
+
+        forms.forEach(function(f, i) {
+            var statusBadge = '<span class="badge badge-'+f.status+'">'+statusLabel(f.status)+'</span>';
+            html += '<tr>';
+            html += '<td class="num">'+(i+1)+'</td>';
+            html += '<td>'+f.document_code+'</td>';
+            html += '<td class="num">'+(f.form_date||'-')+'</td>';
+            html += '<td>'+statusBadge+'</td>';
+            html += '<td class="num">'+(f.submitted_at||'-')+'</td>';
+            html += '<td class="num">'+(f.reviewed_at||'-')+'</td>';
+            html += '<td>'+(f.reviewer||'-')+'</td>';
+            html += '<td class="num">'+(f.rejection_count>0?'<span style="color:var(--danger-color);font-weight:600;">'+f.rejection_count+'</span>':'0')+'</td>';
+            html += '<td>';
+            html += '<a href="/forms/'+f.id+'/view" class="btn btn-sm btn-outline" target="_blank">'+T_EMP.view+'</a> ';
+            if (f.comments && f.comments.length > 0) {
+                html += '<button class="btn btn-sm btn-outline" onclick="toggleComments('+f.id+')">💬 '+f.comments.length+'</button>';
+            }
+            html += '</td></tr>';
+
+            // Comment detail row (hidden by default)
+            if (f.comments && f.comments.length > 0) {
+                html += '<tr id="comments-'+f.id+'" style="display:none;">';
+                html += '<td colspan="9" style="background:#fef9ee;padding:12px;">';
+                html += '<strong>'+T_EMP.reviewComments+':</strong><ul style="margin:8px 0 0 20px;list-style:disc;">';
+                f.comments.forEach(function(c) {
+                    html += '<li style="margin-bottom:6px;"><strong>'+c.username+'</strong>';
+                    if (c.created_at) html += ' <small style="color:var(--text-secondary);">('+c.created_at.replace('T',' ').substring(0,16)+')</small>';
+                    html += '<br>'+c.content+'</li>';
+                });
+                html += '</ul></td></tr>';
+            }
+        });
+
+        html += '</tbody></table></div></div>';
+        $c.innerHTML = html;
+
+        // ─── Render charts ───
+        renderAccuracyChart(stats);
+        renderMonthlyChart(monthly);
+    }
+
+    function statCard(icon, label, value, color) {
+        return '<div class="card" style="text-align:center;padding:16px;">' +
+            '<div style="font-size:28px;">'+icon+'</div>' +
+            '<div style="font-size:24px;font-weight:700;color:'+color+';">'+value+'</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);">'+label+'</div></div>';
+    }
+
+    function statusLabel(s) {
+        if (s==='approved') return T_EMP.approved;
+        if (s==='pending') return T_EMP.pending;
+        if (s==='draft') return T_EMP.draft;
+        return s;
+    }
+
+    window.toggleComments = function(formId) {
+        var row = document.getElementById('comments-'+formId);
+        if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+    };
+
+    function renderAccuracyChart(stats) {
+        // Destroy previous
+        if (empPerformanceCharts.accuracy) empPerformanceCharts.accuracy.destroy();
+
+        var ctx = document.getElementById('empAccuracyChart');
+        if (!ctx) return;
+
+        empPerformanceCharts.accuracy = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [T_EMP.approved, T_EMP.pending, T_EMP.draft],
+                datasets: [{
+                    data: [stats.approved, stats.pending, stats.draft],
+                    backgroundColor: ['#22c55e', '#f59e0b', '#94a3b8'],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { family: 'inherit' } } },
+                    datalabels: { display: false },
+                }
+            }
+        });
+    }
+
+    function renderMonthlyChart(monthly) {
+        if (empPerformanceCharts.monthly) empPerformanceCharts.monthly.destroy();
+
+        var ctx = document.getElementById('empMonthlyChart');
+        if (!ctx) return;
+
+        var labels = monthly.map(function(m) { return m.month; });
+        var approvedData = monthly.map(function(m) { return m.approved; });
+        var rejectedData = monthly.map(function(m) { return m.rejected||0; });
+        var pendingData = monthly.map(function(m) { return m.pending; });
+
+        empPerformanceCharts.monthly = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: T_EMP.approved, data: approvedData, backgroundColor: '#22c55e', borderRadius: 4 },
+                    { label: T_EMP.rejected, data: rejectedData, backgroundColor: '#ef4444', borderRadius: 4 },
+                    { label: T_EMP.pending, data: pendingData, backgroundColor: '#f59e0b', borderRadius: 4 },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { family: 'inherit' } } },
+                    datalabels: { display: false },
+                }
+            }
+        });
+    }
+
+    /* ── Init: load Activities by default ── */
+    loadActivities();
+})();
+</script>
+{% endif %}
+{% endblock %}

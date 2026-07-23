@@ -1,0 +1,11 @@
+<!-- connect_page.html -->
+{% extends "layout.html" %}
+{% block content %}
+  <h1 data-i18n="connect_page_title">Connect to Me</h1>
+  
+  <h2 data-i18n="connect_upload_title">Upload Files to Me</h2>
+  <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_files') }}">
+    <input type="file" name="files[]" multiple required>
+    <input type="submit" value="Upload" data-i18n-attr="value" data-i18n="upload">
+  </form>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('dashboard') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>{{ t('welcome') }}, {{ user.username }}!</h1>
+    <p class="text-muted">{{ t('overview') }}</p>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">📝</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_forms }}</h3>
+            <p>{{ t('total_forms') }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon warning">⏳</div>
+        <div class="stat-content">
+            <h3>{{ stats.pending_forms }}</h3>
+            <p>{{ t('pending_review') }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon success">✓</div>
+        <div class="stat-content">
+            <h3>{{ stats.approved_forms }}</h3>
+            <p>{{ t('approved') }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon danger">✗</div>
+        <div class="stat-content">
+            <h3>{{ stats.rejected_forms }}</h3>
+            <p>{{ t('rejected') }}</p>
+        </div>
+    </div>
+    
+    {% if user.role == 'boss' %}
+    <div class="stat-card">
+        <div class="stat-icon primary">📁</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_projects }}</h3>
+            <p>{{ t('active_projects') }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon primary">👥</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_employees }}</h3>
+            <p>{{ t('total_employees') }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('quick_actions') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap">
+            {% if user.role == 'employee' %}
+            <a href="{{ url_for('forms.choose_form_method') }}" class="btn btn-primary">
+                ➕ {{ t('new_daily_form') }}
+            </a>
+            <a href="{{ url_for('forms.my_forms') }}" class="btn btn-outline">
+                📋 {{ t('my_forms') }}
+            </a>
+            {% endif %}
+            
+            {% if user.role == 'admin' %}
+            <a href="{{ url_for('forms.pending_forms') }}" class="btn btn-warning">
+                ⏳ {{ t('pending_forms') }} ({{ stats.pending_forms }})
+            </a>
+            <a href="{{ url_for('forms.all_forms') }}" class="btn btn-outline">
+                📋 {{ t('all_forms') }}
+            </a>
+            {% endif %}
+            
+            {% if user.role == 'boss' %}
+            <a href="{{ url_for('projects.new_project') }}" class="btn btn-primary">
+                ➕ {{ t('new_project') }}
+            </a>
+            <a href="{{ url_for('analytics.index') }}" class="btn btn-success">
+                📊 {{ t('analytics') }}
+            </a>
+            <a href="{{ url_for('forms.all_forms') }}" class="btn btn-outline">
+                📋 {{ t('all_forms') }}
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('export.export_page') }}" class="btn btn-outline">
+                📥 {{ t('export_excel') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Forms -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('recent_activity') }}</h2>
+        {% if user.role == 'employee' %}
+        <a href="{{ url_for('forms.my_forms') }}" class="btn btn-sm btn-outline">{{ t('view') }} {{ t('all') }}</a>
+        {% else %}
+        <a href="{{ url_for('forms.all_forms') }}" class="btn btn-sm btn-outline">{{ t('view') }} {{ t('all') }}</a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if recent_forms %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('document_code') }}</th>
+                        <th>{{ t('project') }}</th>
+                        <th>{{ t('form_date') }}</th>
+                        {% if user.role != 'employee' %}
+                        <th>{{ t('submitted_by') }}</th>
+                        {% endif %}
+                        <th>{{ t('status') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in recent_forms %}
+                    <tr>
+                        <td>{{ form.document_code }}</td>
+                        <td>{{ form.project.name if form.project else '-' }}</td>
+                        <td>{{ form.form_date|jalali }}</td>
+                        {% if user.role != 'employee' %}
+                        <td>{{ form.submitted_by_user.username if form.submitted_by_user else '-' }}</td>
+                        {% endif %}
+                        <td>
+                            <span class="badge badge-{{ form.status }}">
+                                {{ t(form.status) }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('forms.view_form', form_id=form.id) }}" class="btn btn-sm btn-outline">{{ t('view') }}</a>
+                            {% if user.role == 'admin' and form.status == 'pending' %}
+                            <a href="{{ url_for('forms.review_form', form_id=form.id) }}" class="btn btn-sm btn-primary">{{ t('review') }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>{{ t('no_data') }}</h3>
+            <p>{{ t('no_data') }}</p>
+            {% if user.role == 'employee' %}
+            <a href="{{ url_for('forms.choose_form_method') }}" class="btn btn-primary">{{ t('new_daily_form') }}</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

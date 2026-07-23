@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('generate_test_data') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>🎲 {{ t('generate_test_data') }}</h1>
+    <p class="text-muted">{{ t('generate_test_data_desc') }}</p>
+</div>
+
+<div class="card" style="max-width: 700px;">
+    <div class="card-body">
+        <form method="POST" id="generateForm">
+            <!-- Project Selection -->
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('project') }} <span class="text-danger">*</span></label>
+                <select name="project_id" class="form-control" required id="projectSelect">
+                    <option value="">-- {{ t('select_project') }} --</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}" data-code="{{ p.project_code }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date Range -->
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('start_date') }} <span class="text-danger">*</span></label>
+                    <input type="text" name="start_date" class="form-control" required
+                           placeholder="1404/01/01" dir="ltr"
+                           pattern="\d{4}/\d{2}/\d{2}"
+                           title="{{ t('jalali_date_format') }}">
+                    <small class="text-muted">{{ t('jalali_date_format') }}</small>
+                </div>
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('end_date') }} <span class="text-danger">*</span></label>
+                    <input type="text" name="end_date" class="form-control" required
+                           placeholder="1404/01/15" dir="ltr"
+                           pattern="\d{4}/\d{2}/\d{2}"
+                           title="{{ t('jalali_date_format') }}">
+                    <small class="text-muted">{{ t('jalali_date_format') }}</small>
+                </div>
+            </div>
+
+            <!-- Shift Type -->
+            <div class="form-group mb-4">
+                <label class="form-label">{{ t('shift') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <label class="form-check">
+                        <input type="radio" name="shift_type" value="both" checked>
+                        <span class="form-check-label">{{ t('both_shifts') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="radio" name="shift_type" value="morning">
+                        <span class="form-check-label">{{ t('morning_shift') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="radio" name="shift_type" value="night">
+                        <span class="form-check-label">{{ t('night_shift') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="alert alert-info mb-4" style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                <span>ℹ️</span>
+                <div>
+                    <strong>{{ t('note') }}:</strong>
+                    {{ t('generate_data_info') }}
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-primary" id="generateBtn">
+                    🎲 {{ t('generate_and_download') }}
+                </button>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline">
+                    {{ t('cancel') }}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bulk Submit Section -->
+<div class="card mt-4" style="max-width: 700px;">
+    <div class="card-body">
+        <h5 class="mb-3">📤 {{ t('bulk_submit_title') if t('bulk_submit_title') != 'bulk_submit_title' else 'Bulk Submit Generated ZIP' }}</h5>
+        <p class="text-muted mb-3">
+            {{ t('bulk_submit_desc') if t('bulk_submit_desc') != 'bulk_submit_desc' else 'Upload a previously generated ZIP file to submit all forms directly into the database (status: approved).' }}
+        </p>
+        <form method="POST" action="{{ url_for('forms.bulk_submit_zip') }}" enctype="multipart/form-data" id="bulkSubmitForm">
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('project') }} <span class="text-danger">*</span></label>
+                <select name="bulk_project_id" class="form-control" required>
+                    <option value="">-- {{ t('select_project') }} --</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">ZIP File <span class="text-danger">*</span></label>
+                <input type="file" name="zip_file" class="form-control" accept=".zip" required>
+            </div>
+            <div class="alert alert-warning mb-3" style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                <span>⚠️</span>
+                <div>
+                    <strong>{{ t('warning') if t('warning') != 'warning' else 'Warning' }}:</strong>
+                    {{ t('bulk_submit_warning') if t('bulk_submit_warning') != 'bulk_submit_warning' else 'This will create approved form submissions directly. Use only for testing purposes.' }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-warning" id="bulkSubmitBtn">
+                📤 {{ t('bulk_submit') if t('bulk_submit') != 'bulk_submit' else 'Bulk Submit' }}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('generateForm').addEventListener('submit', function(e) {
+    var btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ {{ t("generating") }}...';
+    // Re-enable after 30 seconds in case download completes
+    setTimeout(function() {
+        btn.disabled = false;
+        btn.innerHTML = '🎲 {{ t("generate_and_download") }}';
+    }, 30000);
+});
+
+document.getElementById('bulkSubmitForm').addEventListener('submit', function(e) {
+    var btn = document.getElementById('bulkSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Submitting...';
+});
+</script>
+{% endblock %}

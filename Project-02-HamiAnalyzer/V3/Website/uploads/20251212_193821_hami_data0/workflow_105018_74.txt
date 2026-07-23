@@ -1,0 +1,30 @@
+parent_id: None
+id: 1d1f99f5-1062-4fce-93e4-74d9dd2f51aa
+date: شنبه، 22 خرداد 1404 18:13
+name: کارشناسی پیوسته_پرستاری_یزد_4001
+email: sf-105-10401-4-4001@iau.ir
+--------------------------------------------------
+parent_id: 1d1f99f5-1062-4fce-93e4-74d9dd2f51aa
+id: 3ae1fe4f-bcfc-406c-babd-5b58ed8c8622
+date: دوشنبه، 26 خرداد 1404 12:10
+name: ایمان اله حیدری
+email: 336804@iau.ir
+--------------------------------------------------
+parent_id: 3ae1fe4f-bcfc-406c-babd-5b58ed8c8622
+id: 81cc1d9b-b8a1-4da2-9db3-46298fbb6bee
+date: دوشنبه، 26 خرداد 1404 14:20
+name: کارشناسی پیوسته_پرستاری_یزد_4001
+email: sf-105-10401-4-4001@iau.ir
+--------------------------------------------------
+parent_id: 81cc1d9b-b8a1-4da2-9db3-46298fbb6bee
+id: ff386f1b-1a46-46db-addc-ea4acc102c4a
+date: شنبه، 27 خرداد 1404 12:57
+name: Fatemesadat  Tabatabaie Nodoushan
+email: 4420942304@iau.ir
+--------------------------------------------------
+parent_id: 1d1f99f5-1062-4fce-93e4-74d9dd2f51aa
+id: 89252018-f1d0-4614-9d49-b3ca7232ec8f
+date: دوشنبه، 26 خرداد 1404 12:10
+name: Fatemesadat  Tabatabaie Nodoushan
+email: 4420942304@iau.ir
+--------------------------------------------------

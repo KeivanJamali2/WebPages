@@ -1,0 +1,10 @@
+## Resources
+Manufacturing, 40.0, 150, 0.02
+RareEarth, 70.0, 10, 0.1
+Electronics, 60.0, 50, 0.05
+
+## Capacity
+1410
+
+## HouseWorth
+150000

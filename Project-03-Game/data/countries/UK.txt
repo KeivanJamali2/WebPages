@@ -1,0 +1,10 @@
+## Resources
+Finance, 110.0, 6, 0.08
+Education, 50.0, 4, 0.1
+Sheep, 15.0, 1, 0.2
+
+## Capacity
+67
+
+## HouseWorth
+350000

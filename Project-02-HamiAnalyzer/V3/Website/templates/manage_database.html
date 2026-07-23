@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}Database Management - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-database"></i> Database Management
+        </h1>
+        <p class="text-muted">View, browse, and search your data</p>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4" id="databaseTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">
+            <i class="bi bi-bar-chart"></i> Statistics
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="browse-tab" data-bs-toggle="tab" data-bs-target="#browse" type="button" role="tab">
+            <i class="bi bi-folder"></i> Browse Files
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+            <i class="bi bi-search"></i> Search
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="databaseTabsContent">
+    <!-- Statistics Tab -->
+    <div class="tab-pane fade show active" id="statistics" role="tabpanel">
+
+<!-- First Folder Statistics -->
+<div class="row mb-3">
+    <div class="col">
+        <h5 class="text-primary"><i class="bi bi-folder"></i> First Folder Statistics</h5>
+    </div>
+</div>
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-folder-fill text-primary" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.first.hamis }}</h3>
+                <p class="text-muted mb-0">Hamis (First)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-file-earmark-text-fill text-success" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.first.requests }}</h3>
+                <p class="text-muted mb-0">Requests (First)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-range-fill text-info" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.first.months }}</h3>
+                <p class="text-muted mb-0">Time Periods (First)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-hdd-fill text-warning" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.first.size }}</h3>
+                <p class="text-muted mb-0">Size (First)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Last Folder Statistics -->
+<div class="row mb-3">
+    <div class="col">
+        <h5 class="text-secondary"><i class="bi bi-folder"></i> Last Folder Statistics</h5>
+    </div>
+</div>
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-folder-fill text-primary" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.last.hamis }}</h3>
+                <p class="text-muted mb-0">Hamis (Last)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-file-earmark-text-fill text-success" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.last.requests }}</h3>
+                <p class="text-muted mb-0">Requests (Last)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-range-fill text-info" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.last.months }}</h3>
+                <p class="text-muted mb-0">Time Periods (Last)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-hdd-fill text-warning" style="font-size: 2.5rem;"></i>
+                <h3 class="mt-2 mb-0">{{ stats.last.size }}</h3>
+                <p class="text-muted mb-0">Size (Last)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle-fill text-success"></i> Add Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Upload additional data to expand your database.</p>
+                <a href="{{ url_for('upload') }}" class="btn btn-success">
+                    <i class="bi bi-cloud-upload"></i> Upload More Data
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 border-warning">
+            <div class="card-header bg-white border-warning">
+                <h5 class="mb-0 text-warning">
+                    <i class="bi bi-exclamation-circle-fill"></i> Duplicates
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Check for and resolve duplicate records in your database.</p>
+                <a href="{{ url_for('duplicates_page') }}" class="btn btn-warning">
+                    <i class="bi bi-search-check"></i> Check Duplicates
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 border-danger">
+            <div class="card-header bg-white border-danger">
+                <h5 class="mb-0 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Danger Zone
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Clear all data from the database. <strong>This action cannot be undone!</strong></p>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearModal">
+                    <i class="bi bi-trash"></i> Clear Database
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <!-- Browse Files Tab -->
+    <div class="tab-pane fade" id="browse" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-folder2-open"></i> Browse Database Files</h5>
+            </div>
+            <div class="card-body">
+                <!-- Controls -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Date Source</label>
+                        <select class="form-select" id="browse-date-source">
+                            <option value="first">First</option>
+                            <option value="last">Last</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Output Type</label>
+                        <select class="form-select" id="browse-output-type">
+                            <option value="">-- Select Type --</option>
+                            <option value="combined_output">Combined Output</option>
+                            <option value="hami_output">Hami Output</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Month</label>
+                        <select class="form-select" id="browse-month">
+                            <option value="">-- Select Month --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Files Table -->
+                <div id="files-container">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Select a date source, output type, and month to view files.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Tab -->
+    <div class="tab-pane fade" id="search" role="tabpanel" 
+         data-first-hamis="{{ stats.first.hamis }}" 
+         data-first-requests="{{ stats.first.requests }}" 
+         data-first-months="{{ stats.first.months }}"
+         data-last-hamis="{{ stats.last.hamis }}" 
+         data-last-requests="{{ stats.last.requests }}" 
+         data-last-months="{{ stats.last.months }}">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-search"></i> Search Database</h5>
+            </div>
+            <div class="card-body">
+                <!-- Search Controls -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Date Source</label>
+                        <select class="form-select" id="search-date-source">
+                            <option value="first">First</option>
+                            <option value="last">Last</option>
+                        </select>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label">Search Type</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="search-type" id="search-by-date" value="date" checked>
+                            <label class="btn btn-outline-primary" for="search-by-date">
+                                <i class="bi bi-calendar-range"></i> Date
+                            </label>
+                            <input type="radio" class="btn-check" name="search-type" id="search-by-reference" value="reference">
+                            <label class="btn btn-outline-primary" for="search-by-reference">
+                                <i class="bi bi-code-square"></i> Ref. Code
+                            </label>
+                            <input type="radio" class="btn-check" name="search-type" id="search-by-field" value="field">
+                            <label class="btn btn-outline-primary" for="search-by-field">
+                                <i class="bi bi-funnel"></i> By Field
+                            </label>
+                            <input type="radio" class="btn-check" name="search-type" id="search-by-employee" value="employee">
+                            <label class="btn btn-outline-primary" for="search-by-employee">
+                                <i class="bi bi-people"></i> People
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range Search -->
+                <div id="date-search-form">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label">Start Date (Jalali)</label>
+                            <input type="text" class="form-control" id="search-start-date" placeholder="YYYY-MM-DD (e.g., 1404-01-01)">
+                            <small class="text-muted">Optional: Leave empty for no start limit</small>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">End Date (Jalali)</label>
+                            <input type="text" class="form-control" id="search-end-date" placeholder="YYYY-MM-DD (e.g., 1404-12-30)">
+                            <small class="text-muted">Optional: Leave empty for no end limit</small>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="searchByDate()">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reference Code Search -->
+                <div id="reference-search-form" style="display: none;">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-10">
+                            <label class="form-label">Reference Code</label>
+                            <input type="text" class="form-control" id="search-reference-code" placeholder="Enter reference code">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="searchByReference()">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Field Search -->
+                <div id="field-search-form" style="display: none;">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Search Field</label>
+                            <select class="form-select" id="search-field-name">
+                                <option value="subject">Subject (Topic)</option>
+                                <option value="name">Student Name</option>
+                                <option value="major">Major</option>
+                                <option value="field">Field</option>
+                                <option value="student_id">Student ID</option>
+                                <option value="national_id">National ID</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Search Value</label>
+                            <input type="text" class="form-control" id="search-field-value" placeholder="Enter search value">
+                            <small class="text-muted">Use partial text for text fields (e.g., part of name)</small>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="searchByField()">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- People Search -->
+                <div id="employee-search-form" style="display: none;">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-10">
+                            <label class="form-label">Person Name</label>
+                            <input type="text" class="form-control" id="search-employee-name" placeholder="Enter person name (e.g., محمدمهدی حمیدنژاد)">
+                            <small class="text-muted">Searches in message senders and receivers (from/to columns in combined data). Partial match supported.</small>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="searchByEmployee()">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Progress Bar -->
+                <div id="search-progress-container" style="display: none;">
+                    <div class="card border-0 bg-light mb-3">
+                        <div class="card-body py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-primary fw-semibold">
+                                    <i class="bi bi-hourglass-split search-spinner"></i>
+                                    <span id="search-progress-status">Searching database...</span>
+                                </span>
+                                <span id="search-progress-time" class="text-muted small">Estimated: calculating...</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div id="search-progress-bar" 
+                                     class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" 
+                                     style="width: 0%;" 
+                                     aria-valuenow="0" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    <span id="search-progress-percent">0%</span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <small id="search-progress-detail" class="text-muted">Initializing search...</small>
+                                <small id="search-elapsed-time" class="text-muted">Elapsed: 0s</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="search-results-container">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Enter search criteria and click Search to find files.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Database Modal -->
+<div class="modal fade" id="clearModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Confirm Clear Database
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure you want to clear the entire database?</p>
+                <p class="text-danger mb-0"><strong>This will delete all data permanently!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('clear_database') }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Yes, Clear Database
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File Preview Modal -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="filePreviewModalLabel">
+                    <i class="bi bi-file-earmark-text"></i> <span id="preview-filename">File Preview</span>
+                </h5>
+                <div class="d-flex align-items-center">
+                    <span id="preview-file-info" class="badge bg-light text-dark me-3"></span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0" style="min-height: 300px;">
+                <!-- Loading spinner -->
+                <div id="preview-loading" class="justify-content-center align-items-center" style="height: 300px; display: flex;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                
+                <!-- Error message -->
+                <div id="preview-error" class="alert alert-danger m-3" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i> <span id="preview-error-message"></span>
+                </div>
+                
+                <!-- Global Info Panel (for combined files) -->
+                <div id="preview-global-info" class="p-3 border-bottom bg-light" style="display: none;">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <h6 class="mb-2 text-primary"><i class="bi bi-info-circle"></i> Request Information</h6>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <small class="text-muted d-block">Reference Code</small>
+                            <code id="global-reference-code" class="ref-code-copy text-break" style="cursor: pointer;" onclick="copyToClipboard(this.dataset.refcode, this)" title="Click to copy">-</code>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <small class="text-muted d-block">Subject</small>
+                            <strong id="global-subject" dir="rtl" class="text-break">-</strong>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <small class="text-muted d-block">Student Name</small>
+                            <strong id="global-name" dir="rtl">-</strong>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <small class="text-muted d-block">Student ID</small>
+                            <strong id="global-student-id">-</strong>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <small class="text-muted d-block">Major</small>
+                            <strong id="global-major" dir="rtl" class="text-break">-</strong>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <small class="text-muted d-block">Field</small>
+                            <strong id="global-field" dir="rtl" class="text-break">-</strong>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <small class="text-muted d-block">National ID</small>
+                            <strong id="global-national-id">-</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table container -->
+                <div id="preview-table-container" class="table-responsive" style="display: none; max-height: calc(100vh - 180px); overflow-y: auto;">
+                    <table class="table table-striped table-hover table-bordered mb-0 file-preview-table">
+                        <thead id="preview-table-head" class="table-dark sticky-top">
+                        </thead>
+                        <tbody id="preview-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <!-- Pagination -->
+                <div id="preview-pagination" class="d-flex align-items-center">
+                    <button class="btn btn-outline-primary btn-sm me-2" id="prev-page-btn" onclick="loadPreviewPage('prev')">
+                        <i class="bi bi-chevron-left"></i> Previous
+                    </button>
+                    <span id="pagination-info" class="text-muted mx-2">Page 1 of 1</span>
+                    <button class="btn btn-outline-primary btn-sm ms-2" id="next-page-btn" onclick="loadPreviewPage('next')">
+                        Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div>
+                    <span id="preview-rows-info" class="text-muted me-3"></span>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graph View Modal -->
+<div class="modal fade" id="graphViewModal" tabindex="-1" aria-labelledby="graphViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="graphViewModalLabel">
+                    <i class="bi bi-diagram-3"></i> <span id="graph-filename">Graph View</span>
+                </h5>
+                <div class="d-flex align-items-center">
+                    <span id="graph-stats" class="badge bg-light text-dark me-3"></span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 position-relative" style="min-height: 400px;">
+                <!-- Loading spinner -->
+                <div id="graph-loading" class="justify-content-center align-items-center position-absolute w-100 h-100" style="display: flex; z-index: 10; background: rgba(255,255,255,0.9);">
+                    <div class="text-center">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading graph data...</p>
+                    </div>
+                </div>
+                
+                <!-- Error message -->
+                <div id="graph-error" class="alert alert-danger m-3" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i> <span id="graph-error-message"></span>
+                </div>
+                
+                <!-- Graph container -->
+                <div id="graph-container" style="width: 100%; height: calc(100vh - 160px);"></div>
+                
+                <!-- Node/Edge Info Panel -->
+                <div id="graph-info-panel" class="position-absolute bg-white shadow rounded p-3" style="display: none; top: 10px; right: 10px; max-width: 400px; max-height: 50vh; overflow-y: auto; z-index: 20;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 id="graph-info-title" class="mb-0"><i class="bi bi-info-circle"></i> Details</h6>
+                        <button type="button" class="btn-close btn-sm" onclick="hideGraphInfoPanel()"></button>
+                    </div>
+                    <div id="graph-info-content"></div>
+                </div>
+                
+                <!-- Graph Legend -->
+                <div class="position-absolute bg-white shadow rounded p-2" style="bottom: 10px; left: 10px; z-index: 20;">
+                    <small class="fw-bold">Legend:</small>
+                    <div class="d-flex align-items-center mt-1">
+                        <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #4CAF50;"></span>
+                        <small>Person Node</small>
+                    </div>
+                    <div class="d-flex align-items-center mt-1">
+                        <span class="d-inline-block me-2" style="width: 20px; height: 2px; background-color: #2196F3;"></span>
+                        <small>Message (click for details)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="resetGraphView()">
+                        <i class="bi bi-arrows-fullscreen"></i> Reset View
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleGraphPhysics()">
+                        <i class="bi bi-play-circle"></i> <span id="physics-btn-text">Pause Physics</span>
+                    </button>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/database_manager.js') }}"></script>
+{% endblock %}

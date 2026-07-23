@@ -1,0 +1,2815 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('new_daily_form') if mode == 'new' else t('edit_daily_form') }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<!-- Persian Date Picker -->
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<style>
+    .datepicker-plot-area { font-family: 'Vazirmatn', sans-serif !important; }
+    .day-of-week-display {
+        background: var(--bg-color);
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius);
+        font-weight: 600;
+        color: var(--primary-color);
+        border: 1px solid var(--border-color);
+    }
+    .excel-notice {
+        background: linear-gradient(135deg, var(--success-light) 0%, rgba(16, 185, 129, 0.1) 100%);
+        border: 1px solid var(--success-color);
+        border-radius: var(--radius-lg);
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .excel-notice-icon {
+        font-size: 2rem;
+    }
+    .excel-notice-text {
+        color: var(--success-dark);
+        font-weight: 500;
+    }
+    
+    /* Station Input Styling */
+    .station-input {
+        font-family: 'Monaco', 'Consolas', monospace !important;
+        letter-spacing: 1px;
+        text-align: center;
+        max-width: 100px;
+    }
+    
+    /* Roadmap Visualization - Minimal Professional Style */
+    /* Force LTR direction for roadmap regardless of page language */
+    .roadmap-container {
+        direction: ltr !important;
+        text-align: left !important;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .roadmap-container * {
+        direction: ltr !important;
+    }
+    
+    .roadmap-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .roadmap-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    .roadmap-total {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    
+    .roadmap-total strong {
+        color: var(--primary-color);
+        font-family: 'Monaco', 'Consolas', monospace;
+    }
+    
+    /* Multi-line track container */
+    .roadmap-tracks {
+        margin-bottom: 0.75rem;
+    }
+    
+    .roadmap-activity-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 0.75rem;
+    }
+    
+    .roadmap-activity-label {
+        min-width: 140px;
+        max-width: 140px;
+        font-size: 0.75rem;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .roadmap-activity-color {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+    
+    .roadmap-activity-track {
+        flex: 1;
+        background: var(--bg-secondary);
+        border-radius: 3px;
+        height: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .roadmap-activity-segment {
+        position: absolute;
+        height: 100%;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    
+    .roadmap-activity-total {
+        min-width: 80px;
+        text-align: right;
+        font-size: 0.75rem;
+        font-family: 'Monaco', 'Consolas', monospace;
+        color: var(--text-muted);
+    }
+    
+    /* Ruler */
+    .roadmap-ruler {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0 0.5rem 148px;
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.5rem;
+    }
+    
+    .roadmap-ruler-value {
+        color: var(--text-muted);
+        font-size: 0.65rem;
+        font-family: 'Monaco', 'Consolas', monospace;
+    }
+    
+    /* Summary section */
+    .roadmap-summary {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.5rem;
+    }
+    
+    .roadmap-summary-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .roadmap-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .roadmap-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.6rem;
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        font-size: 0.75rem;
+    }
+    
+    .roadmap-summary-name {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--text-color);
+    }
+    
+    .roadmap-summary-value {
+        font-family: 'Monaco', 'Consolas', monospace;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .roadmap-empty {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+    
+    /* Activity Colors - Simple solid colors */
+    .activity-color-0 { background: #6366f1; }
+    .activity-color-1 { background: #ec4899; }
+    .activity-color-2 { background: #14b8a6; }
+    .activity-color-3 { background: #f59e0b; }
+    .activity-color-4 { background: #8b5cf6; }
+    .activity-color-5 { background: #ef4444; }
+    .activity-color-6 { background: #22c55e; }
+    .activity-color-7 { background: #06b6d4; }
+    .activity-color-8 { background: #f97316; }
+    .activity-color-9 { background: #84cc16; }
+    
+    /* Tooltip */
+    .roadmap-tooltip {
+        position: fixed;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius);
+        font-size: 0.8rem;
+        z-index: 1000;
+        pointer-events: none;
+        box-shadow: var(--shadow);
+        max-width: 220px;
+    }
+    
+    .roadmap-tooltip-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--text-color);
+    }
+    
+    .roadmap-tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    
+    /* Zoom Modal */
+    .roadmap-zoom-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    .roadmap-zoom-modal {
+        direction: ltr !important;
+        background: var(--bg-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        max-width: 900px;
+        width: 100%;
+        max-height: 80vh;
+        overflow: auto;
+    }
+    
+    .roadmap-zoom-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: var(--bg-color);
+        z-index: 1;
+    }
+    
+    .roadmap-zoom-title {
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .roadmap-zoom-range {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-family: 'Monaco', 'Consolas', monospace;
+    }
+    
+    .roadmap-zoom-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0.25rem;
+        line-height: 1;
+    }
+    
+    .roadmap-zoom-close:hover {
+        color: var(--text-color);
+    }
+    
+    .roadmap-zoom-body {
+        padding: 1.25rem;
+    }
+    
+    .roadmap-zoom-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+    
+    .roadmap-zoom-btn {
+        padding: 0.4rem 0.8rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-size: 0.8rem;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .roadmap-zoom-btn:hover {
+        background: var(--border-color);
+    }
+    
+    .roadmap-zoom-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .roadmap-zoom-info {
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    
+    .roadmap-zoom-tracks {
+        margin-bottom: 1rem;
+    }
+    
+    .roadmap-zoom-track {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        gap: 0.75rem;
+    }
+    
+    .roadmap-zoom-label {
+        min-width: 120px;
+        max-width: 120px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--text-color);
+    }
+    
+    .roadmap-zoom-lane {
+        flex: 1;
+        background: var(--bg-secondary);
+        border-radius: 4px;
+        height: 28px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .roadmap-zoom-segment {
+        position: absolute;
+        height: 100%;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: white;
+        cursor: pointer;
+    }
+    
+    .roadmap-zoom-segment:hover {
+        filter: brightness(1.1);
+    }
+    
+    .roadmap-zoom-total {
+        min-width: 70px;
+        text-align: right;
+        font-size: 0.75rem;
+        font-family: 'Monaco', 'Consolas', monospace;
+        color: var(--text-muted);
+    }
+    
+    .roadmap-zoom-ruler {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0 0 128px;
+        margin-right: 78px;
+    }
+    
+    .roadmap-zoom-ruler-value {
+        font-size: 0.7rem;
+        font-family: 'Monaco', 'Consolas', monospace;
+        color: var(--text-muted);
+    }
+    
+    /* Clickable segment indicator */
+    .roadmap-activity-segment {
+        cursor: pointer;
+    }
+    
+    .roadmap-activity-segment:hover {
+        filter: brightness(1.15);
+    }
+    
+    .roadmap-click-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div class="d-flex justify-between align-center flex-wrap gap-2">
+        <h1>{{ t('new_daily_form') if mode == 'new' else t('edit_daily_form') }}</h1>
+        {% if mode == 'new' %}
+        <button type="button" class="btn btn-secondary" id="load-previous-btn" title="{{ t('load_previous_form_desc') }}">
+            📋 {{ t('load_previous_form') }}
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+{% if excel_data %}
+<div class="excel-notice">
+    <span class="excel-notice-icon">📊</span>
+    <span class="excel-notice-text">{{ t('data_loaded_from_excel') }}</span>
+</div>
+{% endif %}
+
+<form method="POST" id="daily-form" enctype="multipart/form-data" action="{% if mode == 'new' %}{{ url_for('forms.new_form') }}{% elif mode == 'edit' %}{{ url_for('forms.edit_form', form_id=form.id) }}{% endif %}">
+    <!-- Section 1: Date and Time -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📅 {{ t('date_and_time') }}</h3>
+        </div>
+        <div class="form-section-body">
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('project') }} *</label>
+                    <select name="project_id" id="project-select" class="form-control" required>
+                        <option value="">{{ t('select_project') }}</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" 
+                            {% if form and form.project_id == project.id %}selected
+                            {% elif selected_project and selected_project.id == project.id %}selected
+                            {% elif excel_data and excel_data.date_time.project_name and project.name == excel_data.date_time.project_name %}selected
+                            {% endif %}>
+                            {{ project.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group flex-1" style="min-width: 180px;">
+                    <label class="form-label">{{ t('form_date') }} *</label>
+                    <input type="text" name="form_date" id="jalali-date-input" class="form-control" required
+                           placeholder="۱۴۰۴-۰۹-۰۶"
+                           value="{% if excel_data and excel_data.date_time.form_date %}{{ excel_data.date_time.form_date }}{% elif form %}{{ form.form_date|jalali('%Y-%m-%d') }}{% else %}{{ today_jalali() }}{% endif %}"
+                           autocomplete="off">
+                </div>
+                <div class="form-group flex-1" style="min-width: 130px;">
+                    <label class="form-label">{{ t('day_of_week') }}</label>
+                    <div class="day-of-week-display" id="day-of-week-display">
+                        {% if excel_data and excel_data.date_time.day_of_week %}{{ excel_data.date_time.day_of_week }}{% elif form and form.day_of_week %}{{ form.day_of_week }}{% else %}-{% endif %}
+                    </div>
+                    <input type="hidden" name="day_of_week" id="day-of-week-input" 
+                           value="{% if excel_data and excel_data.date_time.day_of_week %}{{ excel_data.date_time.day_of_week }}{% elif form %}{{ form.day_of_week }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('work_shift') }}</label>
+                    {% set excel_shift = excel_data.date_time.work_shift if excel_data else '' %}
+                    <select name="work_shift" class="form-control">
+                        <option value="">{{ t('select') }}</option>
+                        <option value="Morning" {% if (form and form.work_shift == 'Morning') or ('صبح' in excel_shift or 'morning' in excel_shift.lower()) %}selected{% endif %}>{{ t('morning_shift') }}</option>
+                        <option value="Night" {% if (form and form.work_shift == 'Night') or ('شب' in excel_shift or 'night' in excel_shift.lower()) %}selected{% endif %}>{{ t('night_shift') }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Climate Condition -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🌤️ {{ t('climate_condition') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            {% set climate = form.climate_conditions.first() if form else None %}
+            {% set excel_climate = excel_data.climate if excel_data else {} %}
+            
+            <!-- Temperature and Humidity -->
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('min_temperature') }} (°C)</label>
+                    <input type="number" name="min_temp" class="form-control" step="0.1"
+                           value="{% if excel_climate.min_temperature %}{{ excel_climate.min_temperature }}{% elif climate %}{{ climate.min_temperature }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('max_temperature') }} (°C)</label>
+                    <input type="number" name="max_temp" class="form-control" step="0.1"
+                           value="{% if excel_climate.max_temperature %}{{ excel_climate.max_temperature }}{% elif climate %}{{ climate.max_temperature }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('humidity') }} (%)</label>
+                    <input type="number" name="humidity" class="form-control" min="0" max="100"
+                           value="{% if excel_climate.humidity %}{{ excel_climate.humidity }}{% elif climate %}{{ climate.humidity }}{% endif %}">
+                </div>
+            </div>
+            
+            <!-- Weather Type - Single Selection -->
+            {% set weather_val = excel_climate.weather_type if excel_climate else (climate.weather_type if climate else '') %}
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('weather_type') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_clear" value="clear"
+                               {% if weather_val == 'clear' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_clear">☀️ {{ t('clear') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_cloudy" value="cloudy"
+                               {% if weather_val == 'cloudy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_cloudy">☁️ {{ t('cloudy') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_rainy" value="rainy"
+                               {% if weather_val == 'rainy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_rainy">🌧️ {{ t('rainy') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_foggy" value="foggy"
+                               {% if weather_val == 'foggy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_foggy">🌫️ {{ t('foggy') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="weather_type" class="form-check-input" id="weather_snowy" value="snowy"
+                               {% if weather_val == 'snowy' %}checked{% endif %}>
+                        <label class="form-check-label" for="weather_snowy">❄️ {{ t('snowy') }}</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Wind Speed - Single Selection -->
+            {% set wind_val = excel_climate.wind_speed if excel_climate else (climate.wind_speed if climate else '') %}
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('wind_speed') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input type="radio" name="wind_speed" class="form-check-input" id="wind_slow" value="slow"
+                               {% if wind_val == 'slow' %}checked{% endif %}>
+                        <label class="form-check-label" for="wind_slow">🍃 {{ t('wind_slow') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="wind_speed" class="form-check-input" id="wind_normal" value="normal"
+                               {% if wind_val == 'normal' %}checked{% endif %}>
+                        <label class="form-check-label" for="wind_normal">💨 {{ t('wind_normal') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="wind_speed" class="form-check-input" id="wind_fast" value="fast"
+                               {% if wind_val == 'fast' %}checked{% endif %}>
+                        <label class="form-check-label" for="wind_fast">🌪️ {{ t('wind_fast') }}</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Climate Effect on Project - Single Selection -->
+            {% set effect_val = excel_climate.climate_effect if excel_climate else (climate.climate_effect if climate else '') %}
+            <div class="form-group">
+                <label class="form-label">{{ t('climate_effect') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                        <input type="radio" name="climate_effect" class="form-check-input" id="effect_none" value="no_effect"
+                               {% if effect_val == 'no_effect' %}checked{% endif %}>
+                        <label class="form-check-label" for="effect_none">✅ {{ t('no_effect') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="climate_effect" class="form-check-input" id="effect_slow" value="slow_progress"
+                               {% if effect_val == 'slow_progress' %}checked{% endif %}>
+                        <label class="form-check-label" for="effect_slow">⚠️ {{ t('slow_progress') }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" name="climate_effect" class="form-check-input" id="effect_stopped" value="stopped"
+                               {% if effect_val == 'stopped' %}checked{% endif %}>
+                        <label class="form-check-label" for="effect_stopped">🛑 {{ t('stopped_completely') }}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Section 3: Human Resources -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>👥 {{ t('human_resources') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="hr-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('post') }}</th>
+                        <th style="width: 100px;">{{ t('count') }}</th>
+                        <th style="width: 100px;">{{ t('working_hours') }}</th>
+                        <th>{{ t('explanations') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.human_resources %}
+                        {% for hr in excel_data.human_resources %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="hr_post[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for position in configuration['Human_Resources'] %}
+                                    <option value="{{ position }}" {% if hr.post == position %}selected{% endif %}>{{ position }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="hr_count[]" value="{{ hr.count }}" min="0"></td>
+                            <td><input type="number" name="hr_hours[]" value="{{ hr.working_hours }}" min="0" step="0.5"></td>
+                            <td><input type="text" name="hr_notes[]" value="{{ hr.notes or '' }}"></td>
+                            <td><span class="remove-row-btn" title="{{ t('remove') }}">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for hr in form.human_resources %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="hr_post[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for position in configuration['Human_Resources'] %}
+                                    <option value="{{ position }}" {% if hr.post and hr.post.strip() == position.strip() %}selected{% endif %}>{{ position }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="hr_count[]" value="{{ hr.count }}" min="0"></td>
+                            <td><input type="number" name="hr_hours[]" value="{{ hr.working_hours }}" min="0" step="0.5"></td>
+                            <td><input type="text" name="hr_notes[]" value="{{ hr.notes or '' }}"></td>
+                            <td><span class="remove-row-btn" title="{{ t('remove') }}">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="hr_post[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for position in configuration['Human_Resources'] %}
+                                <option value="{{ position }}">{{ position }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="hr_count[]" min="0" value="0"></td>
+                        <td><input type="number" data-name="hr_hours[]" min="0" step="0.5" value="0"></td>
+                        <td><input type="text" data-name="hr_notes[]"></td>
+                        <td><span class="remove-row-btn" title="{{ t('remove') }}">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="hr-table">➕ {{ t('add_position') }}</div>
+            <!-- HR Summary -->
+            <div id="hr-summary" class="section-summary" style="margin-top: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 0.9em; display: none;">
+                <strong>👥 {{ t('summary') }}:</strong>
+                <span id="hr-total-count">0</span> {{ t('person') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Tools and Equipment -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🚜 {{ t('tools_and_equipment') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="eq-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('equipment_type') }}</th>
+                        <th>{{ t('equipment_model') }}</th>
+                        <th style="width: 80px;">{{ t('count_active') }}</th>
+                        <th style="width: 80px;">{{ t('working_hours') }}</th>
+                        <th style="width: 120px;">{{ t('situation') }}</th>
+                        <th>{{ t('inactivity_reason') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.tools_equipment %}
+                        {% for eq in excel_data.tools_equipment %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="eq_type[]" class="eq-type-select" onchange="updateEquipmentModels(this)">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for eq_type in configuration['Tools_And_Equipments'].keys() %}
+                                    <option value="{{ eq_type }}" {% if eq.equipment_type and eq.equipment_type.strip() == eq_type.strip() %}selected{% endif %}>{{ eq_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="eq_model[]" class="eq-model-select">
+                                    <option value="">-</option>
+                                    {% if eq.equipment_type and eq.equipment_type in configuration['Tools_And_Equipments'] %}
+                                        {% for model in configuration['Tools_And_Equipments'][eq.equipment_type] %}
+                                        <option value="{{ model }}" {% if eq.equipment_model and eq.equipment_model.strip() == model.strip() %}selected{% endif %}>{{ model }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="eq_active[]" value="{{ eq.count_active }}" min="0"></td>
+                            <td><input type="number" name="eq_hours[]" value="{{ eq.working_hours }}" min="0" step="0.5"></td>
+                            <td>
+                                <select name="eq_situation[]">
+                                    <option value="">-</option>
+                                    <option value="Active" {% if eq.situation == 'Active' or 'فعال' in (eq.situation or '') %}selected{% endif %}>{{ t('active') }}</option>
+                                    <option value="Inactive" {% if eq.situation == 'Inactive' or 'غیرفعال' in (eq.situation or '') %}selected{% endif %}>{{ t('inactive') }}</option>
+                                    <option value="Under Repair" {% if eq.situation == 'Under Repair' or 'تعمیر' in (eq.situation or '') %}selected{% endif %}>{{ t('under_repair') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="eq_reason[]" value="{{ eq.inactivity_reason or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for eq in form.tools_equipments %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="eq_type[]" class="eq-type-select" onchange="updateEquipmentModels(this)">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for eq_type in configuration['Tools_And_Equipments'].keys() %}
+                                    <option value="{{ eq_type }}" {% if eq.equipment_type and eq.equipment_type.strip() == eq_type.strip() %}selected{% endif %}>{{ eq_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="eq_model[]" class="eq-model-select">
+                                    <option value="">-</option>
+                                    {% if eq.equipment_type and eq.equipment_type in configuration['Tools_And_Equipments'] %}
+                                        {% for model in configuration['Tools_And_Equipments'][eq.equipment_type] %}
+                                        <option value="{{ model }}" {% if eq.equipment_model and eq.equipment_model.strip() == model.strip() %}selected{% endif %}>{{ model }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="eq_active[]" value="{{ eq.count_active }}" min="0"></td>
+                            <td><input type="number" name="eq_hours[]" value="{{ eq.working_hours }}" min="0" step="0.5"></td>
+                            <td>
+                                <select name="eq_situation[]">
+                                    <option value="">-</option>
+                                    <option value="Active" {% if eq.situation == 'Active' %}selected{% endif %}>{{ t('active') }}</option>
+                                    <option value="Inactive" {% if eq.situation == 'Inactive' %}selected{% endif %}>{{ t('inactive') }}</option>
+                                    <option value="Under Repair" {% if eq.situation == 'Under Repair' %}selected{% endif %}>{{ t('under_repair') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="eq_reason[]" value="{{ eq.inactivity_reason or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="eq_type[]" class="eq-type-select" onchange="updateEquipmentModels(this)">
+                                <option value="">{{ t('select') }}</option>
+                                {% for eq_type in configuration['Tools_And_Equipments'].keys() %}
+                                <option value="{{ eq_type }}">{{ eq_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select data-name="eq_model[]" class="eq-model-select">
+                                <option value="">-</option>
+                            </select>
+                        </td>
+                        <td><input type="number" data-name="eq_active[]" min="0" value="0"></td>
+                        <td><input type="number" data-name="eq_hours[]" min="0" step="0.5" value="0"></td>
+                        <td>
+                            <select data-name="eq_situation[]">
+                                <option value="">-</option>
+                                <option value="Active">{{ t('active') }}</option>
+                                <option value="Inactive">{{ t('inactive') }}</option>
+                                <option value="Under Repair">{{ t('under_repair') }}</option>
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="eq_reason[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="eq-table">➕ {{ t('add_equipment') }}</div>
+            <!-- Equipment Summary -->
+            <div id="eq-summary" class="section-summary" style="margin-top: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 0.9em; display: none;">
+                <strong>🚜 {{ t('summary') }}:</strong>
+                <span style="color: var(--success-color);">✅ {{ t('active') }}: <span id="eq-active-count">0</span></span> |
+                <span style="color: var(--warning-color);">⏸️ {{ t('inactive') }}: <span id="eq-inactive-count">0</span></span> |
+                <span style="color: var(--danger-color);">🔧 {{ t('under_repair') }}: <span id="eq-repair-count">0</span></span> |
+                <strong>{{ t('total') }}: <span id="eq-total-count">0</span></strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: Construction Operations -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🏗️ {{ t('construction_operations') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="op-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th style="width: 200px;">{{ t('operation_type') }}</th>
+                        <th style="width: 100px;">{{ t('start_station') }}</th>
+                        <th style="width: 100px;">{{ t('end_station') }}</th>
+                        <th style="width: 120px;">{{ t('unit') }}</th>
+                        <th style="width: 100px;">{{ t('amount') }}</th>
+                        <th style="width: 180px;">{{ t('explanation') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.operations %}
+                        {% for op in excel_data.operations %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="op_type[]" class="op-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for operation, unit in configuration['Daily_Activity_Report'].items() %}
+                                    <option value="{{ operation }}" data-unit="{{ unit }}" {% if op.operation_type and op.operation_type.strip() == operation.strip() %}selected{% endif %}>{{ operation }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="op_start[]" class="station-input" value="{{ op.start_station or '' }}" placeholder="00+000"></td>
+                            <td><input type="text" name="op_end[]" class="station-input" value="{{ op.end_station or '' }}" placeholder="00+000"></td>
+                            <td>
+                                <input type="text" name="op_unit[]" class="op-unit-input" value="{{ op.unit or configuration['Daily_Activity_Report'].get(op.operation_type, '') }}" readonly>
+                            </td>
+                            <td><input type="number" name="op_amount[]" value="{{ op.amount or 0 }}" step="0.01"></td>
+                            <td><input type="text" name="op_explanation[]" value="{{ op.explanation or '' }}" placeholder="{{ t('explanation') }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for op in form.construction_operations %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="op_type[]" class="op-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for operation, unit in configuration['Daily_Activity_Report'].items() %}
+                                    <option value="{{ operation }}" data-unit="{{ unit }}" {% if op.operation_type and op.operation_type.strip() == operation.strip() %}selected{% endif %}>{{ operation }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="op_start[]" class="station-input" value="{{ op.start_station or '' }}" placeholder="00+000"></td>
+                            <td><input type="text" name="op_end[]" class="station-input" value="{{ op.end_station or '' }}" placeholder="00+000"></td>
+                            <td>
+                                <input type="text" name="op_unit[]" class="op-unit-input" value="{{ op.unit or '' }}" readonly>
+                            </td>
+                            <td><input type="number" name="op_amount[]" value="{{ op.amount or 0 }}" step="0.01"></td>
+                            <td><input type="text" name="op_explanation[]" value="{{ op.explanation or '' }}" placeholder="{{ t('explanation') }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="op_type[]" class="op-type-select">
+                                <option value="">{{ t('select') }}</option>
+                                {% for operation, unit in configuration['Daily_Activity_Report'].items() %}
+                                <option value="{{ operation }}" data-unit="{{ unit }}">{{ operation }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="op_start[]" class="station-input" placeholder="00+000"></td>
+                        <td><input type="text" data-name="op_end[]" class="station-input" placeholder="00+000"></td>
+                        <td>
+                            <input type="text" data-name="op_unit[]" class="op-unit-input" readonly>
+                        </td>
+                        <td><input type="number" data-name="op_amount[]" step="0.01" value="0"></td>
+                        <td><input type="text" data-name="op_explanation[]" placeholder="{{ t('explanation') }}"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="op-table">➕ {{ t('add_operation') }}</div>
+            
+            <!-- Visual Roadmap - Shows all historical data for the project -->
+            <div class="roadmap-container" id="roadmap-container" style="display: none;">
+                <div class="roadmap-header">
+                    <div class="roadmap-title">📍 {{ t('project_roadmap') }}</div>
+                    <div class="roadmap-total">
+                        {{ t('total_length') }}: <strong id="roadmap-total-length">0 m</strong>
+                    </div>
+                </div>
+                
+                <!-- Activity tracks - one line per activity type -->
+                <div class="roadmap-tracks" id="roadmap-tracks"></div>
+                
+                <!-- Ruler showing station positions -->
+                <div class="roadmap-ruler" id="roadmap-ruler"></div>
+                
+                <!-- Click hint -->
+                <div class="roadmap-click-hint" id="roadmap-click-hint">
+                    {{ t('click_to_zoom') }}
+                </div>
+                
+                <!-- Summary by activity type -->
+                <div class="roadmap-summary" id="roadmap-summary">
+                    <div class="roadmap-summary-title">{{ t('summary_by_activity') }}</div>
+                    <div class="roadmap-summary-grid" id="roadmap-summary-grid"></div>
+                </div>
+                
+                <div class="roadmap-empty" id="roadmap-empty" style="display: none;">
+                    {{ t('no_historical_data') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Incoming Materials -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📦 {{ t('incoming_materials') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="mat-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('material_type') }}</th>
+                        <th>{{ t('unit') }}</th>
+                        <th>{{ t('incoming_amount') }}</th>
+                        <th>{{ t('used_amount') }}</th>
+                        <th>{{ t('storage_place') }}</th>
+                        <th>{{ t('waybill_number') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.materials %}
+                        {% for mat in excel_data.materials %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="mat_type[]" class="mat-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for material, unit in configuration['Incoming_Materials_And_Goods'].items() %}
+                                    <option value="{{ material }}" data-unit="{{ unit }}" {% if mat.material_type == material %}selected{% endif %}>{{ material }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="mat_unit[]" class="mat-unit-input" value="{{ mat.material_unit or configuration['Incoming_Materials_And_Goods'].get(mat.material_type, '') }}" readonly>
+                            </td>
+                            <td><input type="number" name="mat_incoming[]" value="{{ mat.incoming_amount }}" step="0.01"></td>
+                            <td><input type="number" name="mat_used[]" value="{{ mat.used_amount }}" step="0.01"></td>
+                            <td><input type="text" name="mat_storage[]" value="{{ mat.storage_place or '' }}"></td>
+                            <td><input type="text" name="mat_waybill[]" value="{{ mat.waybill_number or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for mat in form.incoming_materials %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="mat_type[]" class="mat-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for material, unit in configuration['Incoming_Materials_And_Goods'].items() %}
+                                    <option value="{{ material }}" data-unit="{{ unit }}" {% if mat.material_type and mat.material_type.strip() == material.strip() %}selected{% endif %}>{{ material }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="mat_unit[]" class="mat-unit-input" value="{{ mat.material_unit or '' }}" readonly>
+                            </td>
+                            <td><input type="number" name="mat_incoming[]" value="{{ mat.incoming_amount }}" step="0.01"></td>
+                            <td><input type="number" name="mat_used[]" value="{{ mat.used_amount }}" step="0.01"></td>
+                            <td><input type="text" name="mat_storage[]" value="{{ mat.storage_place or '' }}"></td>
+                            <td><input type="text" name="mat_waybill[]" value="{{ mat.waybill_number or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="mat_type[]" class="mat-type-select">
+                                <option value="">{{ t('select') }}</option>
+                                {% for material, unit in configuration['Incoming_Materials_And_Goods'].items() %}
+                                <option value="{{ material }}" data-unit="{{ unit }}">{{ material }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" data-name="mat_unit[]" class="mat-unit-input" readonly>
+                        </td>
+                        <td><input type="number" data-name="mat_incoming[]" step="0.01" value="0"></td>
+                        <td><input type="number" data-name="mat_used[]" step="0.01" value="0"></td>
+                        <td><input type="text" data-name="mat_storage[]"></td>
+                        <td><input type="text" data-name="mat_waybill[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="mat-table">➕ {{ t('add_material') }}</div>
+            <!-- Materials Inventory Summary -->
+            <div id="mat-summary" class="section-summary" style="margin-top: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 0.9em; display: none;">
+                <strong>📦 {{ t('summary') }}:</strong>
+                <span>📥 {{ t('total_incoming') }}: <span id="mat-total-incoming">0</span></span> |
+                <span>📤 {{ t('total_used') }}: <span id="mat-total-used">0</span></span> |
+                <span id="mat-diff-label">📊 {{ t('difference') }}: <span id="mat-total-diff">0</span></span>
+            </div>
+            <div id="mat-inventory-warning" style="margin-top: 6px; padding: 8px 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-size: 0.85em; color: #856404; display: none;">
+                ⚠️ <span id="mat-warning-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 7: Project Issues -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>⚠️ {{ t('project_issues') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="issue-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th>{{ t('issue_type') }}</th>
+                        <th>{{ t('effect') }}</th>
+                        <th style="width: 100px;">{{ t('location_km') }}</th>
+                        <th style="width: 100px;">{{ t('start_time') }}</th>
+                        <th style="width: 100px;">{{ t('end_time') }}</th>
+                        <th>{{ t('notes') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.issues %}
+                        {% for issue in excel_data.issues %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="issue_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for issue_option in configuration['Project_Issues'] %}
+                                    <option value="{{ issue_option }}" {% if issue.issue_type and issue.issue_type.strip() == issue_option.strip() %}selected{% endif %}>{{ issue_option }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="issue_effect[]" value="{{ issue.effect or '' }}"></td>
+                            <td><input type="text" name="issue_location[]" value="{{ issue.location_station or '' }}" placeholder="00+000" class="station-input"></td>
+                            <td><input type="time" name="issue_start_time[]" value="{{ issue.start_time or '' }}"></td>
+                            <td><input type="time" name="issue_end_time[]" value="{{ issue.end_time or '' }}"></td>
+                            <td><input type="text" name="issue_notes[]" value="{{ issue.notes or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for issue in form.project_issues %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="issue_type[]">
+                                    <option value="">{{ t('select') }}</option>
+                                    {% for issue_option in configuration['Project_Issues'] %}
+                                    <option value="{{ issue_option }}" {% if issue.issue_type and issue.issue_type.strip() == issue_option.strip() %}selected{% endif %}>{{ issue_option }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" name="issue_effect[]" value="{{ issue.effect or '' }}"></td>
+                            <td><input type="text" name="issue_location[]" value="{{ issue.location_station or '' }}" placeholder="00+000" class="station-input"></td>
+                            <td><input type="time" name="issue_start_time[]" value="{{ issue.start_time.strftime('%H:%M') if issue.start_time else '' }}"></td>
+                            <td><input type="time" name="issue_end_time[]" value="{{ issue.end_time.strftime('%H:%M') if issue.end_time else '' }}"></td>
+                            <td><input type="text" name="issue_notes[]" value="{{ issue.notes or '' }}"></td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="issue_type[]">
+                                <option value="">{{ t('select') }}</option>
+                                {% for issue_option in configuration['Project_Issues'] %}
+                                <option value="{{ issue_option }}">{{ issue_option }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="issue_effect[]"></td>
+                        <td><input type="number" data-name="issue_location[]" step="0.01"></td>
+                        <td><input type="time" data-name="issue_start_time[]"></td>
+                        <td><input type="time" data-name="issue_end_time[]"></td>
+                        <td><input type="text" data-name="issue_notes[]"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="issue-table">➕ {{ t('add_issue') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 8: Safety -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>🛡️ {{ t('safety') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            {% set safety = form.safety_records.first() if form else None %}
+            {% set excel_safety = excel_data.safety if excel_data else None %}
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-group">
+                    <label class="form-label">{{ t('safety_situation') }}</label>
+                    {% set selected_situation = excel_safety.safety_situation if excel_safety else (safety.safety_situation if safety else '') %}
+                    <div class="d-flex gap-4 flex-wrap mt-2">
+                        <div class="form-check">
+                            <input type="radio" name="safety_situation" class="form-check-input" id="safety_no_incident" 
+                                   value="NoIncident" {% if selected_situation == 'NoIncident' or not selected_situation %}checked{% endif %}>
+                            <label class="form-check-label" for="safety_no_incident">{{ t('no_incident') }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" name="safety_situation" class="form-check-input" id="safety_near_miss" 
+                                   value="NearMiss" {% if selected_situation == 'NearMiss' %}checked{% endif %}>
+                            <label class="form-check-label" for="safety_near_miss">{{ t('near_miss') }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" name="safety_situation" class="form-check-input" id="safety_incident" 
+                                   value="Incident" {% if selected_situation == 'Incident' %}checked{% endif %}>
+                            <label class="form-check-label" for="safety_incident">{{ t('incident') }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-3 flex-wrap mb-3">
+                <div class="form-check">
+                    {% set inspection_checked = excel_safety.safety_inspection if excel_safety else (safety.safety_inspection if safety else False) %}
+                    <input type="checkbox" name="safety_inspection" class="form-check-input" id="safety_inspection"
+                           {% if inspection_checked %}checked{% endif %}>
+                    <label class="form-check-label" for="safety_inspection">{{ t('safety_inspection') }}</label>
+                </div>
+                <div class="form-check">
+                    {% set incident_checked = excel_safety.incident_occurred if excel_safety else (safety.incident_occurred if safety else False) %}
+                    <input type="checkbox" name="incident_occurred" class="form-check-input" id="incident_occurred"
+                           {% if incident_checked %}checked{% endif %}>
+                    <label class="form-check-label" for="incident_occurred">{{ t('incident_occurred') }}</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ t('incident_explanation') }}</label>
+                {% set incident_text = excel_safety.incident_explanation if excel_safety else (safety.incident_explanation if safety else '') %}
+                <textarea name="incident_explanation" class="form-control" rows="3">{{ incident_text }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 9: Events -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📌 {{ t('events') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <table class="dynamic-table" id="event-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th style="width: 120px;">{{ t('event_type') }}</th>
+                        <th>{{ t('event_name') }}</th>
+                        <th>{{ t('explanation') }}</th>
+                        <th style="width: 200px;">{{ t('meeting_minutes') }}</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if excel_data and excel_data.events %}
+                        {% for event in excel_data.events %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="event_type[]" class="form-control event-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    <option value="Visit" {% if event.event_type == 'Visit' %}selected{% endif %}>{{ t('event_visit') }}</option>
+                                    <option value="Meeting" {% if event.event_type == 'Meeting' %}selected{% endif %}>{{ t('event_meeting') }}</option>
+                                    <option value="Other" {% if event.event_type == 'Other' %}selected{% endif %}>{{ t('event_other') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="event_name[]" value="{{ event.event_name or '' }}" class="event-name-input"></td>
+                            <td><input type="text" name="event_explanation[]" value="{{ event.explanation or '' }}"></td>
+                            <td>
+                                <input type="file" name="event_document_{{ loop.index0 }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="form-control event-doc-input">
+                            </td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% elif form %}
+                        {% for event in form.events %}
+                        <tr>
+                            <td class="row-number">{{ loop.index }}</td>
+                            <td>
+                                <select name="event_type[]" class="form-control event-type-select">
+                                    <option value="">{{ t('select') }}</option>
+                                    <option value="Visit" {% if event.event_type == 'Visit' %}selected{% endif %}>{{ t('event_visit') }}</option>
+                                    <option value="Meeting" {% if event.event_type == 'Meeting' %}selected{% endif %}>{{ t('event_meeting') }}</option>
+                                    <option value="Other" {% if event.event_type == 'Other' %}selected{% endif %}>{{ t('event_other') }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="event_name[]" value="{{ event.event_name }}" class="event-name-input"></td>
+                            <td><input type="text" name="event_explanation[]" value="{{ event.explanation or '' }}"></td>
+                            <td>
+                                {% if event.document_filename %}
+                                <span class="badge badge-success" title="{{ event.document_filename }}">📄 {{ t('documents_attached') }}</span>
+                                {% endif %}
+                                <input type="file" name="event_document_{{ loop.index0 }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="form-control event-doc-input">
+                            </td>
+                            <td><span class="remove-row-btn">🗑️</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    <tr class="row-template d-none">
+                        <td class="row-number"></td>
+                        <td>
+                            <select data-name="event_type[]" class="form-control event-type-select">
+                                <option value="">{{ t('select') }}</option>
+                                <option value="Visit">{{ t('event_visit') }}</option>
+                                <option value="Meeting">{{ t('event_meeting') }}</option>
+                                <option value="Other">{{ t('event_other') }}</option>
+                            </select>
+                        </td>
+                        <td><input type="text" data-name="event_name[]" class="event-name-input"></td>
+                        <td><input type="text" data-name="event_explanation[]"></td>
+                        <td><input type="file" data-name="event_document_INDEX" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="form-control event-doc-input"></td>
+                        <td><span class="remove-row-btn">🗑️</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="add-row-btn" data-table="event-table">➕ {{ t('add_event') }}</div>
+        </div>
+    </div>
+
+    <!-- Section 10: Documents -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3>📎 {{ t('form_documents') }}</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="form-section-body">
+            <div class="document-upload-area">
+                <div class="upload-info mb-3">
+                    <p class="text-muted">{{ t('upload_documents_desc') }}</p>
+                    <small class="text-muted">{{ t('allowed_file_types') }} | {{ t('max_file_size') }}</small>
+                </div>
+                
+                {% if form and form.documents_path %}
+                <div class="existing-documents mb-3" id="existing-documents">
+                    <div class="d-flex align-center gap-2 flex-wrap">
+                        <span class="badge badge-success">📄 {{ t('documents_attached') }}</span>
+                        <a href="{{ url_for('forms.download_form_documents', form_id=form.id) }}" class="btn btn-sm btn-primary">
+                            📥 {{ t('download_documents') }}
+                        </a>
+                        {% if form.status == 'draft' %}
+                        <button type="button" class="btn btn-sm btn-danger" id="delete-documents-btn" 
+                                data-form-id="{{ form.id }}">
+                            🗑️ {{ t('delete_documents') }}
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="file-input-wrapper">
+                    <label class="file-input-label" for="form-documents">
+                        <span class="file-input-icon">📁</span>
+                        <span class="file-input-text">{{ t('select_files') }}</span>
+                        <input type="file" 
+                               name="form_documents[]" 
+                               id="form-documents" 
+                               multiple 
+                               accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.doc,.docx,.zip,.rar"
+                               class="file-input">
+                    </label>
+                </div>
+                
+                <div class="selected-files-list mt-3" id="selected-files-list" style="display: none;">
+                    <h5>{{ t('selected_files') }}:</h5>
+                    <ul id="files-list"></ul>
+                    <div class="total-size mt-2">
+                        <span id="total-size-display"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Buttons -->
+    <div class="d-flex gap-3 mt-4">
+        <button type="submit" name="action" value="draft" class="btn btn-outline">💾 {{ t('save_draft') }}</button>
+        <button type="submit" name="action" value="submit" class="btn btn-primary">✈️ {{ t('submit_form') }}</button>
+        <a href="{{ url_for('forms.my_forms') }}" class="btn btn-outline">{{ t('cancel') }}</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Persian Date Picker -->
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Project-specific configurations
+    var projectConfigs = {{ project_configs | tojson | safe }};
+    
+    // Helper: convert Persian/Arabic digits to English
+    function persianToEnglish(str) {
+        if (!str) return str;
+        return str.toString()
+            .replace(/[۰-۹]/g, function(d) { return d.charCodeAt(0) - 1776; })
+            .replace(/[٠-٩]/g, function(d) { return d.charCodeAt(0) - 1632; });
+    }
+    
+    // Helper: auto-fill units for all pre-selected operation/material dropdowns
+    function autoFillUnitsFromDropdowns() {
+        $('select.op-type-select, select[name="op_type[]"]').each(function() {
+            var $select = $(this);
+            if ($select.val()) {
+                var $row = $select.closest('tr');
+                var $unitInput = $row.find('.op-unit-input, input[name="op_unit[]"]');
+                var selectedOption = $select.find('option:selected');
+                var unit = selectedOption.data('unit') || '';
+                if (unit) {
+                    $unitInput.val(unit);
+                }
+            }
+        });
+        $('select.mat-type-select, select[name="mat_type[]"]').each(function() {
+            var $select = $(this);
+            if ($select.val()) {
+                var $row = $select.closest('tr');
+                var $unitInput = $row.find('.mat-unit-input, input[name="mat_unit[]"]');
+                var selectedOption = $select.find('option:selected');
+                var unit = selectedOption.data('unit') || '';
+                if (unit) {
+                    $unitInput.val(unit);
+                }
+            }
+        });
+    }
+    
+    // Helper: auto-fill equipment models for all pre-selected equipment types
+    function autoFillEquipmentModels() {
+        $('select.eq-type-select, select[name="eq_type[]"]').each(function() {
+            if ($(this).val()) {
+                updateEquipmentModels(this);
+            }
+        });
+    }
+    
+    // Store current selection value
+    var selectLabel = '{{ t("select") }}';
+    
+    // Function to update equipment model dropdown based on selected type
+    window.updateEquipmentModels = function(selectElement) {
+        var $typeSelect = $(selectElement);
+        var $row = $typeSelect.closest('tr');
+        var $modelSelect = $row.find('.eq-model-select');
+        var selectedType = $typeSelect.val();
+        
+        // Get current project's configuration
+        var projectId = $('#project-select').val();
+        var equipment = {};
+        
+        if (projectId && projectConfigs[projectId] && projectConfigs[projectId]['Tools_And_Equipments']) {
+            equipment = projectConfigs[projectId]['Tools_And_Equipments'];
+        }
+        
+        // Clear and rebuild model options
+        $modelSelect.empty();
+        $modelSelect.append($('<option>', { value: '', text: '-' }));
+        
+        if (selectedType && equipment[selectedType]) {
+            var models = equipment[selectedType];
+            $.each(models, function(i, model) {
+                $modelSelect.append($('<option>', { value: model, text: model }));
+            });
+        }
+        
+        // Refresh the SearchableSelect wrapper if it exists
+        var wrapper = $modelSelect.closest('.searchable-select-wrapper');
+        if (wrapper.length && $modelSelect[0]._searchableSelect) {
+            $modelSelect[0]._searchableSelect.refresh();
+        } else if (wrapper.length) {
+            // Re-initialize the searchable select
+            var selectEl = $modelSelect[0];
+            wrapper.replaceWith(selectEl);
+            new SearchableSelect(selectEl);
+        }
+    };
+    
+    // Event delegation for equipment type changes (handles SearchableSelect)
+    $(document).on('change', 'select.eq-type-select, select[name="eq_type[]"]', function() {
+        updateEquipmentModels(this);
+    });
+    
+    // Auto-fill unit when operation type is selected
+    $(document).on('change', 'select.op-type-select, select[name="op_type[]"]', function() {
+        var $select = $(this);
+        var $row = $select.closest('tr');
+        var $unitInput = $row.find('.op-unit-input, input[name="op_unit[]"]');
+        var selectedOption = $select.find('option:selected');
+        var unit = selectedOption.data('unit') || '';
+        $unitInput.val(unit);
+    });
+    
+    // Auto-fill unit when material type is selected
+    $(document).on('change', 'select.mat-type-select, select[name="mat_type[]"]', function() {
+        var $select = $(this);
+        var $row = $select.closest('tr');
+        var $unitInput = $row.find('.mat-unit-input, input[name="mat_unit[]"]');
+        var selectedOption = $select.find('option:selected');
+        var unit = selectedOption.data('unit') || '';
+        $unitInput.val(unit);
+    });
+    
+    // Function to update dropdown options based on project
+    function updateConfigurableDropdowns(projectId) {
+        if (!projectId || !projectConfigs[projectId]) return;
+        
+        var config = projectConfigs[projectId];
+        
+        // Update Human Resources dropdowns
+        updateSelectOptions('hr_post[]', config['Human_Resources']);
+        
+        // Update Equipment Type dropdowns (now it's a dict, so get keys)
+        var equipmentTypes = Object.keys(config['Tools_And_Equipments'] || {});
+        updateSelectOptions('eq_type[]', equipmentTypes);
+        
+        // Clear all model dropdowns when project changes
+        $('select[name="eq_model[]"]').each(function() {
+            var $select = $(this);
+            $select.empty().append($('<option>', { value: '', text: '-' }));
+            // Refresh SearchableSelect if it exists
+            if ($select[0]._searchableSelect) {
+                $select[0]._searchableSelect.refresh();
+            }
+        });
+        
+        // Update Operations dropdowns (dict format: {name: unit})
+        updateSelectOptionsWithUnit('op_type[]', config['Daily_Activity_Report']);
+        
+        // Update Materials dropdowns (dict format: {name: unit})
+        updateSelectOptionsWithUnit('mat_type[]', config['Incoming_Materials_And_Goods']);
+        
+        // Clear unit inputs when project changes
+        $('input[name="op_unit[]"], input[name="mat_unit[]"]').val('');
+        
+        // Update Issues dropdowns
+        updateSelectOptions('issue_type[]', config['Project_Issues']);
+        
+        // Also update the row templates
+        updateTemplateOptions('hr-table', 'hr_post[]', config['Human_Resources']);
+        updateEquipmentTemplateOptions('eq-table', equipmentTypes);
+        updateTemplateOptionsWithUnit('op-table', 'op_type[]', config['Daily_Activity_Report']);
+        updateTemplateOptionsWithUnit('mat-table', 'mat_type[]', config['Incoming_Materials_And_Goods']);
+        updateTemplateOptions('issue-table', 'issue_type[]', config['Project_Issues']);
+    }
+    
+    // Function to update equipment template options
+    function updateEquipmentTemplateOptions(tableId, equipmentTypes) {
+        var $template = $('#' + tableId + ' .row-template');
+        var $typeSelect = $template.find('select[data-name="eq_type[]"]');
+        
+        if ($typeSelect.length) {
+            $typeSelect.empty();
+            $typeSelect.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(equipmentTypes, function(i, eqType) {
+                $typeSelect.append($('<option>', { value: eqType, text: eqType }));
+            });
+        }
+    }
+    
+    // Function to update select options with unit data (for dicts)
+    function updateSelectOptionsWithUnit(selectName, optionsDict) {
+        $('select[name="' + selectName + '"]').each(function() {
+            var currentValue = $(this).val();
+            var $select = $(this);
+            
+            // Clear and rebuild options
+            $select.empty();
+            $select.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(optionsDict, function(name, unit) {
+                $select.append($('<option>', { value: name, text: name, 'data-unit': unit }));
+            });
+            
+            // Try to restore previous value
+            if (currentValue && optionsDict[currentValue]) {
+                $select.val(currentValue);
+            }
+            
+            // Refresh SearchableSelect if it exists
+            if ($select[0]._searchableSelect) {
+                $select[0]._searchableSelect.refresh();
+            }
+        });
+    }
+    
+    // Function to update template options with unit (for dicts)
+    function updateTemplateOptionsWithUnit(tableId, dataName, optionsDict) {
+        var $template = $('#' + tableId + ' .row-template');
+        var $select = $template.find('select[data-name="' + dataName + '"]');
+        
+        if ($select.length) {
+            $select.empty();
+            $select.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(optionsDict, function(name, unit) {
+                $select.append($('<option>', { value: name, text: name, 'data-unit': unit }));
+            });
+        }
+    }
+    
+    // Function to update select options while preserving current value
+    function updateSelectOptions(selectName, options) {
+        $('select[name="' + selectName + '"]').each(function() {
+            var currentValue = $(this).val();
+            var $select = $(this);
+            
+            // Clear and rebuild options
+            $select.empty();
+            $select.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(options, function(i, option) {
+                $select.append($('<option>', { value: option, text: option }));
+            });
+            
+            // Try to restore previous value if it exists in new options
+            if (currentValue && options.indexOf(currentValue) !== -1) {
+                $select.val(currentValue);
+            }
+            
+            // Refresh SearchableSelect if it exists
+            if ($select[0]._searchableSelect) {
+                $select[0]._searchableSelect.refresh();
+            }
+        });
+    }
+    
+    // Function to update template row options
+    function updateTemplateOptions(tableId, dataName, options) {
+        var $template = $('#' + tableId + ' .row-template');
+        var $select = $template.find('select[data-name="' + dataName + '"]');
+        
+        if ($select.length) {
+            $select.empty();
+            $select.append($('<option>', { value: '', text: selectLabel }));
+            
+            $.each(options, function(i, option) {
+                $select.append($('<option>', { value: option, text: option }));
+            });
+        }
+    }
+    
+    // Handle project selection change
+    $('select[name="project_id"]').on('change', function() {
+        var projectId = $(this).val();
+        updateConfigurableDropdowns(projectId);
+    });
+    
+    // Initialize dropdowns with currently selected project (if any)
+    var initialProjectId = $('select[name="project_id"]').val();
+    if (initialProjectId) {
+        updateConfigurableDropdowns(initialProjectId);
+    }
+    
+    // Auto-fill units and equipment models for all pre-selected rows on page load
+    autoFillUnitsFromDropdowns();
+    autoFillEquipmentModels();
+    
+    // Persian weekday names
+    var weekdays = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
+    
+    // Function to update day of week display
+    function updateDayOfWeek(unix) {
+        var pDate = new persianDate(unix);
+        var dayIndex = pDate.day() - 1; // day() returns 1=Saturday..7=Friday, subtract 1 for 0-based array
+        var dayName = weekdays[dayIndex];
+        $('#day-of-week-display').text(dayName);
+        $('#day-of-week-input').val(dayName);
+    }
+    
+    // Initialize Persian date picker with today's date as default
+    var datepicker = $('#jalali-date-input').persianDatepicker({
+        format: 'YYYY-MM-DD',
+        initialValue: true,
+        initialValueType: 'persian',
+        autoClose: true,
+        editable: true,
+        observer: true,
+        calendar: {
+            persian: {
+                locale: 'fa'
+            }
+        },
+        toolbox: {
+            calendarSwitch: {
+                enabled: false
+            }
+        },
+        onSelect: function(unix) {
+            updateDayOfWeek(unix);
+        }
+    });
+    
+    // Set initial day of week on page load
+    // Helper to parse Jalali date string (handles both Persian and English digits)
+    function parseDateAndUpdateDayOfWeek() {
+        var initialDateStr = persianToEnglish($('#jalali-date-input').val());
+        if (initialDateStr) {
+            var parts = initialDateStr.split('-');
+            if (parts.length === 3) {
+                var y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                    var pDate = new persianDate([y, m, d]);
+                    updateDayOfWeek(pDate.valueOf());
+                    return;
+                }
+            }
+        }
+        // Fallback to today
+        updateDayOfWeek(new persianDate().valueOf());
+    }
+    parseDateAndUpdateDayOfWeek();
+    
+    // Load Previous Form functionality
+    $('#load-previous-btn').on('click', function() {
+        var confirmMsg = currentLang === 'fa' ? 
+            'این عمل اطلاعات فعلی فرم را با آخرین فرم ارسالی شما جایگزین می‌کند. ادامه می‌دهید؟' : 
+            'This will replace current form data with your last submission. Continue?';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        var $btn = $(this);
+        var originalText = $btn.html();
+        var loadingText = currentLang === 'fa' ? '⏳ در حال بارگذاری...' : '⏳ Loading...';
+        
+        $btn.prop('disabled', true).html(loadingText);
+        
+        // Get current project ID if selected
+        var projectId = $('select[name="project_id"]').val();
+        var url = '{{ url_for("forms.get_previous_form") }}';
+        if (projectId) {
+            url += '?project_id=' + projectId;
+        }
+        
+        $.get(url)
+            .done(function(data) {
+                if (data.success) {
+                    populateFormWithPreviousData(data);
+                    var successMsg = currentLang === 'fa' ? 
+                        'اطلاعات فرم قبلی با موفقیت بارگذاری شد' : 
+                        'Previous form data loaded successfully';
+                    showAlert('success', successMsg);
+                }
+            })
+            .fail(function(xhr) {
+                var errorMsg = currentLang === 'fa' ? 
+                    'فرم قبلی یافت نشد' : 
+                    'No previous form found';
+                showAlert('warning', errorMsg);
+            })
+            .always(function() {
+                $btn.prop('disabled', false).html(originalText);
+            });
+    });
+    
+    function populateFormWithPreviousData(data) {
+        // Set project
+        if (data.project_id) {
+            $('select[name="project_id"]').val(data.project_id).trigger('change');
+        }
+        
+        // Set work shift
+        if (data.work_shift) {
+            $('select[name="work_shift"]').val(data.work_shift);
+        }
+        
+        // Set climate data
+        if (data.climate) {
+            $('input[name="min_temp"]').val(data.climate.min_temperature || '');
+            $('input[name="max_temp"]').val(data.climate.max_temperature || '');
+            $('input[name="humidity"]').val(data.climate.humidity || '');
+            
+            if (data.climate.weather_type) {
+                $('input[name="weather_type"][value="' + data.climate.weather_type + '"]').prop('checked', true);
+            }
+            if (data.climate.wind_speed) {
+                $('input[name="wind_speed"][value="' + data.climate.wind_speed + '"]').prop('checked', true);
+            }
+            if (data.climate.climate_effect) {
+                $('input[name="climate_effect"][value="' + data.climate.climate_effect + '"]').prop('checked', true);
+            }
+        }
+        
+        // Populate Human Resources table
+        populateDynamicTable('hr-table', data.human_resources, function(row, item) {
+            row.find('select[name="hr_post[]"]').val(item.post);
+            row.find('input[name="hr_count[]"]').val(item.count || 0);
+            row.find('input[name="hr_hours[]"]').val(item.working_hours || 0);
+            row.find('input[name="hr_notes[]"]').val(item.notes || '');
+        });
+        
+        // Populate Tools and Equipment table
+        populateDynamicTable('eq-table', data.tools_equipment, function(row, item) {
+            var $typeSelect = row.find('select[name="eq_type[]"]');
+            var $modelSelect = row.find('select[name="eq_model[]"]');
+            
+            $typeSelect.val(item.equipment_type);
+            
+            // Populate model options based on selected type
+            var projectId = $('#project-select').val();
+            if (projectId && projectConfigs[projectId] && projectConfigs[projectId]['Tools_And_Equipments']) {
+                var equipment = projectConfigs[projectId]['Tools_And_Equipments'];
+                var eqType = item.equipment_type;
+                
+                if (eqType && equipment[eqType]) {
+                    $modelSelect.empty().append($('<option>', { value: '', text: '-' }));
+                    $.each(equipment[eqType], function(i, model) {
+                        $modelSelect.append($('<option>', { value: model, text: model }));
+                    });
+                    $modelSelect.val(item.equipment_model || '');
+                }
+            }
+            
+            row.find('input[name="eq_active[]"]').val(item.count_active || 0);
+            row.find('input[name="eq_hours[]"]').val(item.working_hours || 0);
+            row.find('select[name="eq_situation[]"]').val(item.situation || '');
+            row.find('input[name="eq_reason[]"]').val(item.inactivity_reason || '');
+        });
+        
+        // Populate Construction Operations table
+        populateDynamicTable('op-table', data.operations, function(row, item) {
+            row.find('select[name="op_type[]"]').val(item.operation_type);
+            row.find('input[name="op_start[]"]').val(item.start_station || '');
+            row.find('input[name="op_end[]"]').val(item.end_station || '');
+            row.find('input[name="op_unit[]"]').val(item.unit || '');
+            row.find('input[name="op_amount[]"]').val(item.amount || 0);
+            row.find('input[name="op_explanation[]"]').val(item.explanation || '');
+            // Update roadmap after populating
+            setTimeout(updateRoadmap, 200);
+        });
+        
+        // Populate Incoming Materials table
+        populateDynamicTable('mat-table', data.materials, function(row, item) {
+            row.find('select[name="mat_type[]"]').val(item.material_type);
+            row.find('input[name="mat_unit[]"]').val(item.material_unit || '');
+            row.find('input[name="mat_incoming[]"]').val(item.incoming_amount || 0);
+            row.find('input[name="mat_used[]"]').val(item.used_amount || 0);
+            row.find('input[name="mat_storage[]"]').val(item.storage_place || '');
+            row.find('input[name="mat_waybill[]"]').val(item.waybill_number || '');
+        });
+        
+        // Populate Project Issues table
+        populateDynamicTable('issue-table', data.issues, function(row, item) {
+            row.find('select[name="issue_type[]"]').val(item.issue_type);
+            row.find('input[name="issue_effect[]"]').val(item.effect || '');
+            row.find('input[name="issue_location[]"]').val(item.location_station || '');
+            row.find('input[name="issue_start_time[]"]').val(item.start_time || '');
+            row.find('input[name="issue_end_time[]"]').val(item.end_time || '');
+            row.find('input[name="issue_notes[]"]').val(item.notes || '');
+        });
+        
+        // Set Safety data
+        if (data.safety) {
+            $('select[name="safety_situation"]').val(data.safety.safety_situation || '');
+            $('input[name="safety_inspection"]').prop('checked', data.safety.safety_inspection);
+            $('input[name="incident_occurred"]').prop('checked', data.safety.incident_occurred);
+            $('textarea[name="incident_explanation"]').val(data.safety.incident_explanation || '');
+        }
+        
+        // Populate Events table
+        populateDynamicTable('event-table', data.events, function(row, item) {
+            row.find('select[name="event_type[]"]').val(item.event_type || '');
+            row.find('input[name="event_name[]"]').val(item.event_name);
+            row.find('input[name="event_explanation[]"]').val(item.explanation || '');
+        });
+        
+        // Re-initialize searchable selects for newly added rows,
+        // then re-fill units and equipment models (since dropdown rebuild may clear them)
+        setTimeout(function() {
+            if (typeof initSearchableSelects === 'function') {
+                initSearchableSelects();
+            }
+            // Re-fill units from selected dropdown options after everything is rebuilt
+            autoFillUnitsFromDropdowns();
+            autoFillEquipmentModels();
+            // Re-compute day of week for current date
+            parseDateAndUpdateDayOfWeek();
+        }, 150);
+    }
+    
+    // Event type auto-fill event name
+    var eventTypeNames = {
+        'Visit': currentLang === 'fa' ? 'بازدید' : 'Visit',
+        'Meeting': currentLang === 'fa' ? 'جلسه' : 'Meeting',
+        'Other': currentLang === 'fa' ? 'موارد دیگر' : 'Other'
+    };
+    
+    $(document).on('change', '.event-type-select', function() {
+        var $row = $(this).closest('tr');
+        var $nameInput = $row.find('.event-name-input');
+        var selectedType = $(this).val();
+        
+        // Only auto-fill if name is empty or matches a previous auto-fill
+        var currentName = $nameInput.val().trim();
+        var isAutoFilled = Object.values(eventTypeNames).includes(currentName) || currentName === '';
+        
+        if (isAutoFilled && selectedType && eventTypeNames[selectedType]) {
+            $nameInput.val(eventTypeNames[selectedType]);
+        }
+    });
+    
+    function populateDynamicTable(tableId, items, populateRow) {
+        if (!items || items.length === 0) return;
+        
+        var $table = $('#' + tableId);
+        var $tbody = $table.find('tbody');
+        var $template = $table.find('.row-template');
+        
+        // Remove existing non-template rows
+        $tbody.find('tr:not(.row-template)').remove();
+        
+        // Add rows for each item
+        items.forEach(function(item, index) {
+            var $newRow = $template.clone();
+            $newRow.removeClass('row-template d-none');
+            $newRow.css('display', '');
+            
+            // Convert data-name to name attributes
+            $newRow.find('[data-name]').each(function() {
+                var dataName = $(this).attr('data-name');
+                $(this).attr('name', dataName);
+            });
+            
+            // Set row number
+            $newRow.find('.row-number').text(index + 1);
+            
+            // Populate the row with data
+            populateRow($newRow, item);
+            
+            $tbody.append($newRow);
+        });
+    }
+    
+    // Document upload handling
+    var MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 MB
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    }
+    
+    function getFileIcon(filename) {
+        var ext = filename.split('.').pop().toLowerCase();
+        var icons = {
+            'pdf': '📕',
+            'doc': '📘',
+            'docx': '📘',
+            'png': '🖼️',
+            'jpg': '🖼️',
+            'jpeg': '🖼️',
+            'gif': '🖼️',
+            'bmp': '🖼️',
+            'zip': '📦',
+            'rar': '📦'
+        };
+        return icons[ext] || '📄';
+    }
+    
+    $('#form-documents').on('change', function() {
+        var files = this.files;
+        var $list = $('#files-list');
+        var $container = $('#selected-files-list');
+        var $totalSize = $('#total-size-display');
+        
+        $list.empty();
+        
+        if (files.length === 0) {
+            $container.hide();
+            return;
+        }
+        
+        var totalSize = 0;
+        
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            totalSize += file.size;
+            
+            var $li = $('<li>');
+            $li.html(
+                '<span class="file-name">' + getFileIcon(file.name) + ' ' + file.name + '</span>' +
+                '<span class="file-size">' + formatFileSize(file.size) + '</span>'
+            );
+            $list.append($li);
+        }
+        
+        var totalSizeClass = '';
+        if (totalSize > MAX_FILE_SIZE) {
+            totalSizeClass = 'danger';
+        } else if (totalSize > MAX_FILE_SIZE * 0.8) {
+            totalSizeClass = 'warning';
+        }
+        
+        var totalLabel = currentLang === 'fa' ? 'حجم کل:' : 'Total size:';
+        $totalSize.html(totalLabel + ' <strong>' + formatFileSize(totalSize) + '</strong>');
+        $totalSize.parent().removeClass('warning danger').addClass(totalSizeClass);
+        
+        if (totalSize > MAX_FILE_SIZE) {
+            var warningMsg = currentLang === 'fa' ? 
+                '⚠️ حجم فایل‌ها از حد مجاز (۲۰۰ مگابایت) بیشتر است!' : 
+                '⚠️ File size exceeds limit (200 MB)!';
+            $totalSize.append('<br><span style="color: var(--danger-color);">' + warningMsg + '</span>');
+        }
+        
+        $container.show();
+    });
+    
+    // Delete documents button
+    $('#delete-documents-btn').on('click', function() {
+        var formId = $(this).data('form-id');
+        if (!formId) return;
+        
+        var confirmMsg = currentLang === 'fa' ? 
+            'آیا مطمئن هستید که می‌خواهید اسناد پیوست شده را حذف کنید؟' : 
+            'Are you sure you want to delete the attached documents?';
+        
+        if (!confirm(confirmMsg)) return;
+        
+        $.post('/forms/' + formId + '/documents/delete')
+            .done(function(data) {
+                if (data.success) {
+                    // Remove main documents indicator
+                    $('#existing-documents').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    
+                    // Also remove event document badges since they were in the ZIP
+                    $('#event-table .badge-success').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    
+                    var successMsg = currentLang === 'fa' ? 'اسناد با موفقیت حذف شد' : 'Documents deleted successfully';
+                    showAlert('success', successMsg);
+                }
+            })
+            .fail(function() {
+                var errorMsg = currentLang === 'fa' ? 'خطا در حذف اسناد' : 'Error deleting documents';
+                showAlert('danger', errorMsg);
+            });
+    });
+    
+    // ===========================================
+    // ROADMAP VISUALIZATION
+    // ===========================================
+    
+    // Activity color palette
+    var activityColors = [
+        'activity-color-0', 'activity-color-1', 'activity-color-2',
+        'activity-color-3', 'activity-color-4', 'activity-color-5',
+        'activity-color-6', 'activity-color-7', 'activity-color-8',
+        'activity-color-9'
+    ];
+    
+    // Store color assignments for activities
+    var activityColorMap = {};
+    var colorIndex = 0;
+    
+    // Parse station format (00+000) to meters
+    function stationToMeters(station) {
+        if (!station || typeof station !== 'string') return null;
+        var match = station.match(/^(\d+)\+(\d{3})$/);
+        if (!match) return null;
+        var km = parseInt(match[1], 10);
+        var m = parseInt(match[2], 10);
+        return km * 1000 + m;
+    }
+    
+    // Format meters to station format
+    function metersToStation(meters) {
+        if (meters === null || meters === undefined || isNaN(meters)) return '';
+        var km = Math.floor(meters / 1000);
+        var m = meters % 1000;
+        return km.toString().padStart(2, '0') + '+' + m.toString().padStart(3, '0');
+    }
+    
+    // Get color class for activity
+    function getActivityColor(activityName) {
+        if (!activityColorMap[activityName]) {
+            activityColorMap[activityName] = activityColors[colorIndex % activityColors.length];
+            colorIndex++;
+        }
+        return activityColorMap[activityName];
+    }
+    
+    // Load and render roadmap with historical data + current form operations
+    function loadProjectRoadmap(projectId) {
+        var $container = $('#roadmap-container');
+        var $tracks = $('#roadmap-tracks');
+        var $ruler = $('#roadmap-ruler');
+        var $summary = $('#roadmap-summary');
+        var $summaryGrid = $('#roadmap-summary-grid');
+        var $empty = $('#roadmap-empty');
+        
+        // Reset color assignments for new project
+        activityColorMap = {};
+        colorIndex = 0;
+        
+        // First, collect current form operations
+        var currentFormOps = collectCurrentFormOperations();
+        
+        if (!projectId) {
+            // No project selected - show roadmap only if there are current form operations
+            if (currentFormOps.length > 0) {
+                renderRoadmap(currentFormOps, {});
+            } else {
+                $container.hide();
+            }
+            return;
+        }
+        
+        // Show container immediately
+        $container.show();
+        
+        // Fetch historical data from API
+        $.get('/forms/api/project-roadmap/' + projectId)
+            .done(function(data) {
+                var historicalActivities = (data.success && data.activities) ? data.activities : {};
+                renderRoadmap(currentFormOps, historicalActivities);
+            })
+            .fail(function() {
+                // API failed - just show current form operations
+                renderRoadmap(currentFormOps, {});
+            });
+    }
+    
+    // Collect operations from current form
+    function collectCurrentFormOperations() {
+        var operations = [];
+        
+        $('#op-table tbody tr:not(.row-template)').each(function() {
+            var $row = $(this);
+            var activityType = $row.find('select[name="op_type[]"]').val();
+            var startStation = $row.find('input[name="op_start[]"]').val();
+            var endStation = $row.find('input[name="op_end[]"]').val();
+            var unit = $row.find('input[name="op_unit[]"]').val() || '';
+            var amount = parseFloat($row.find('input[name="op_amount[]"]').val()) || 0;
+            
+            if (activityType && startStation && endStation) {
+                var startMeters = stationToMeters(startStation);
+                var endMeters = stationToMeters(endStation);
+                
+                if (startMeters !== null && endMeters !== null && startMeters < endMeters) {
+                    operations.push({
+                        activity: activityType,
+                        start_station: startStation,
+                        end_station: endStation,
+                        start_meters: startMeters,
+                        end_meters: endMeters,
+                        length: endMeters - startMeters,
+                        amount: amount,
+                        unit: unit,
+                        form_date: 'Current Form',
+                        isCurrent: true
+                    });
+                }
+            }
+        });
+        
+        return operations;
+    }
+    
+    // Render roadmap with combined data
+    function renderRoadmap(currentFormOps, historicalActivities) {
+        var $container = $('#roadmap-container');
+        var $tracks = $('#roadmap-tracks');
+        var $ruler = $('#roadmap-ruler');
+        var $summary = $('#roadmap-summary');
+        var $summaryGrid = $('#roadmap-summary-grid');
+        var $empty = $('#roadmap-empty');
+        
+        // Merge current form operations into activities
+        var allActivities = JSON.parse(JSON.stringify(historicalActivities)); // Deep copy
+        
+        currentFormOps.forEach(function(op) {
+            if (!allActivities[op.activity]) {
+                allActivities[op.activity] = {
+                    segments: [],
+                    total_length: 0,
+                    total_amount: 0,
+                    unit: op.unit
+                };
+            }
+            allActivities[op.activity].segments.push(op);
+            allActivities[op.activity].total_length += op.length;
+            allActivities[op.activity].total_amount += op.amount;
+        });
+        
+        // Check if we have any data
+        if (Object.keys(allActivities).length === 0) {
+            $container.show();
+            $tracks.hide();
+            $ruler.hide();
+            $summary.hide();
+            $empty.show();
+            $('#roadmap-total-length').text('0 m');
+            return;
+        }
+        
+        $container.show();
+        $tracks.show();
+        $ruler.show();
+        $summary.show();
+        $empty.hide();
+        
+        // Calculate global min/max for all operations
+        var globalMin = Infinity;
+        var globalMax = 0;
+        
+        Object.keys(allActivities).forEach(function(activity) {
+            allActivities[activity].segments.forEach(function(seg) {
+                var startM = seg.start_meters;
+                var endM = seg.end_meters;
+                if (startM < globalMin) globalMin = startM;
+                if (endM > globalMax) globalMax = endM;
+            });
+        });
+        
+        // Round to nice boundaries
+        var rulerMin = Math.floor(globalMin / 100) * 100;
+        var rulerMax = Math.ceil(globalMax / 100) * 100;
+        var rulerRange = rulerMax - rulerMin;
+        if (rulerRange === 0) rulerRange = 100; // Prevent division by zero
+        
+        // Store data for zoom functionality
+        storeZoomData(allActivities, rulerMin, rulerMax);
+        
+        // Show/hide click hint based on range
+        var $clickHint = $('#roadmap-click-hint');
+        if (rulerRange > 2000) {
+            $clickHint.show();
+        } else {
+            $clickHint.hide();
+        }
+        
+        // Calculate total length
+        var totalLength = 0;
+        Object.keys(allActivities).forEach(function(activity) {
+            totalLength += allActivities[activity].total_length;
+        });
+        $('#roadmap-total-length').text(totalLength.toLocaleString() + ' m');
+        
+        // Build tracks - one row per activity
+        $tracks.empty();
+        Object.keys(allActivities).forEach(function(activity) {
+            var actData = allActivities[activity];
+            var colorClass = getActivityColor(activity);
+            
+            var $row = $('<div class="roadmap-activity-row">');
+            
+            // Activity label with color
+            var $label = $('<div class="roadmap-activity-label">')
+                .html('<span class="roadmap-activity-color ' + colorClass + '"></span>' +
+                      '<span title="' + activity + '">' + activity + '</span>');
+            $row.append($label);
+            
+            // Track with segments
+            var $track = $('<div class="roadmap-activity-track">');
+            
+            actData.segments.forEach(function(seg) {
+                var startM = seg.start_meters;
+                var endM = seg.end_meters;
+                var leftPercent = ((startM - rulerMin) / rulerRange) * 100;
+                var widthPercent = ((endM - startM) / rulerRange) * 100;
+                
+                var $segment = $('<div class="roadmap-activity-segment ' + colorClass + '">')
+                    .css({
+                        left: leftPercent + '%',
+                        width: Math.max(widthPercent, 0.5) + '%',
+                        opacity: seg.isCurrent ? 0.7 : 1
+                    })
+                    .attr('data-activity', activity)
+                    .attr('data-start', seg.start_station)
+                    .attr('data-end', seg.end_station)
+                    .attr('data-length', seg.length || (endM - startM))
+                    .attr('data-amount', seg.amount || 0)
+                    .attr('data-unit', seg.unit || '')
+                    .attr('data-date', seg.form_date || '');
+                
+                if (seg.isCurrent) {
+                    $segment.css('border', '2px dashed white');
+                }
+                
+                $track.append($segment);
+            });
+            
+            $row.append($track);
+            
+            // Activity total
+            var $total = $('<div class="roadmap-activity-total">')
+                .text(actData.total_length.toLocaleString() + ' m');
+            $row.append($total);
+            
+            $tracks.append($row);
+        });
+        
+        // Build ruler
+        $ruler.empty();
+        var numMarks = Math.min(8, Math.ceil(rulerRange / 500) + 1);
+        if (numMarks < 2) numMarks = 2;
+        var step = rulerRange / (numMarks - 1);
+        
+        for (var i = 0; i < numMarks; i++) {
+            var meters = rulerMin + (i * step);
+            var $mark = $('<span class="roadmap-ruler-value">')
+                .text(metersToStation(Math.round(meters)));
+            $ruler.append($mark);
+        }
+        
+        // Build summary
+        $summaryGrid.empty();
+        Object.keys(allActivities).forEach(function(activity) {
+            var actData = allActivities[activity];
+            var colorClass = getActivityColor(activity);
+            
+            var $item = $('<div class="roadmap-summary-item">')
+                .html(
+                    '<span class="roadmap-summary-name">' +
+                        '<span class="roadmap-activity-color ' + colorClass + '"></span>' +
+                        '<span>' + activity + '</span>' +
+                    '</span>' +
+                    '<span class="roadmap-summary-value">' + 
+                        actData.total_length.toLocaleString() + ' m' +
+                        (actData.total_amount > 0 ? ' / ' + actData.total_amount.toLocaleString() + ' ' + actData.unit : '') +
+                    '</span>'
+                );
+            $summaryGrid.append($item);
+        });
+    }
+    
+    // Update roadmap when form operations change
+    function updateRoadmapFromForm() {
+        var projectId = $('select[name="project_id"]').val();
+        loadProjectRoadmap(projectId);
+    }
+    
+    // Tooltip for segments
+    var $tooltip = null;
+    
+    $(document).on('mouseenter', '.roadmap-activity-segment', function(e) {
+        var $seg = $(this);
+        var activity = $seg.data('activity');
+        var startStation = $seg.data('start');
+        var endStation = $seg.data('end');
+        var length = $seg.data('length');
+        var amount = $seg.data('amount');
+        var unit = $seg.data('unit');
+        var formDate = $seg.data('date');
+        
+        $tooltip = $('<div class="roadmap-tooltip">' +
+            '<div class="roadmap-tooltip-title">' + activity + '</div>' +
+            '<div class="roadmap-tooltip-row"><span>From:</span><span>' + startStation + '</span></div>' +
+            '<div class="roadmap-tooltip-row"><span>To:</span><span>' + endStation + '</span></div>' +
+            '<div class="roadmap-tooltip-row"><span>Length:</span><span>' + length.toLocaleString() + ' m</span></div>' +
+            (amount > 0 ? '<div class="roadmap-tooltip-row"><span>Amount:</span><span>' + amount + ' ' + unit + '</span></div>' : '') +
+            (formDate ? '<div class="roadmap-tooltip-row"><span>Date:</span><span>' + formDate + '</span></div>' : '') +
+        '</div>').appendTo('body');
+        
+        positionTooltip(e);
+    });
+    
+    $(document).on('mousemove', '.roadmap-activity-segment', function(e) {
+        if ($tooltip) positionTooltip(e);
+    });
+    
+    $(document).on('mouseleave', '.roadmap-activity-segment', function() {
+        if ($tooltip) {
+            $tooltip.remove();
+            $tooltip = null;
+        }
+    });
+    
+    function positionTooltip(e) {
+        if (!$tooltip) return;
+        var x = e.pageX + 15;
+        var y = e.pageY + 15;
+        
+        // Keep tooltip in viewport
+        var tooltipWidth = $tooltip.outerWidth();
+        var tooltipHeight = $tooltip.outerHeight();
+        
+        if (x + tooltipWidth > $(window).width()) {
+            x = e.pageX - tooltipWidth - 15;
+        }
+        if (y + tooltipHeight > $(window).scrollTop() + $(window).height()) {
+            y = e.pageY - tooltipHeight - 15;
+        }
+        
+        $tooltip.css({ left: x, top: y });
+    }
+    
+    // ===========================================
+    // ROADMAP ZOOM FUNCTIONALITY
+    // ===========================================
+    
+    var zoomData = {
+        allActivities: {},
+        globalMin: 0,
+        globalMax: 0,
+        currentMin: 0,
+        currentMax: 0,
+        zoomLevel: 1
+    };
+    
+    // Store activities data for zoom
+    function storeZoomData(allActivities, globalMin, globalMax) {
+        zoomData.allActivities = allActivities;
+        zoomData.globalMin = globalMin;
+        zoomData.globalMax = globalMax;
+    }
+    
+    // Click on segment to zoom
+    $(document).on('click', '.roadmap-activity-segment', function(e) {
+        e.stopPropagation();
+        
+        // Hide tooltip
+        if ($tooltip) {
+            $tooltip.remove();
+            $tooltip = null;
+        }
+        
+        var $seg = $(this);
+        var startM = stationToMeters($seg.data('start'));
+        var endM = stationToMeters($seg.data('end'));
+        
+        if (startM === null || endM === null) return;
+        
+        // Calculate zoom window - center on clicked segment with padding
+        var segCenter = (startM + endM) / 2;
+        var totalRange = zoomData.globalMax - zoomData.globalMin;
+        var zoomRange = Math.max(totalRange / 5, 2000); // Show at least 2km or 1/5 of total
+        
+        var zoomMin = Math.max(zoomData.globalMin, segCenter - zoomRange / 2);
+        var zoomMax = Math.min(zoomData.globalMax, segCenter + zoomRange / 2);
+        
+        // Adjust if we hit boundaries
+        if (zoomMin === zoomData.globalMin) {
+            zoomMax = Math.min(zoomData.globalMax, zoomMin + zoomRange);
+        }
+        if (zoomMax === zoomData.globalMax) {
+            zoomMin = Math.max(zoomData.globalMin, zoomMax - zoomRange);
+        }
+        
+        showZoomModal(zoomMin, zoomMax);
+    });
+    
+    function showZoomModal(zoomMin, zoomMax) {
+        zoomData.currentMin = zoomMin;
+        zoomData.currentMax = zoomMax;
+        
+        var totalRange = zoomData.globalMax - zoomData.globalMin;
+        var currentRange = zoomMax - zoomMin;
+        
+        // Create modal
+        var $overlay = $('<div class="roadmap-zoom-overlay">');
+        var $modal = $('<div class="roadmap-zoom-modal">');
+        
+        // Header
+        var $header = $('<div class="roadmap-zoom-header">' +
+            '<div class="roadmap-zoom-title">' +
+                '<span>🔍 Zoomed View</span>' +
+                '<span class="roadmap-zoom-range">' + metersToStation(Math.round(zoomMin)) + ' → ' + metersToStation(Math.round(zoomMax)) + '</span>' +
+            '</div>' +
+            '<button class="roadmap-zoom-close" title="Close">×</button>' +
+        '</div>');
+        
+        // Body
+        var $body = $('<div class="roadmap-zoom-body">');
+        
+        // Navigation
+        var canGoLeft = zoomMin > zoomData.globalMin;
+        var canGoRight = zoomMax < zoomData.globalMax;
+        var canZoomOut = currentRange < totalRange * 0.9;
+        var canZoomIn = currentRange > 500; // Minimum zoom: 500m
+        
+        var $nav = $('<div class="roadmap-zoom-nav">' +
+            '<button class="roadmap-zoom-btn zoom-left" ' + (canGoLeft ? '' : 'disabled') + '>◀ Previous</button>' +
+            '<div class="roadmap-zoom-info">' +
+                'Showing ' + (currentRange / 1000).toFixed(1) + ' km of ' + (totalRange / 1000).toFixed(1) + ' km total' +
+            '</div>' +
+            '<button class="roadmap-zoom-btn zoom-right" ' + (canGoRight ? '' : 'disabled') + '>Next ▶</button>' +
+        '</div>');
+        
+        // Zoom controls
+        var $zoomControls = $('<div style="text-align: center; margin-bottom: 1rem; display: flex; justify-content: center; gap: 1rem;">' +
+            '<button class="roadmap-zoom-btn zoom-in" ' + (canZoomIn ? '' : 'disabled') + '>🔍+ Zoom In</button>' +
+            '<button class="roadmap-zoom-btn zoom-out" ' + (canZoomOut ? '' : 'disabled') + '>🔍- Zoom Out</button>' +
+        '</div>');
+        
+        // Tracks container
+        var $tracks = $('<div class="roadmap-zoom-tracks">');
+        
+        // Render zoomed tracks
+        var zoomRange = zoomMax - zoomMin;
+        
+        Object.keys(zoomData.allActivities).forEach(function(activity) {
+            var actData = zoomData.allActivities[activity];
+            var colorClass = getActivityColor(activity);
+            
+            var $row = $('<div class="roadmap-zoom-track">');
+            
+            // Label
+            var $label = $('<div class="roadmap-zoom-label">')
+                .html('<span class="roadmap-activity-color ' + colorClass + '"></span>' +
+                      '<span>' + activity + '</span>');
+            $row.append($label);
+            
+            // Track
+            var $lane = $('<div class="roadmap-zoom-lane">');
+            var segmentsInView = 0;
+            var lengthInView = 0;
+            
+            actData.segments.forEach(function(seg) {
+                var startM = seg.start_meters;
+                var endM = seg.end_meters;
+                
+                // Check if segment is in view
+                if (endM <= zoomMin || startM >= zoomMax) return;
+                
+                // Clip segment to view
+                var visibleStart = Math.max(startM, zoomMin);
+                var visibleEnd = Math.min(endM, zoomMax);
+                
+                var leftPercent = ((visibleStart - zoomMin) / zoomRange) * 100;
+                var widthPercent = ((visibleEnd - visibleStart) / zoomRange) * 100;
+                
+                segmentsInView++;
+                lengthInView += (visibleEnd - visibleStart);
+                
+                var $segment = $('<div class="roadmap-zoom-segment ' + colorClass + '">')
+                    .css({
+                        left: leftPercent + '%',
+                        width: Math.max(widthPercent, 1) + '%',
+                        opacity: seg.isCurrent ? 0.7 : 1
+                    })
+                    .attr('data-activity', activity)
+                    .attr('data-start', seg.start_station)
+                    .attr('data-end', seg.end_station)
+                    .attr('data-length', seg.length || (endM - startM))
+                    .attr('data-amount', seg.amount || 0)
+                    .attr('data-unit', seg.unit || '')
+                    .attr('data-date', seg.form_date || '');
+                
+                // Show text if wide enough
+                if (widthPercent > 15) {
+                    $segment.text(seg.start_station + '-' + seg.end_station);
+                }
+                
+                if (seg.isCurrent) {
+                    $segment.css('border', '2px dashed white');
+                }
+                
+                $lane.append($segment);
+            });
+            
+            $row.append($lane);
+            
+            // Total in view
+            var $total = $('<div class="roadmap-zoom-total">')
+                .text(lengthInView > 0 ? lengthInView.toLocaleString() + ' m' : '-');
+            $row.append($total);
+            
+            $tracks.append($row);
+        });
+        
+        // Ruler
+        var $ruler = $('<div class="roadmap-zoom-ruler">');
+        var numMarks = 6;
+        var step = zoomRange / (numMarks - 1);
+        
+        for (var i = 0; i < numMarks; i++) {
+            var meters = zoomMin + (i * step);
+            $ruler.append($('<span class="roadmap-zoom-ruler-value">').text(metersToStation(Math.round(meters))));
+        }
+        
+        // Assemble
+        $body.append($nav).append($zoomControls).append($tracks).append($ruler);
+        $modal.append($header).append($body);
+        $overlay.append($modal);
+        
+        $('body').append($overlay);
+        
+        // Event handlers
+        $overlay.on('click', function(e) {
+            if (e.target === this) {
+                $overlay.remove();
+            }
+        });
+        
+        $header.find('.roadmap-zoom-close').on('click', function() {
+            $overlay.remove();
+        });
+        
+        $nav.find('.zoom-left').on('click', function() {
+            var shift = currentRange * 0.5;
+            var newMin = Math.max(zoomData.globalMin, zoomMin - shift);
+            var newMax = newMin + currentRange;
+            $overlay.remove();
+            showZoomModal(newMin, newMax);
+        });
+        
+        $nav.find('.zoom-right').on('click', function() {
+            var shift = currentRange * 0.5;
+            var newMax = Math.min(zoomData.globalMax, zoomMax + shift);
+            var newMin = newMax - currentRange;
+            $overlay.remove();
+            showZoomModal(newMin, newMax);
+        });
+        
+        $zoomControls.find('.zoom-in').on('click', function() {
+            var newRange = Math.max(500, currentRange / 2); // Minimum 500m
+            var center = (zoomMin + zoomMax) / 2;
+            var newMin = center - newRange / 2;
+            var newMax = center + newRange / 2;
+            
+            $overlay.remove();
+            showZoomModal(newMin, newMax);
+        });
+        
+        $zoomControls.find('.zoom-out').on('click', function() {
+            var newRange = currentRange * 2;
+            var center = (zoomMin + zoomMax) / 2;
+            var newMin = Math.max(zoomData.globalMin, center - newRange / 2);
+            var newMax = Math.min(zoomData.globalMax, center + newRange / 2);
+            
+            // Adjust if hit boundaries
+            if (newMax - newMin < newRange) {
+                if (newMin === zoomData.globalMin) {
+                    newMax = Math.min(zoomData.globalMax, newMin + newRange);
+                } else {
+                    newMin = Math.max(zoomData.globalMin, newMax - newRange);
+                }
+            }
+            
+            $overlay.remove();
+            showZoomModal(newMin, newMax);
+        });
+        
+        // Tooltip for zoom segments
+        $tracks.on('mouseenter', '.roadmap-zoom-segment', function(e) {
+            var $seg = $(this);
+            var activity = $seg.data('activity');
+            var startStation = $seg.data('start');
+            var endStation = $seg.data('end');
+            var length = $seg.data('length');
+            var amount = $seg.data('amount');
+            var unit = $seg.data('unit');
+            var formDate = $seg.data('date');
+            
+            $tooltip = $('<div class="roadmap-tooltip">' +
+                '<div class="roadmap-tooltip-title">' + activity + '</div>' +
+                '<div class="roadmap-tooltip-row"><span>From:</span><span>' + startStation + '</span></div>' +
+                '<div class="roadmap-tooltip-row"><span>To:</span><span>' + endStation + '</span></div>' +
+                '<div class="roadmap-tooltip-row"><span>Length:</span><span>' + length.toLocaleString() + ' m</span></div>' +
+                (amount > 0 ? '<div class="roadmap-tooltip-row"><span>Amount:</span><span>' + amount + ' ' + unit + '</span></div>' : '') +
+                (formDate ? '<div class="roadmap-tooltip-row"><span>Date:</span><span>' + formDate + '</span></div>' : '') +
+            '</div>').appendTo('body');
+            
+            positionTooltip(e);
+        });
+        
+        $tracks.on('mousemove', '.roadmap-zoom-segment', function(e) {
+            if ($tooltip) positionTooltip(e);
+        });
+        
+        $tracks.on('mouseleave', '.roadmap-zoom-segment', function() {
+            if ($tooltip) {
+                $tooltip.remove();
+                $tooltip = null;
+            }
+        });
+        
+        // ESC to close
+        $(document).on('keydown.zoomModal', function(e) {
+            if (e.key === 'Escape') {
+                $overlay.remove();
+                $(document).off('keydown.zoomModal');
+            }
+        });
+    }
+    
+    // Station input validation and formatting
+    $(document).on('input', 'input[name="op_start[]"], input[name="op_end[]"]', function() {
+        var $input = $(this);
+        var val = $input.val().replace(/[^\d+]/g, '');
+        
+        // Auto-format as user types
+        if (val.length > 0 && val.indexOf('+') === -1) {
+            if (val.length >= 3) {
+                val = val.substring(0, val.length - 3) + '+' + val.substring(val.length - 3);
+                if (val.startsWith('+')) val = '0' + val;
+            }
+        }
+        
+        $input.val(val);
+    });
+    
+    $(document).on('blur', 'input[name="op_start[]"], input[name="op_end[]"]', function() {
+        var $input = $(this);
+        var val = $input.val();
+        
+        // Validate format on blur
+        if (val && !/^\d+\+\d{3}$/.test(val)) {
+            var nums = val.replace(/\D/g, '');
+            if (nums.length >= 1) {
+                var km = nums.substring(0, Math.max(1, nums.length - 3)) || '0';
+                var m = nums.substring(Math.max(0, nums.length - 3)).padStart(3, '0');
+                $input.val(km.padStart(2, '0') + '+' + m);
+            }
+        }
+        
+        // Update roadmap after station change
+        updateRoadmapFromForm();
+    });
+    
+    // Update roadmap when operation type changes
+    $(document).on('change', '#op-table select[name="op_type[]"]', function() {
+        setTimeout(updateRoadmapFromForm, 100);
+    });
+    
+    // Update roadmap when rows are added/removed
+    var opTableObserver = new MutationObserver(function(mutations) {
+        setTimeout(updateRoadmapFromForm, 100);
+    });
+    
+    var opTableBody = document.querySelector('#op-table tbody');
+    if (opTableBody) {
+        opTableObserver.observe(opTableBody, { childList: true });
+    }
+    
+    // Load roadmap when project changes
+    $('select[name="project_id"]').on('change', function() {
+        var projectId = $(this).val();
+        loadProjectRoadmap(projectId);
+    });
+    
+    // Initial load if project is already selected
+    var initialProjectId = $('select[name="project_id"]').val();
+    if (initialProjectId) {
+        setTimeout(function() {
+            loadProjectRoadmap(initialProjectId);
+        }, 300);
+    }
+
+    // ===========================================
+    // SECTION SUMMARIES (HR, Equipment, Materials)
+    // ===========================================
+
+    // --- HR Summary: total count of people ---
+    function updateHRSummary() {
+        var total = 0;
+        $('#hr-table tbody tr:not(.row-template)').each(function() {
+            var count = parseInt($(this).find('input[name="hr_count[]"]').val()) || 0;
+            total += count;
+        });
+        var $summary = $('#hr-summary');
+        if (total > 0) {
+            $('#hr-total-count').text(total);
+            $summary.show();
+        } else {
+            $summary.hide();
+        }
+    }
+
+    // --- Equipment Summary: active / inactive / repairing counts ---
+    function updateEQSummary() {
+        var active = 0, inactive = 0, repair = 0;
+        $('#eq-table tbody tr:not(.row-template)').each(function() {
+            var count = parseInt($(this).find('input[name="eq_active[]"]').val()) || 0;
+            var situation = $(this).find('select[name="eq_situation[]"]').val();
+            if (situation === 'Active') active += count;
+            else if (situation === 'Inactive') inactive += count;
+            else if (situation === 'Under Repair') repair += count;
+        });
+        var total = active + inactive + repair;
+        var $summary = $('#eq-summary');
+        if (total > 0) {
+            $('#eq-active-count').text(active);
+            $('#eq-inactive-count').text(inactive);
+            $('#eq-repair-count').text(repair);
+            $('#eq-total-count').text(total);
+            $summary.show();
+        } else {
+            $summary.hide();
+        }
+    }
+
+    // --- Materials Summary: cumulative incoming/used/diff with negative inventory warning ---
+    function updateMatSummary() {
+        var totalIncoming = 0, totalUsed = 0;
+        var negativeItems = [];
+        $('#mat-table tbody tr:not(.row-template)').each(function() {
+            var incoming = parseFloat($(this).find('input[name="mat_incoming[]"]').val()) || 0;
+            var used = parseFloat($(this).find('input[name="mat_used[]"]').val()) || 0;
+            var matName = $(this).find('select[name="mat_type[]"]').val() || '?';
+            totalIncoming += incoming;
+            totalUsed += used;
+            if (used > incoming && incoming >= 0) {
+                negativeItems.push(matName);
+            }
+        });
+        var diff = totalIncoming - totalUsed;
+        var $summary = $('#mat-summary');
+        var $warning = $('#mat-inventory-warning');
+        if (totalIncoming > 0 || totalUsed > 0) {
+            $('#mat-total-incoming').text(totalIncoming.toFixed(2));
+            $('#mat-total-used').text(totalUsed.toFixed(2));
+            $('#mat-total-diff').text(diff.toFixed(2));
+            if (diff < 0) {
+                $('#mat-diff-label').css('color', 'var(--danger-color)');
+            } else {
+                $('#mat-diff-label').css('color', '');
+            }
+            $summary.show();
+        } else {
+            $summary.hide();
+        }
+        // Negative inventory warning
+        if (negativeItems.length > 0) {
+            var warningText = currentLang === 'fa' ?
+                'مقدار مصرف بیشتر از ورود برای: ' + negativeItems.join('، ') :
+                'Used amount exceeds incoming for: ' + negativeItems.join(', ');
+            $('#mat-warning-text').text(warningText);
+            $warning.show();
+        } else {
+            $warning.hide();
+        }
+    }
+
+    // Bind summary updates to input changes
+    $(document).on('input change', '#hr-table input[name="hr_count[]"]', updateHRSummary);
+    $(document).on('input change', '#eq-table input[name="eq_active[]"], #eq-table select[name="eq_situation[]"]', updateEQSummary);
+    $(document).on('input change', '#mat-table input[name="mat_incoming[]"], #mat-table input[name="mat_used[]"]', updateMatSummary);
+
+    // Also update on row add/remove (via MutationObserver on table bodies)
+    function observeTableForSummary(tableId, updateFn) {
+        var tbody = document.querySelector('#' + tableId + ' tbody');
+        if (tbody) {
+            var observer = new MutationObserver(function() { setTimeout(updateFn, 50); });
+            observer.observe(tbody, { childList: true });
+        }
+    }
+    observeTableForSummary('hr-table', updateHRSummary);
+    observeTableForSummary('eq-table', updateEQSummary);
+    observeTableForSummary('mat-table', updateMatSummary);
+
+    // Initial computation
+    updateHRSummary();
+    updateEQSummary();
+    updateMatSummary();
+});
+</script>
+{% endblock %}

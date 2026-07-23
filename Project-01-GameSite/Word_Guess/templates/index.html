@@ -1,0 +1,46 @@
+{% extends 'layout.html' %}
+{% block title %}ورود به اتاق | حدس واژه{% endblock %}
+{% block content %}
+<section class="hero-tavern" aria-labelledby="hero-title">
+  <div class="hero-inner">
+    <h1 id="hero-title" class="hero-title">ورود به ماجراجویی</h1>
+    <p class="hero-sub">کد اتاق و رمز مشترک را وارد کن تا به همراه دیگران واژه پنهان را بیابی.</p>
+  </div>
+</section>
+
+<section class="rooms-board" aria-label="ورود">
+  <div class="board-frame single-join">
+    <header class="board-header">
+      <h2 class="board-title">ورود به اتاق</h2>
+      <p class="board-hint">کد اتاق عددی بین 1 تا 4 است. رمز برای همه اتاق‌ها: <strong class="pwd-hint">1234</strong></p>
+    </header>
+    <form method="post" action="{{ url_for('join_by_code') }}" class="join-form main-join" id="join-code-form" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      <label class="fld">نام بازیکن
+        <input name="player_name" maxlength="32" placeholder="مثلاً آوا" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" data-nohist>
+      </label>
+      <label class="fld">کد اتاق
+        <input name="room_code" maxlength="3" pattern="[0-9]+" inputmode="numeric" placeholder="مثلاً 2" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      </label>
+      <label class="fld">رمز
+        <input name="password" placeholder="رمز" value="1234" required autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-nohist>
+      </label>
+      <button type="submit" class="btn primary">پیوستن</button>
+    </form>
+    <div class="rooms-status" aria-live="polite">
+      <h3 style="margin:1rem 0 .5rem; font-size:.9rem; color:#ffe5c0;">وضعیت اتاق‌ها</h3>
+      <ul class="rooms-mini" id="rooms-grid">
+        {% for r in rooms %}
+          <li class="mini {{ 'full' if r.player_count >= r.max_players else '' }}" data-room="{{ r.id }}">
+            <span class="id">#{{ r.id }}</span>
+            <span class="cap">{{ r.player_count }}/{{ r.max_players }}</span>
+            {% if r.started %}<span class="state started">بازی</span>{% else %}<span class="state idle">آماده</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/lobby.js') }}"></script>
+{% endblock %}

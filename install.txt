@@ -1,0 +1,1 @@
+pip install bs4 selenium -i https://mirror-pypi.runflare.com/simple/ --trusted-host mirror-pypi.runflare.com

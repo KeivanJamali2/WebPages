@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('review_form') }} - {{ form.document_code }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-between align-center">
+    <div>
+        <h1>{{ t('review_form') }}</h1>
+        <p class="text-muted">{{ form.document_code }} - {{ form.form_date|jalali }}</p>
+    </div>
+    <span class="badge badge-pending" style="font-size: 1rem; padding: 0.5rem 1rem;">
+        {{ t('pending') }}
+    </span>
+</div>
+
+<!-- Form Summary -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('details') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap mb-3">
+            <div><strong>{{ t('project') }}:</strong> {{ form.project.name if form.project else '-' }}</div>
+            <div><strong>{{ t('submitted_by') }}:</strong> {{ form.submitted_by_user|display_name if form.submitted_by_user else '-' }}</div>
+            <div><strong>{{ t('submitted_at') }}:</strong> {{ form.submitted_at|jalali('%Y-%m-%d %H:%M') if form.submitted_at else '-' }}</div>
+            <div><strong>{{ t('day_of_week') }}:</strong> {{ form.day_of_week or '-' }}</div>
+            <div><strong>{{ t('work_shift') }}:</strong> {{ t('morning_shift') if form.work_shift == 'Morning' else t('night_shift') if form.work_shift == 'Night' else '-' }}</div>
+        </div>
+        <a href="{{ url_for('forms.view_form', form_id=form.id) }}" class="btn btn-outline" target="_blank">👁️ {{ t('view_form') }} {{ t('details') }}</a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-icon primary">👥</div>
+        <div class="stat-content">
+            <h3>{{ form.human_resources.all()|sum(attribute='count') }}</h3>
+            <p>{{ t('human_resources') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon primary">🚜</div>
+        <div class="stat-content">
+            <h3>{{ form.tools_equipments.all()|sum(attribute='count_active') }}</h3>
+            <p>{{ t('tools_and_equipment') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon primary">🏗️</div>
+        <div class="stat-content">
+            <h3>{{ form.construction_operations.count() }}</h3>
+            <p>{{ t('construction_operations') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon primary">⚠️</div>
+        <div class="stat-content">
+            <h3>{{ form.project_issues.count() }}</h3>
+            <p>{{ t('project_issues') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Review Action -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('review') }}</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label">{{ t('add_comment') }}</label>
+                <textarea name="comment" class="form-control" rows="4" placeholder="{{ t('enter_rejection_reason') }}"></textarea>
+            </div>
+            
+            <div class="d-flex gap-3">
+                <button type="submit" name="action" value="approve" class="btn btn-success">
+                    ✅ {{ t('approve_form') }}
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                    ❌ {{ t('reject_form') }}
+                </button>
+                <a href="{{ url_for('forms.pending_forms') }}" class="btn btn-outline">{{ t('cancel') }}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

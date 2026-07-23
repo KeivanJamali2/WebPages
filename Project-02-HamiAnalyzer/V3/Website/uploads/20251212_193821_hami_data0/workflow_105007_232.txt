@@ -1,0 +1,24 @@
+parent_id: None
+id: c0eea718-65b0-4333-b480-3df9b2494cdc
+date: شنبه، 17 تیر 1404 12:10
+name: دکتری عمومی_پزشکی_یزد_3961
+email: sm-105-10101-6-3961@iau.ir
+--------------------------------------------------
+parent_id: c0eea718-65b0-4333-b480-3df9b2494cdc
+id: 670be06f-1868-4a0f-a06a-b81129a9c511
+date: شنبه، 17 تیر 1404 12:48
+name: فاطمه جعفری ندوشن
+email: 336774@iau.ir
+--------------------------------------------------
+parent_id: c0eea718-65b0-4333-b480-3df9b2494cdc
+id: ec8a59da-ee32-4301-99aa-7a7be87ead01
+date: شنبه، 19 تیر 1404 11:23
+name: Mohammad hasan Shafizadeh
+email: 1272773647@iau.ir
+--------------------------------------------------
+parent_id: c0eea718-65b0-4333-b480-3df9b2494cdc
+id: bf1657fe-f6d5-4f7f-8ece-02017aeadc4f
+date: شنبه، 29 تیر 1404 14:05
+name: Mohammad hasan Shafizadeh
+email: 1272773647@iau.ir
+--------------------------------------------------

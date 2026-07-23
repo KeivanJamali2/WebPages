@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <title>Word Sync Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Favicon / Site icons -->
+  <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512" />
+  <link rel="icon" type="image/png" href="/favicon.png" sizes="256x256" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <link rel="shortcut icon" href="/favicon.png" />
+  <meta name="apple-mobile-web-app-title" content="Word Sync" />
+  <meta name="application-name" content="Word Sync" />
+  <!-- Social / SEO preview -->
+  <meta property="og:site_name" content="Word Sync" />
+  <meta property="og:title" content="Word Sync Game" />
+  <meta property="og:description" content="Synchronize minds – think of words until you converge perfectly." />
+  <meta property="og:image" content="/favicon.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Local Persian font faces -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    :root { --configured-persian-font: {{ PERSIAN_FONT_STACK|tojson|safe }}; }
+    /* Simplified font picker styling */
+    .font-picker { position:relative; }
+    .font-picker-btn { font-size:.6rem; padding:.4rem .6rem; background:#2d3350; border:1px solid #3f4868; color:#fff; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:.4rem; line-height:1; }
+    .light .font-picker-btn { background:#e4e8f2; border-color:#c8cfde; color:#1e2333; }
+    .font-picker-btn:hover { filter:brightness(1.1); }
+  .font-picker-panel { position:absolute; top:110%; right:0; z-index:9000; background:#1e2436; border:1px solid #3f4868; border-radius:8px; padding:.4rem .5rem .5rem; min-width:190px; max-height:270px; overflow-y:auto; overflow-x:hidden; box-shadow:0 8px 28px -6px #000d; display:none; scrollbar-width:thin; }
+  .font-picker-panel.portal { position:fixed; }
+    .light .font-picker-panel { background:#fff; border-color:#d1d7e4; }
+    .font-picker.open .font-picker-panel { display:block; }
+  .font-option { all:unset; box-sizing:border-box; display:block; width:100%; cursor:pointer; padding:.5rem .65rem; border-radius:6px; font-size:.72rem; line-height:1.15; border:1px solid transparent; color:#f5f7fa; background:rgba(255,255,255,0.03); position:relative; }
+  .font-option + .font-option { margin-top:.25rem; }
+    .light .font-option { color:#1e2333; }
+  .font-option:hover { background:#303a55; }
+    .light .font-option:hover { background:#eef1f7; }
+  .font-option.active { background:#6e55d4; color:#fff; }
+  /* Remove any accidental horizontal scrolling on small viewports */
+  body { overscroll-behavior-x:none; }
+    .light .font-option.active { background:#6e55d4; color:#fff; }
+  </style>
+  <meta name="theme-color" content="#251d3a" />
+  <script type="module">
+    // Theme toggle persistence
+    const THEME_KEY = 'word-sync-theme';
+    function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); if(t==='light'){ document.documentElement.classList.add('light'); } else { document.documentElement.classList.remove('light'); } }
+    const saved = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(saved);
+    window.toggleTheme = function(){ const cur = document.documentElement.getAttribute('data-theme'); const next = cur==='dark'?'light':'dark'; applyTheme(next); localStorage.setItem(THEME_KEY,next); document.querySelector('.theme-toggle')?.classList.toggle('dark', next==='dark'); };
+    document.addEventListener('DOMContentLoaded', ()=> { const cur = document.documentElement.getAttribute('data-theme'); document.querySelector('.theme-toggle')?.classList.toggle('dark', cur==='dark'); });
+  </script>
+</head>
+<body>
+<header>
+  <a href="/" class="brand" aria-label="Word Sync Home">
+    <img src="/logo-inline.png" alt="Word Sync Logo" class="brand-logo" width="48" height="48" decoding="async" />
+    <span class="brand-text">Word Sync</span>
+  </a>
+  <div style="display:flex; align-items:center; gap:1rem;">
+    <div class="theme-toggle" role="button" tabindex="0" aria-label="Toggle theme" onclick="toggleTheme()" onkeydown="if(event.key==='Enter') toggleTheme();">
+      <div class="knob"></div>
+      <div class="stars"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="font-picker" id="fontPicker">
+      <button type="button" class="font-picker-btn" id="fontPickerBtn" title="Select Persian Font">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h3l9-16h4"/><path d="M9 20 15 8"/></svg>
+        <span id="fontActiveLabel" class="sample">Font</span>
+        <span style="font-size:.65rem; opacity:.7;">▾</span>
+      </button>
+      <div class="font-picker-panel" id="fontPickerPanel" role="listbox" aria-label="Persian font selector"></div>
+    </div>
+  </div>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+<div class="footer">Crafted for maximum synchronicity & beauty - By Keivan Jamali ✨</div>
+<script type="module" src="{{ url_for('static', filename='js/sounds.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<!-- Global enforcement to disable browser autocomplete / history suggestions on all inputs -->
+<script>
+  // Some browsers can still persist history unless attributes are on each element.
+  // We enforce on DOMContentLoaded and also on dynamic additions via a MutationObserver.
+  (function(){
+    const ATTRS = {
+      autocomplete: 'off',
+      autocapitalize: 'off',
+      autocorrect: 'off',
+      spellcheck: 'false',
+      'data-form-history': 'disabled'
+    };
+    function apply(node){
+      if(node.matches && (node.matches('form') || node.matches('input') || node.matches('textarea'))){
+        Object.entries(ATTRS).forEach(([k,v])=> node.setAttribute(k,v));
+      }
+      if(node.querySelectorAll){
+        node.querySelectorAll('form, input, textarea').forEach(el=>{
+          Object.entries(ATTRS).forEach(([k,v])=> el.setAttribute(k,v));
+        });
+      }
+    }
+    document.addEventListener('DOMContentLoaded', ()=> {
+      apply(document);
+      // Observe future additions (e.g., if any dynamic inputs are added later)
+      const mo = new MutationObserver(muts=>{
+        muts.forEach(m=> m.addedNodes.forEach(n=> apply(n)));
+      });
+      mo.observe(document.body, {childList:true, subtree:true});
+    });
+  })();
+  // Note: Users may still see password manager prompts if they use extensions; that's outside standard attribute control.
+</script>
+<script id="fontData" type="application/json">{{ {'fonts': AVAILABLE_PERSIAN_FONTS, 'selected': SELECTED_PERSIAN_FONT}|tojson|safe }}</script>
+<script>
+  // Dynamic Persian font picker (values loaded from JSON script tag to avoid template braces inside JS code linting)
+  (function(){
+    const dataTag = document.getElementById('fontData');
+    let fontPayload = {fonts:[], selected:''};
+    try { fontPayload = JSON.parse(dataTag.textContent); } catch(e) { console.warn('Font payload parse', e); }
+    let { fonts: AVAILABLE_PERSIAN_FONTS, selected: SELECTED_PERSIAN_FONT } = fontPayload;
+    const picker = document.getElementById('fontPicker');
+    if(!picker) return; // safety
+    const panel = document.getElementById('fontPickerPanel');
+    const btn = document.getElementById('fontPickerBtn');
+    const activeLabel = document.getElementById('fontActiveLabel');
+    function rebuildPanel(){
+      panel.innerHTML='';
+      AVAILABLE_PERSIAN_FONTS.forEach(f=>{
+        const b=document.createElement('button');
+        b.type='button'; b.className='font-option'+(f===SELECTED_PERSIAN_FONT?' active':'');
+        b.textContent=f; b.style.fontFamily=`'${f}', var(--configured-persian-font)`;
+        b.dataset.font=f;
+        b.addEventListener('click',()=> selectFont(f));
+        panel.appendChild(b);
+      });
+    }
+    async function selectFont(font){
+      if(font===SELECTED_PERSIAN_FONT) { picker.classList.remove('open'); return; }
+      try {
+        const res = await fetch('/api/font',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({font})});
+        const data = await res.json();
+        if(!data.ok) throw new Error(data.error||'font error');
+        SELECTED_PERSIAN_FONT = data.selected;
+        document.documentElement.style.setProperty('--configured-persian-font', data.stack);
+        activeLabel.textContent = SELECTED_PERSIAN_FONT;
+        rebuildPanel();
+      } catch(e){ console.error(e); }
+      picker.classList.remove('open');
+    }
+  function ensurePortal(){
+    if(!panel.classList.contains('portal')){
+      panel.classList.add('portal');
+      document.body.appendChild(panel);
+    }
+  }
+  function positionPanel(){
+    ensurePortal();
+    const r = btn.getBoundingClientRect();
+    const margin = 6;
+    panel.style.display='block';
+    const pw = panel.offsetWidth || 200;
+    let left = r.right - pw;
+    left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+    panel.style.left = left + 'px';
+    panel.style.top = (r.bottom + margin) + 'px';
+    panel.style.maxHeight = Math.min(300, window.innerHeight - (r.bottom + margin) - 12) + 'px';
+  }
+  btn.addEventListener('click',()=>{ 
+    const opening = !picker.classList.contains('open');
+    picker.classList.toggle('open');
+    if(opening){ rebuildPanel(); positionPanel(); panel.focus(); }
+    else { panel.style.display='none'; }
+  });
+  document.addEventListener('click',e=>{ if(!picker.contains(e.target) && !panel.contains(e.target)) { picker.classList.remove('open'); panel.style.display='none'; } });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ picker.classList.remove('open'); panel.style.display='none'; }});
+  window.addEventListener('resize',()=>{ if(picker.classList.contains('open')) positionPanel(); });
+  window.addEventListener('scroll',()=>{ if(picker.classList.contains('open')) positionPanel(); }, { passive:true });
+    activeLabel.textContent = SELECTED_PERSIAN_FONT || 'Font';
+    btn.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); btn.click(); } });
+  })();
+</script>
+</body>
+</html>

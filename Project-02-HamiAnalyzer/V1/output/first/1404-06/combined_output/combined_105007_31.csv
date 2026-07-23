@@ -1,0 +1,20 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-04 03:35:42,با سلام . احتراما درخواست دانشجو ارسال می گردد .,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-04 12:58:00,<empty>,MOHAMMAD JAVAD MOZAFARYAN,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,<empty>,bd8ef868-fd32-445c-88a5-c51c9eec03db,True
+1404-06-04 15:35:00,"موضوع: 'درخواست باز شدن مجوز قسمت ویرایش پژوهشیار'
+با سلام . احتراما درخواست دانشجو ارسال می گردد .",دکتری عمومی_پزشکی_یزد_3981,فاطمه جعفری ندوشن,336774@iau.ir,bd8ef868-fd32-445c-88a5-c51c9eec03db,cb427a84-956c-438d-b95d-c9b8fb9e1654,True
+1404-06-06 09:27:00,"موضوع: 'پاسخ: درخواست باز شدن مجوز قسمت ویرایش پژوهشیار'
+با سلام انجام شد",فاطمه جعفری ندوشن,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,cb427a84-956c-438d-b95d-c9b8fb9e1654,5e4f0b98-0ce7-4de0-a8d7-34b59586c337,True
+1404-06-06 10:01:00,با سلام انجام شده است .,دکتری عمومی_پزشکی_یزد_3981,MOHAMMAD JAVAD MOZAFARYAN,4220709576@iau.ir,5e4f0b98-0ce7-4de0-a8d7-34b59586c337,1dc2ad75-c984-4ddd-8a3f-52f9e85a43df,True
+1404-06-14 23:03:00,There is nothing about this message in the Emails.,MOHAMMAD JAVAD MOZAFARYAN,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,1dc2ad75-c984-4ddd-8a3f-52f9e85a43df,444d6b7c-4a32-446f-b1b5-88d8bcaaf6a3,False
+1404-06-16 08:37:57,"با سلام . خانم جعفری فرمودند حضوری جواب داده شده است . 
+به اطلاع می رساند برای پاسخگویی سریعتر حامی می بایست هر درخواست با یک ایمیل ارسال گردد 
+موفق باشید و سلامت",Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-16 08:56:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_3981,فاطمه جعفری ندوشن,336774@iau.ir,444d6b7c-4a32-446f-b1b5-88d8bcaaf6a3,f774c446-b36d-47bf-867b-43cb6fd6d989,False
+1404-06-16 08:59:00,"موضوع: 'درخواست باز شدن مجوز قسمت ویرایش پژوهشیار'
+باسلام . احتراما دانشجو عنوان می کند قسمت ویرایش بازنشده است . با تشکر",دکتری عمومی_پزشکی_یزد_3981,فاطمه جعفری ندوشن,336774@iau.ir,444d6b7c-4a32-446f-b1b5-88d8bcaaf6a3,f92ea330-af11-4dfd-b1e0-76f00ee0c396,True
+1404-06-16 08:59:38,باسلام . احتراما دانشجو عنوان می کند قسمت ویرایش بازنشده است . با تشکر,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False
+1404-06-16 20:38:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_3981,MOHAMMAD JAVAD MOZAFARYAN,4220709576@iau.ir,444d6b7c-4a32-446f-b1b5-88d8bcaaf6a3,a5b2be4b-1086-4570-9780-991fea44ce72,False
+1404-06-18 09:50:00,"موضوع: 'پاسخ: درخواست باز شدن مجوز قسمت ویرایش پژوهشیار'
+سلام انجام شد",فاطمه جعفری ندوشن,دکتری عمومی_پزشکی_یزد_3981,sm-105-10101-6-3981@iau.ir,f774c446-b36d-47bf-867b-43cb6fd6d989,4c4539b8-4177-4916-a95a-64a60cc1dafb,True
+1404-06-18 10:48:00,با سلام . انجام شده است,دکتری عمومی_پزشکی_یزد_3981,MOHAMMAD JAVAD MOZAFARYAN,4220709576@iau.ir,4c4539b8-4177-4916-a95a-64a60cc1dafb,3e1a8e40-2787-4c7a-b789-feded350c0c6,True

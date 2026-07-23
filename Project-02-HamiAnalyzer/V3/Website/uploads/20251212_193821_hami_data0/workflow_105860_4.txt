@@ -1,0 +1,18 @@
+parent_id: None
+id: b04ad7e0-2960-418b-bbb7-bce2fff7b030
+date: شنبه، 1 تیر 1404 10:22
+name: دکتری تخصصی_مدیریت صنعتی - تولید و عملیات_یزد_4031
+email: sm-105-21049-7-4031@iau.ir
+--------------------------------------------------
+parent_id: b04ad7e0-2960-418b-bbb7-bce2fff7b030
+id: af303095-0bb1-44d3-8ae7-8282276eb36d
+date: دوشنبه، 2 تیر 1404 09:09
+name: mohammadali sharafinezhad
+email: 3130478353@iau.ir
+--------------------------------------------------
+parent_id: b04ad7e0-2960-418b-bbb7-bce2fff7b030
+id: 9057d5b2-b385-41a5-a4dd-d83f8213e22d
+date: چهارشنبه، 8 مرداد 1404 08:59
+name: mohammadali sharafinezhad
+email: 3130478353@iau.ir
+--------------------------------------------------

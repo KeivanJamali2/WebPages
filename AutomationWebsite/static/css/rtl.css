@@ -1,0 +1,220 @@
+/* RTL (Right-to-Left) Styles for Persian/Farsi Language */
+
+body.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+body.rtl nav {
+    direction: rtl;
+}
+
+body.rtl nav > div {
+    flex-direction: row-reverse;
+}
+
+body.rtl .container {
+    direction: rtl;
+}
+
+/* Form elements RTL */
+body.rtl form {
+    text-align: right;
+}
+
+body.rtl label {
+    text-align: right;
+    display: block;
+}
+
+body.rtl input,
+body.rtl select,
+body.rtl textarea {
+    text-align: right;
+}
+
+/* Buttons RTL */
+body.rtl button {
+    text-align: center;
+}
+
+/* Navigation RTL */
+body.rtl nav a {
+    margin-left: 0;
+    margin-right: 15px;
+}
+
+/* Lists RTL */
+body.rtl ul,
+body.rtl ol {
+    padding-right: 20px;
+    padding-left: 0;
+}
+
+/* Tables RTL */
+body.rtl table {
+    direction: rtl;
+}
+
+body.rtl th,
+body.rtl td {
+    text-align: right;
+}
+
+/* Flex containers RTL */
+body.rtl .flex-container {
+    flex-direction: row-reverse;
+}
+
+/* Grid RTL */
+body.rtl .grid-container {
+    direction: rtl;
+}
+
+/* Tooltips and popups RTL */
+body.rtl .tooltip {
+    text-align: right;
+}
+
+/* Float helpers */
+body.rtl .float-left {
+    float: right !important;
+}
+
+body.rtl .float-right {
+    float: left !important;
+}
+
+/* Margin and padding helpers */
+body.rtl .ml-1 { margin-right: 0.25rem; margin-left: 0; }
+body.rtl .ml-2 { margin-right: 0.5rem; margin-left: 0; }
+body.rtl .ml-3 { margin-right: 1rem; margin-left: 0; }
+body.rtl .mr-1 { margin-left: 0.25rem; margin-right: 0; }
+body.rtl .mr-2 { margin-left: 0.5rem; margin-right: 0; }
+body.rtl .mr-3 { margin-left: 1rem; margin-right: 0; }
+
+body.rtl .pl-1 { padding-right: 0.25rem; padding-left: 0; }
+body.rtl .pl-2 { padding-right: 0.5rem; padding-left: 0; }
+body.rtl .pl-3 { padding-right: 1rem; padding-left: 0; }
+body.rtl .pr-1 { padding-left: 0.25rem; padding-right: 0; }
+body.rtl .pr-2 { padding-left: 0.5rem; padding-right: 0; }
+body.rtl .pr-3 { padding-left: 1rem; padding-right: 0; }
+
+/* Persian/Farsi font improvements */
+body.rtl {
+    font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+}
+
+/* Language toggle button */
+.language-toggle {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+body.rtl .language-toggle {
+    left: 20px;
+    right: auto;
+}
+
+.language-toggle button {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #000000;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.language-toggle button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.language-toggle button.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Tool cards RTL */
+body.rtl .tool-card {
+    text-align: right;
+}
+
+body.rtl .tool-icon {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+/* Flash messages RTL */
+body.rtl .flashes {
+    text-align: right;
+}
+
+/* Forms specific styling for RTL */
+body.rtl .form-group {
+    text-align: right;
+}
+
+body.rtl .form-row {
+    flex-direction: row-reverse;
+}
+
+/* File upload RTL */
+body.rtl .file-upload-label {
+    text-align: right;
+}
+
+/* Results page RTL */
+body.rtl .result-item {
+    text-align: right;
+}
+
+/* Responsive adjustments for RTL */
+@media (max-width: 768px) {
+    body.rtl .language-toggle {
+        top: 10px;
+        left: 10px;
+    }
+    
+    body.rtl nav > div {
+        flex-direction: column;
+    }
+}
+
+/* Share file table RTL */
+body.rtl .share-file-table th,
+body.rtl .share-file-table td {
+    text-align: right;
+}
+
+body.rtl .share-header {
+    flex-direction: row-reverse;
+}
+
+body.rtl .manage-bar {
+    flex-direction: row-reverse;
+}
+
+body.rtl .file-list li {
+    border-left: none;
+    border-right: 3px solid var(--color-accent);
+}
+
+body.rtl .file-list li:hover {
+    transform: translateX(-5px);
+}

@@ -1,0 +1,5 @@
+# username,password,phone_number,national_ID,email,role
+
+keivan,1234,09101511983,4421031429,keivan@gmail.com,boss
+sarina,1234,09309610624,0150308051,sarina@gmail.com,admin
+test,1234,09011111111,001111111,test@gamail.com,employee

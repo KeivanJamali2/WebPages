@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('boss_dashboard') }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .project-selector {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .project-card {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .project-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .project-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--primary-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+    }
+    
+    .project-info {
+        flex: 1;
+    }
+    
+    .project-info h3 {
+        margin: 0 0 4px 0;
+        color: var(--text-primary);
+    }
+    
+    .project-info p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+    
+    .project-arrow {
+        font-size: 24px;
+        color: var(--text-secondary);
+    }
+    
+    .welcome-section {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .welcome-section h1 {
+        font-size: 32px;
+        margin-bottom: 12px;
+    }
+    
+    .welcome-section p {
+        color: var(--text-secondary);
+        font-size: 18px;
+        margin-bottom: 40px;
+    }
+    
+    .no-projects {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+    
+    .no-projects i {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1>📊 {{ t('boss_dashboard') }}</h1>
+    <p>{{ t('select_project_to_analyze') if lang == 'en' else 'یک پروژه برای تحلیل انتخاب کنید' }}</p>
+</div>
+
+<div class="project-selector">
+    {% if projects %}
+        {% for project in projects %}
+        <a href="{{ url_for('boss.analysis', project_id=project.id) }}" class="project-card">
+            <div class="project-icon">🏗️</div>
+            <div class="project-info">
+                <h3>{{ project.name }}</h3>
+                <p>{{ project.description or (t('no_description') if lang == 'en' else 'بدون توضیحات') }}</p>
+            </div>
+            <div class="project-arrow">→</div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="no-projects">
+            <div>📁</div>
+            <h2>{{ t('no_projects') if lang == 'en' else 'پروژه‌ای یافت نشد' }}</h2>
+            <p>{{ t('create_project_first') if lang == 'en' else 'ابتدا یک پروژه ایجاد کنید' }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

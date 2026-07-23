@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Downloads - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-file-earmark-arrow-down"></i> CSV Downloads
+        </h1>
+        <p class="text-muted">Download analysis results as CSV files</p>
+    </div>
+</div>
+
+{% if files %}
+<div class="row mb-3">
+    <div class="col">
+        <a href="{{ url_for('download_all_csv') }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-zip"></i> Download All as ZIP
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th><i class="bi bi-file-earmark-text"></i> File Name</th>
+                        <th><i class="bi bi-hdd"></i> Size</th>
+                        <th class="text-end"><i class="bi bi-gear"></i> Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td>
+                            <i class="bi bi-filetype-csv text-success"></i>
+                            <strong>{{ file.name }}</strong>
+                        </td>
+                        <td>{{ file.size }}</td>
+                        <td class="text-end">
+                            <a href="{{ file.path }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h5 class="mb-3">
+                    <i class="bi bi-info-circle"></i> About CSV Files
+                </h5>
+                <p class="mb-0 small">
+                    These CSV files contain detailed analysis results that you can open with Excel, 
+                    Google Sheets, or any spreadsheet application. Each file represents a specific 
+                    analysis metric or statistic.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-0 shadow-sm text-center p-5">
+            <div class="card-body">
+                <i class="bi bi-file-earmark-text text-muted" style="font-size: 5rem;"></i>
+                <h3 class="mt-4">No CSV Files Available</h3>
+                <p class="text-muted">Run an analysis to generate CSV data files</p>
+                <a href="{{ url_for('analyze') }}" class="btn btn-primary mt-3">
+                    <i class="bi bi-bar-chart-line"></i> Run Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

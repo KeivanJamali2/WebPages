@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-between align-center">
+    <div>
+        <h1>{{ project.name }}</h1>
+        <p class="text-muted">{{ project.project_code }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if project.status != 'removed' %}
+        <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-warning">{{ t('edit') }}</a>
+        
+        <!-- Toggle Active/Inactive -->
+        <form method="POST" action="{{ url_for('projects.toggle_project_active', project_id=project.id) }}" style="display: inline;">
+            {% if project.status == 'active' %}
+            <button type="submit" class="btn btn-outline">{{ t('make_inactive') }}</button>
+            {% else %}
+            <button type="submit" class="btn btn-success">{{ t('make_active') }}</button>
+            {% endif %}
+        </form>
+        
+        <!-- Remove (Soft Delete) -->
+        <form method="POST" action="{{ url_for('projects.remove_project', project_id=project.id) }}" style="display: inline;" 
+              onsubmit="return confirm('{{ t('confirm_remove_project') }}');">
+            <button type="submit" class="btn btn-danger">{{ t('remove') }}</button>
+        </form>
+        {% else %}
+        <!-- Restore -->
+        <form method="POST" action="{{ url_for('projects.restore_project', project_id=project.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-success">{{ t('restore') }}</button>
+        </form>
+        {% endif %}
+        
+        <!-- Permanent Delete Button -->
+        <button type="button" class="btn btn-danger" onclick="openPermanentDeleteModal()">🗑️ {{ t('permanent_delete') }}</button>
+    </div>
+</div>
+
+<!-- Permanent Delete Modal -->
+<div id="permanentDeleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚠️ {{ t('permanent_delete_warning') }}</h3>
+            <button type="button" class="close-btn" onclick="closePermanentDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-danger"><strong>{{ t('permanent_delete_desc') }}</strong></p>
+            <p>{{ t('permanent_delete_confirm_msg') }}</p>
+            <form method="POST" action="{{ url_for('projects.permanent_delete_project', project_id=project.id) }}" id="permanentDeleteForm">
+                <div class="form-group">
+                    <label for="password">{{ t('enter_password_to_confirm') }}:</label>
+                    <input type="password" name="password" id="deletePassword" class="form-control" required>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="button" class="btn btn-outline" onclick="closePermanentDeleteModal()">{{ t('cancel') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ t('confirm_permanent_delete') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background: var(--card-bg);
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-header h3 {
+    margin: 0;
+    color: var(--danger-color);
+}
+.modal-body {
+    padding: 1rem;
+}
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+.close-btn:hover {
+    color: var(--text-color);
+}
+</style>
+
+<script>
+function openPermanentDeleteModal() {
+    document.getElementById('permanentDeleteModal').style.display = 'flex';
+}
+function closePermanentDeleteModal() {
+    document.getElementById('permanentDeleteModal').style.display = 'none';
+    document.getElementById('deletePassword').value = '';
+}
+// Close modal on outside click
+document.getElementById('permanentDeleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePermanentDeleteModal();
+    }
+});
+</script>
+
+<!-- Project Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-icon primary">📝</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_forms }}</h3>
+            <p>{{ t('total_forms') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">✓</div>
+        <div class="stat-content">
+            <h3>{{ stats.approved_forms }}</h3>
+            <p>{{ t('approved') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">⏳</div>
+        <div class="stat-content">
+            <h3>{{ stats.pending_forms }}</h3>
+            <p>{{ t('pending_review') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Project Details -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('details') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap">
+            <div><strong>{{ t('location') }}:</strong> {{ project.location or '-' }}</div>
+            <div><strong>{{ t('contract_number') }}:</strong> {{ project.contract_number or '-' }}</div>
+            <div><strong>{{ t('start_date') }}:</strong> {{ project.start_date|jalali if project.start_date else '-' }}</div>
+            <div><strong>{{ t('end_date') }}:</strong> {% if project.is_ongoing %}{{ t('ongoing') }}{% else %}{{ project.end_date|jalali if project.end_date else '-' }}{% endif %}</div>
+            <div><strong>{{ t('budget') }}:</strong> {{ project.budget or '-' }}</div>
+            <div><strong>{{ t('owner') }}:</strong> {{ project.owner or '-' }}</div>
+            <div><strong>{{ t('manager') }}:</strong> {{ project.manager or '-' }}</div>
+        </div>
+        {% if project.description %}
+        <div class="mt-3">
+            <strong>{{ t('description') }}:</strong>
+            <p>{{ project.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Forms -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('recent_activity') }}</h2>
+        <a href="{{ url_for('forms.all_forms', project=project.id) }}" class="btn btn-sm btn-outline">{{ t('view') }} {{ t('all') }}</a>
+    </div>
+    <div class="card-body">
+        {% if recent_forms %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('document_code') }}</th>
+                        <th>{{ t('form_date') }}</th>
+                        <th>{{ t('submitted_by') }}</th>
+                        <th>{{ t('status') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in recent_forms %}
+                    <tr>
+                        <td>{{ form.document_code }}</td>
+                        <td>{{ form.form_date }}</td>
+                        <td>{{ form.submitted_by_user|display_name if form.submitted_by_user else '-' }}</td>
+                        <td><span class="badge badge-{{ form.status }}">{{ t(form.status) }}</span></td>
+                        <td>
+                            <a href="{{ url_for('forms.view_form', form_id=form.id) }}" class="btn btn-sm btn-outline">{{ t('view') }}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>{{ t('no_data') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline">{{ t('back') }}</a>
+</div>
+{% endblock %}

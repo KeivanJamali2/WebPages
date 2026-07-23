@@ -1,0 +1,182 @@
+/* ========================================
+   PMO Website - RTL (Right-to-Left) Stylesheet
+   Persian/Arabic Language Support
+   ======================================== */
+
+/* === Global RTL Adjustments === */
+[dir="rtl"] body {
+    text-align: right;
+    direction: rtl;
+}
+
+/* === Navigation === */
+[dir="rtl"] .nav-menu {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-user {
+    border-left: none;
+    border-right: 1px solid var(--color-border);
+    align-items: flex-start;
+}
+
+[dir="rtl"] .language-switcher {
+    margin-left: 0;
+    margin-right: var(--spacing-sm);
+}
+
+[dir="rtl"] .login-language-switcher {
+    right: auto;
+    left: 20px;
+}
+
+/* === Forms === */
+[dir="rtl"] .form-group label {
+    text-align: right;
+}
+
+[dir="rtl"] .form-control {
+    text-align: right;
+}
+
+[dir="rtl"] .form-actions {
+    justify-content: flex-start;
+}
+
+/* === Cards === */
+[dir="rtl"] .card {
+    text-align: right;
+}
+
+[dir="rtl"] .card-header {
+    text-align: right;
+}
+
+/* === Buttons === */
+[dir="rtl"] .btn-group {
+    flex-direction: row-reverse;
+}
+
+/* === Tables === */
+[dir="rtl"] table {
+    text-align: right;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+    text-align: right;
+}
+
+[dir="rtl"] .table-actions {
+    text-align: left;
+}
+
+/* === Alerts === */
+[dir="rtl"] .alert {
+    text-align: right;
+}
+
+/* === Flash Messages === */
+[dir="rtl"] .flash-message {
+    text-align: right;
+}
+
+/* === Stats Grid === */
+[dir="rtl"] .stats-grid {
+    direction: rtl;
+}
+
+/* === User Info === */
+[dir="rtl"] .user-info {
+    text-align: right;
+}
+
+[dir="rtl"] .info-label {
+    text-align: right;
+}
+
+/* === Settings === */
+[dir="rtl"] .settings-content {
+    text-align: right;
+}
+
+[dir="rtl"] .settings-section {
+    text-align: right;
+}
+
+/* === Modals === */
+[dir="rtl"] .modal-content {
+    text-align: right;
+}
+
+[dir="rtl"] .modal-header {
+    text-align: right;
+}
+
+/* === Lists === */
+[dir="rtl"] ul,
+[dir="rtl"] ol {
+    padding-right: var(--spacing-lg);
+    padding-left: 0;
+}
+
+/* === Margins & Paddings === */
+[dir="rtl"] .ml-1 { margin-left: 0; margin-right: var(--spacing-xs); }
+[dir="rtl"] .ml-2 { margin-left: 0; margin-right: var(--spacing-sm); }
+[dir="rtl"] .ml-3 { margin-left: 0; margin-right: var(--spacing-md); }
+[dir="rtl"] .ml-4 { margin-left: 0; margin-right: var(--spacing-lg); }
+
+[dir="rtl"] .mr-1 { margin-right: 0; margin-left: var(--spacing-xs); }
+[dir="rtl"] .mr-2 { margin-right: 0; margin-left: var(--spacing-sm); }
+[dir="rtl"] .mr-3 { margin-right: 0; margin-left: var(--spacing-md); }
+[dir="rtl"] .mr-4 { margin-right: 0; margin-left: var(--spacing-lg); }
+
+[dir="rtl"] .pl-1 { padding-left: 0; padding-right: var(--spacing-xs); }
+[dir="rtl"] .pl-2 { padding-left: 0; padding-right: var(--spacing-sm); }
+[dir="rtl"] .pl-3 { padding-left: 0; padding-right: var(--spacing-md); }
+[dir="rtl"] .pl-4 { padding-left: 0; padding-right: var(--spacing-lg); }
+
+[dir="rtl"] .pr-1 { padding-right: 0; padding-left: var(--spacing-xs); }
+[dir="rtl"] .pr-2 { padding-right: 0; padding-left: var(--spacing-sm); }
+[dir="rtl"] .pr-3 { padding-right: 0; padding-left: var(--spacing-md); }
+[dir="rtl"] .pr-4 { padding-right: 0; padding-left: var(--spacing-lg); }
+
+/* === Float === */
+[dir="rtl"] .float-left {
+    float: right;
+}
+
+[dir="rtl"] .float-right {
+    float: left;
+}
+
+/* === Text Alignment === */
+[dir="rtl"] .text-left {
+    text-align: right;
+}
+
+[dir="rtl"] .text-right {
+    text-align: left;
+}
+
+/* === Flex === */
+[dir="rtl"] .flex-row {
+    flex-direction: row-reverse;
+}
+
+/* === Persian Font Support === */
+[dir="rtl"] body,
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select,
+[dir="rtl"] button {
+    font-family: "Vazir", "Tahoma", "IRANSans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* === Number Display for Persian === */
+[dir="rtl"] .number,
+[dir="rtl"] .date,
+[dir="rtl"] .time {
+    direction: ltr;
+    display: inline-block;
+}

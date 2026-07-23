@@ -1,0 +1,10 @@
+## Resources
+Tech, 100.0, 15, 0.05
+Wheat, 20.0, 5, 0.12
+Finance, 120.0, 10, 0.1
+
+## Capacity
+340
+
+## HouseWorth
+300000

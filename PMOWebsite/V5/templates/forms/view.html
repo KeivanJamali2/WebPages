@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{# Simple display name for employees/admins, full code only for boss #}
+{% set display_name = form.document_code if user.role == 'boss' else (t('daily_form') + ' - ' + (form.form_date|jalali)) %}
+
+{% block title %}{{ t('view_daily_form') }} - {{ display_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-between align-center">
+    <div>
+        <h1>{{ display_name }}</h1>
+        <p class="text-muted">{{ form.form_date|jalali }} - {{ form.project.name if form.project else '' }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge badge-{{ form.status }}" style="font-size: 1rem; padding: 0.5rem 1rem;">
+            {{ t(form.status) }}
+        </span>
+        <a href="{{ url_for('export.export_single_form', form_id=form.id) }}" class="btn btn-outline">📥 {{ t('export_excel') }}</a>
+        {% if form.submitted_by_user.username == user.username and form.status == 'draft' %}
+        <a href="{{ url_for('forms.edit_form', form_id=form.id) }}" class="btn btn-warning">{{ t('edit') }}</a>
+        <form action="{{ url_for('forms.submit_draft', form_id=form.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-primary" onclick="return confirm('{{ t('confirm_submit') }}')">{{ t('submit_form') }}</button>
+        </form>
+        {% endif %}
+        {% if user.role == 'admin' and form.status == 'pending' %}
+        <a href="{{ url_for('forms.review_form', form_id=form.id) }}" class="btn btn-primary">{{ t('review') }}</a>
+        {% endif %}
+        {% if user.role == 'admin' and form.status == 'approved' %}
+        <button type="button" class="btn btn-danger" onclick="showSendBackModal()">{{ t('send_back') }}</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Comment (if form was sent back for revision) -->
+{% if form.status == 'draft' and form.review_comment %}
+<div class="alert alert-warning mb-4">
+    <strong>{{ t('revision_required') }}:</strong> {{ form.review_comment }}
+</div>
+{% endif %}
+
+<!-- Section 1: Form Info (Date and Time) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">📅 {{ t('date_and_time') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap">
+            {% if user.role == 'boss' %}
+            <div><strong>{{ t('document_code') }}:</strong> {{ form.document_code }}</div>
+            {% endif %}
+            <div><strong>{{ t('form_date') }}:</strong> {{ form.form_date|jalali }}</div>
+            <div><strong>{{ t('day_of_week') }}:</strong> {{ form.day_of_week or form.form_date|jalali_weekday(lang) }}</div>
+            <div><strong>{{ t('work_shift') }}:</strong> {{ t('morning_shift') if form.work_shift == 'Morning' else t('night_shift') if form.work_shift == 'Night' else '-' }}</div>
+            <div><strong>{{ t('submitted_by') }}:</strong> {{ form.submitted_by_user|display_name if form.submitted_by_user else '-' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Climate Condition -->
+{% if form.climate_conditions.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">🌤️ {{ t('climate_condition') }}</h2>
+    </div>
+    <div class="card-body">
+        {% for climate in form.climate_conditions %}
+        <div class="d-flex gap-3 flex-wrap mb-3">
+            <div><strong>{{ t('min_temperature') }}:</strong> {{ climate.min_temperature }}°C</div>
+            <div><strong>{{ t('max_temperature') }}:</strong> {{ climate.max_temperature }}°C</div>
+            <div><strong>{{ t('humidity') }}:</strong> {{ climate.humidity }}%</div>
+        </div>
+        <div class="d-flex gap-3 flex-wrap mb-3">
+            <div>
+                <strong>{{ t('weather_type') }}:</strong>
+                {% if climate.weather_type == 'clear' %}☀️ {{ t('clear') }}
+                {% elif climate.weather_type == 'cloudy' %}☁️ {{ t('cloudy') }}
+                {% elif climate.weather_type == 'rainy' %}🌧️ {{ t('rainy') }}
+                {% elif climate.weather_type == 'foggy' %}🌫️ {{ t('foggy') }}
+                {% elif climate.weather_type == 'snowy' %}❄️ {{ t('snowy') }}
+                {% else %}-{% endif %}
+            </div>
+            <div>
+                <strong>{{ t('wind_speed') }}:</strong>
+                {% if climate.wind_speed == 'slow' %}🍃 {{ t('wind_slow') }}
+                {% elif climate.wind_speed == 'normal' %}💨 {{ t('wind_normal') }}
+                {% elif climate.wind_speed == 'fast' %}🌪️ {{ t('wind_fast') }}
+                {% else %}-{% endif %}
+            </div>
+            <div>
+                <strong>{{ t('climate_effect') }}:</strong>
+                {% if climate.climate_effect == 'no_effect' %}✅ {{ t('no_effect') }}
+                {% elif climate.climate_effect == 'slow_progress' %}⚠️ {{ t('slow_progress') }}
+                {% elif climate.climate_effect == 'stopped' %}🛑 {{ t('stopped_completely') }}
+                {% else %}-{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 3: Human Resources -->
+{% if form.human_resources.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">👥 {{ t('human_resources') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('post') }}</th>
+                        <th>{{ t('count') }}</th>
+                        <th>{{ t('working_hours') }}</th>
+                        <th>{{ t('explanations') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hr in form.human_resources %}
+                    <tr>
+                        <td>{{ hr.post }}</td>
+                        <td>{{ hr.count }}</td>
+                        <td>{{ hr.working_hours }}</td>
+                        <td>{{ hr.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 4: Tools and Equipment -->
+{% if form.tools_equipments.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">🚜 {{ t('tools_and_equipment') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('equipment_type') }}</th>
+                        <th>{{ t('equipment_model') }}</th>
+                        <th>{{ t('count_active') }}</th>
+                        <th>{{ t('working_hours') }}</th>
+                        <th>{{ t('situation') }}</th>
+                        <th>{{ t('inactivity_reason') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for eq in form.tools_equipments %}
+                    <tr>
+                        <td>{{ eq.equipment_type }}</td>
+                        <td>{{ eq.equipment_model or '-' }}</td>
+                        <td>{{ eq.count_active }}</td>
+                        <td>{{ eq.working_hours }}</td>
+                        <td>
+                            {% if eq.situation == 'Active' %}{{ t('active') }}
+                            {% elif eq.situation == 'Inactive' %}{{ t('inactive') }}
+                            {% elif eq.situation == 'Under Repair' %}{{ t('under_repair') }}
+                            {% else %}{{ eq.situation or '-' }}{% endif %}
+                        </td>
+                        <td>{{ eq.inactivity_reason or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 5: Construction Operations -->
+{% if form.construction_operations.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">🏗️ {{ t('construction_operations') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('operation_type') }}</th>
+                        <th>{{ t('start_station') }}</th>
+                        <th>{{ t('end_station') }}</th>
+                        <th>{{ t('unit') }}</th>
+                        <th>{{ t('amount') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for op in form.construction_operations %}
+                    <tr>
+                        <td>{{ op.operation_type }}</td>
+                        <td>{{ op.start_station or '-' }}</td>
+                        <td>{{ op.end_station or '-' }}</td>
+                        <td>{{ op.unit or '-' }}</td>
+                        <td>{{ op.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 6: Incoming Materials -->
+{% if form.incoming_materials.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">📦 {{ t('incoming_materials') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('material_type') }}</th>
+                        <th>{{ t('incoming_amount') }}</th>
+                        <th>{{ t('used_amount') }}</th>
+                        <th>{{ t('storage_place') }}</th>
+                        <th>{{ t('waybill_number') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mat in form.incoming_materials %}
+                    <tr>
+                        <td>{{ mat.material_type }}</td>
+                        <td>{{ mat.incoming_amount }}</td>
+                        <td>{{ mat.used_amount }}</td>
+                        <td>{{ mat.storage_place or '-' }}</td>
+                        <td>{{ mat.waybill_number or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 7: Project Issues -->
+{% if form.project_issues.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">⚠️ {{ t('project_issues') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('issue_type') }}</th>
+                        <th>{{ t('effect') }}</th>
+                        <th>{{ t('location_station') }}</th>
+                        <th>{{ t('start_time') }}</th>
+                        <th>{{ t('end_time') }}</th>
+                        <th>{{ t('notes') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in form.project_issues %}
+                    <tr>
+                        <td>{{ issue.issue_type }}</td>
+                        <td>{{ issue.effect or '-' }}</td>
+                        <td>{{ issue.location_station or issue.location_km or '-' }}</td>
+                        <td>{{ issue.start_time.strftime('%H:%M') if issue.start_time else '-' }}</td>
+                        <td>{{ issue.end_time.strftime('%H:%M') if issue.end_time else '-' }}</td>
+                        <td>{{ issue.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 8: Safety -->
+{% if form.safety_records.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">🛡️ {{ t('safety') }}</h2>
+    </div>
+    <div class="card-body">
+        {% for safety in form.safety_records %}
+        <div class="d-flex gap-3 flex-wrap mb-3">
+            <div><strong>{{ t('safety_situation') }}:</strong>
+                {% if safety.safety_situation == 'Incident' %}⚠️ {{ t('incident') }}
+                {% elif safety.safety_situation == 'NearMiss' %}⚡ {{ t('near_miss') }}
+                {% elif safety.safety_situation == 'NoIncident' %}✅ {{ t('no_incident') }}
+                {% else %}{{ safety.safety_situation or '-' }}{% endif %}
+            </div>
+            <div><strong>{{ t('safety_inspection') }}:</strong> {% if safety.safety_inspection %}✅ {{ t('yes') }}{% else %}❌ {{ t('no') }}{% endif %}</div>
+            <div><strong>{{ t('incident_occurred') }}:</strong> {% if safety.incident_occurred %}⚠️ {{ t('yes') }}{% else %}✅ {{ t('no') }}{% endif %}</div>
+        </div>
+        {% if safety.incident_explanation %}
+        <div><strong>{{ t('incident_explanation') }}:</strong> {{ safety.incident_explanation }}</div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 9: Events -->
+{% if form.events.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">📌 {{ t('events') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('event_type') }}</th>
+                        <th>{{ t('event_name') }}</th>
+                        <th>{{ t('explanation') }}</th>
+                        <th>{{ t('meeting_minutes') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in form.events %}
+                    <tr>
+                        <td>
+                            {% if event.event_type == 'Visit' %}🚶 {{ t('event_visit') }}
+                            {% elif event.event_type == 'Meeting' %}🤝 {{ t('event_meeting') }}
+                            {% elif event.event_type == 'Other' %}📋 {{ t('event_other') }}
+                            {% else %}{{ event.event_type or '-' }}{% endif %}
+                        </td>
+                        <td>{{ event.event_name }}</td>
+                        <td>{{ event.explanation or '-' }}</td>
+                        <td>
+                            {% if event.document_filename %}
+                            <span class="badge badge-success">📄 {{ event.document_filename }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Section 10: Documents -->
+{% if form.documents_path %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-between align-center">
+        <h2 class="card-title">📎 {{ t('documents') }}</h2>
+        <a href="{{ url_for('forms.download_form_documents', form_id=form.id) }}" class="btn btn-sm btn-outline">
+            📥 {{ t('download_documents') }}
+        </a>
+    </div>
+    <div class="card-body">
+        <div id="documentsListView" class="existing-documents">
+            <p class="text-muted">{{ t('loading') }}...</p>
+        </div>
+    </div>
+</div>
+<script>
+// Load documents info
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('{{ url_for("forms.form_documents_info", form_id=form.id) }}')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('documentsListView');
+            if (data.success && data.files && data.files.length > 0) {
+                let html = '<ul class="documents-list">';
+                data.files.forEach(file => {
+                    const icon = getFileIcon(file.filename);
+                    html += `<li class="document-item">
+                        <span class="file-icon">${icon}</span>
+                        <span class="file-name">${file.filename}</span>
+                        <span class="file-size text-muted">(${formatFileSize(file.size)})</span>
+                    </li>`;
+                });
+                html += '</ul>';
+                html += `<p class="text-muted mt-2">{{ t('total') }}: ${data.files.length} {{ t('file') }} (${formatFileSize(data.total_size)})</p>`;
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="text-muted">{{ t("no_documents") }}</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading documents:', error);
+            document.getElementById('documentsListView').innerHTML = '<p class="text-danger">{{ t("error_loading_documents") }}</p>';
+        });
+});
+
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+        'pdf': '📄', 'doc': '📝', 'docx': '📝', 'xls': '📊', 'xlsx': '📊',
+        'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'bmp': '🖼️',
+        'zip': '📦', 'rar': '📦', '7z': '📦', 'txt': '📃', 'csv': '📋'
+    };
+    return icons[ext] || '📎';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+{% endif %}
+
+<!-- Comments -->
+{% if form.comments.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">💬 {{ t('comments') }}</h2>
+    </div>
+    <div class="card-body">
+        {% for comment in form.comments %}
+        <div class="mb-3 p-3" style="background: var(--bg-color); border-radius: var(--radius);">
+            <div class="d-flex justify-between mb-2">
+                <strong>{{ comment.user|display_name if comment.user else 'Unknown' }}</strong>
+                <span class="text-muted">{{ comment.created_at|jalali_datetime }}</span>
+            </div>
+            <p>{{ comment.content }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex gap-2">
+    <a href="{{ url_for('forms.my_forms') if user.role == 'employee' else url_for('forms.all_forms') }}" class="btn btn-outline">{{ t('back') }}</a>
+</div>
+
+<!-- Send Back Modal for Admin -->
+{% if user.role == 'admin' and form.status == 'approved' %}
+<div id="sendBackModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div class="modal-content" style="background: var(--card-bg); max-width: 500px; margin: 10% auto; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow-lg);">
+        <h3 style="margin-bottom: 1rem;">{{ t('send_back_form') }}</h3>
+        <form action="{{ url_for('forms.send_back_form', form_id=form.id) }}" method="POST">
+            <div class="form-group mb-3">
+                <label class="form-label">{{ t('reason_for_sending_back') }} <span class="text-danger">*</span></label>
+                <textarea name="comment" class="form-control" rows="4" required placeholder="{{ t('enter_reason') }}"></textarea>
+            </div>
+            <div class="d-flex gap-2 justify-end">
+                <button type="button" class="btn btn-outline" onclick="hideSendBackModal()">{{ t('cancel') }}</button>
+                <button type="submit" class="btn btn-danger">{{ t('send_back') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showSendBackModal() {
+    document.getElementById('sendBackModal').style.display = 'block';
+}
+function hideSendBackModal() {
+    document.getElementById('sendBackModal').style.display = 'none';
+}
+// Close modal when clicking outside
+document.getElementById('sendBackModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideSendBackModal();
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

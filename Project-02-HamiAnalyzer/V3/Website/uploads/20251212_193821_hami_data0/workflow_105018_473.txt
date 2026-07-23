@@ -1,0 +1,18 @@
+parent_id: None
+id: 7f692423-8bcb-4097-bc0b-4d908072a38e
+date: چهارشنبه، 4 تیر 1404 12:26
+name: کارشناسی پیوسته_پرستاری_یزد_4021
+email: sf-105-10401-4-4021@iau.ir
+--------------------------------------------------
+parent_id: 7f692423-8bcb-4097-bc0b-4d908072a38e
+id: 32399c61-892e-48f9-9c0e-bd54ac09fe25
+date: شنبه، 12 تیر 1404 10:19
+name: Fatemeh Mirzakhanighorbanabadi
+email: 3040668579@iau.ir
+--------------------------------------------------
+parent_id: 32399c61-892e-48f9-9c0e-bd54ac09fe25
+id: 8ff75fd8-12c8-49e6-96d7-057208b83c5e
+date: شنبه، 14 تیر 1404 11:27
+name: Fatemeh Mirzakhanighorbanabadi
+email: 3040668579@iau.ir
+--------------------------------------------------

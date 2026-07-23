@@ -1,0 +1,6 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-06-18 00:29:00,There is nothing about this message in the Emails.,مژده ظریفی,دکتری تخصصی_مشاوره_یزد_4001,sf-105-21602-7-4001@iau.ir,<empty>,896e8ccd-2ee6-49dc-bff3-ae9d74d9dc74,False
+1404-06-18 09:19:00,"سلام وادب
+درخواست شما تكراري مي باشد نامه قبلي شما درحال بررسي مي باشد
+باتشكر",دکتری تخصصی_مشاوره_یزد_4001,مژده ظریفی,2301140636@iau.ir,896e8ccd-2ee6-49dc-bff3-ae9d74d9dc74,e298f8db-b41c-4e13-a75f-017f32427b86,True
+1500-01-01 00:00:00,با سلام فرم ضمیمه ملاحظات اخلاقی خدمت شما ایمیل شد‌ .,Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False

@@ -1,0 +1,11 @@
+## Resources
+Oil, 80.0, 10, 0.05
+NaturalGas, 60.0, 8, 0.08
+Saffron, 30.0, 2, 0.2
+Pistachio, 15.0, 4, 0.1
+
+## Capacity
+88
+
+## HouseWorth
+80000

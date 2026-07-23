@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Plots - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-image"></i> Generated Plots
+        </h1>
+        <p class="text-muted">View and download visualization plots</p>
+    </div>
+</div>
+
+{% if plots %}
+<div class="row mb-3">
+    <div class="col">
+        <a href="{{ url_for('download_all_plots') }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-zip"></i> Download All Plots as ZIP
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for plot in plots %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <img src="{{ url_for('plot_image', filename=plot.filename) }}" 
+                 class="card-img-top" alt="{{ plot.name }}"
+                 style="height: 250px; object-fit: cover; cursor: pointer;"
+                 data-bs-toggle="modal" data-bs-target="#plotModal{{ loop.index }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ plot.name }}</h5>
+                <a href="{{ plot.path }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-download"></i> Download
+                </a>
+                <button class="btn btn-outline-secondary btn-sm" 
+                        data-bs-toggle="modal" data-bs-target="#plotModal{{ loop.index }}">
+                    <i class="bi bi-eye"></i> View Full
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for full-size view -->
+    <div class="modal fade" id="plotModal{{ loop.index }}" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ plot.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="{{ url_for('plot_image', filename=plot.filename) }}" 
+                         class="img-fluid" alt="{{ plot.name }}">
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ plot.path }}" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-0 shadow-sm text-center p-5">
+            <div class="card-body">
+                <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+                <h3 class="mt-4">No Plots Available</h3>
+                <p class="text-muted">Run an analysis to generate visualization plots</p>
+                <a href="{{ url_for('analyze') }}" class="btn btn-primary mt-3">
+                    <i class="bi bi-bar-chart-line"></i> Run Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

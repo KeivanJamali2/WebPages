@@ -1,0 +1,14 @@
+# Users Data File
+# Format: email|national_id|name|phone|password|role
+# Roles: admin, employee
+
+# Admin users
+keivan@gmail.com|1234567890|John Doe|+98 910 151 1983|admin123|admin
+pmo.head@company.com|1234567891|Sarah Manager|+98 912 345 6789|pmo2025|admin
+
+# Employee users
+employee1@company.com|2345678901|Alice Smith|+98 913 456 7890|pass123|employee
+employee2@company.com|2345678902|Bob Johnson|+98 914 567 8901|pass456|employee
+engineer@company.com|2345678903|Charlie Brown|+98 915 678 9012|eng2025|employee
+designer@company.com|2345678904|Diana Wilson|+98 916 789 0123|design2025|employee
+analyst@company.com|2345678905|Eve Martinez|+98 917 890 1234|analyst2025|employee

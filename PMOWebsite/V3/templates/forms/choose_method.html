@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('new_daily_form') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>📝 {{ t('new_daily_form') }}</h1>
+    <p class="text-muted">{{ t('choose_fill_method') }}</p>
+</div>
+
+<div class="method-selection-container">
+    <div class="method-cards">
+        <!-- Manual Method Card -->
+        <a href="{{ url_for('forms.new_form') }}" class="method-card">
+            <div class="method-icon">
+                ✍️
+            </div>
+            <div class="method-content">
+                <h3>{{ t('manual_entry') }}</h3>
+                <p>{{ t('manual_entry_desc') }}</p>
+            </div>
+            <div class="method-arrow">
+                →
+            </div>
+        </a>
+        
+        <!-- Excel Upload Method Card -->
+        <a href="{{ url_for('forms.upload_excel_form') }}" class="method-card">
+            <div class="method-icon">
+                📊
+            </div>
+            <div class="method-content">
+                <h3>{{ t('excel_upload') }}</h3>
+                <p>{{ t('excel_upload_desc') }}</p>
+            </div>
+            <div class="method-arrow">
+                →
+            </div>
+        </a>
+    </div>
+    
+    <!-- Excel Method Steps -->
+    <div class="excel-steps-info">
+        <h4>{{ t('excel_method_steps') }}</h4>
+        <div class="steps-list">
+            <div class="step-item">
+                <span class="step-number">۱</span>
+                <span class="step-text">{{ t('step_download_template') }}</span>
+            </div>
+            <div class="step-item">
+                <span class="step-number">۲</span>
+                <span class="step-text">{{ t('step_fill_excel') }}</span>
+            </div>
+            <div class="step-item">
+                <span class="step-number">۳</span>
+                <span class="step-text">{{ t('step_upload_excel') }}</span>
+            </div>
+            <div class="step-item">
+                <span class="step-number">۴</span>
+                <span class="step-text">{{ t('step_review_submit') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.method-selection-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.method-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.method-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.75rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-color);
+    text-decoration: none;
+    transition: all var(--transition);
+    cursor: pointer;
+}
+
+.method-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+}
+
+.method-icon {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    background: var(--primary-light);
+    border-radius: var(--radius-lg);
+    flex-shrink: 0;
+}
+
+.method-content {
+    flex: 1;
+}
+
+.method-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-color);
+    font-size: 1.25rem;
+}
+
+.method-content p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.method-arrow {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    transition: all var(--transition);
+}
+
+[dir="rtl"] .method-arrow {
+    transform: rotate(180deg);
+}
+
+.method-card:hover .method-arrow {
+    color: var(--primary-color);
+    transform: translateX(5px);
+}
+
+[dir="rtl"] .method-card:hover .method-arrow {
+    transform: rotate(180deg) translateX(5px);
+}
+
+.excel-steps-info {
+    background: var(--bg-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    border: 1px solid var(--border-color);
+}
+
+.excel-steps-info h4 {
+    margin: 0 0 1.25rem 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.steps-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--card-bg);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-light);
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.step-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .method-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .method-card {
+        padding: 1.25rem;
+    }
+    
+    .method-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 2rem;
+    }
+    
+    .steps-list {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

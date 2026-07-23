@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h1 data-i18n="ppk_processing_page_title">PPK Processing</h1>
+  <form method="post" enctype="multipart/form-data" id="process-form">
+    <div>
+      <label for="file" data-i18n="csv_file_label">CSV File:</label>
+      <input type="file" name="file" id="file" required>
+    </div>
+    <div>
+      <label for="time_threshold" data-i18n="time_threshold_label">Time Threshold (minutes):</label>
+      <small style="color: #929393; display: block; margin-top: 5px;" data-i18n="time_threshold_help">
+        Time gap threshold for filtering sparse data points at start and end of groups. Default: 5 minutes
+      </small>
+      <input type="number" step="0.1" name="time_threshold" id="time_threshold" value="5.0" required>
+    </div>
+    <div>
+      <label for="elevation_threshold" data-i18n="elevation_threshold_label">Elevation Threshold (meters, optional):</label>
+      <small style="color: #929393; display: block; margin-top: 5px;" data-i18n="elevation_threshold_help">
+        Minimum elevation threshold to filter points. Leave as 0 to use automatic standard deviation filtering (recommended).
+      </small>
+      <input type="number" step="0.1" name="elevation_threshold" id="elevation_threshold" value="0" data-i18n-placeholder="auto_std_deviation">
+    </div>
+    <div>
+      <label for="start_num" data-i18n="start_num_label">Starting File Number:</label>
+      <small style="color: #929393; display: block; margin-top: 5px;" data-i18n="start_num_help">
+        Starting number for output file naming. Default: 1
+      </small>
+      <input type="number" name="start_num" id="start_num" value="1" min="1" required>
+    </div>
+    <input type="submit" value="Process" data-i18n-attr="value" data-i18n="process">
+  </form>
+  <div id="processing-info" style="display: none; text-align: center; margin-top: 20px;">
+    <div class="spinner"></div>
+    <p><span data-i18n="processing">Processing...</span> <span data-i18n="time_elapsed">Time elapsed</span>: <span id="timer">0</span> <span data-i18n="seconds">seconds</span></p>
+  </div>
+
+  <script>
+    document.getElementById('process-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      document.getElementById('processing-info').style.display = 'block';
+      let startTime = Date.now();
+
+      const updateTimer = () => {
+        let elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('timer').textContent = elapsed;
+      };
+
+      const timerInterval = setInterval(updateTimer, 1000);
+
+      fetch('{{ url_for("PPK_processing") }}', {
+        method: 'POST',
+        body: new FormData(this)
+      }).then(response => response.json())
+        .then(data => {
+          clearInterval(timerInterval);
+          document.getElementById('processing-info').style.display = 'none';
+          if (data.result_url) {
+            window.location.href = data.result_url;
+          } else {
+            alert(window.i18n ? window.i18n.t('processing_failed') : 'Processing failed');
+          }
+        }).catch(error => {
+          clearInterval(timerInterval);
+          document.getElementById('processing-info').style.display = 'none';
+          alert(window.i18n ? window.i18n.t('error_occurred') : 'An error occurred');
+        });
+    });
+  </script>
+{% endblock %}

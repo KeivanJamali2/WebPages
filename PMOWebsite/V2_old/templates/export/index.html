@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('export') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>{{ t('export_to_excel') }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="d-flex gap-3 flex-wrap mb-4">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('project') }}</label>
+                    <select name="project" class="form-control">
+                        <option value="">{{ t('all') }} {{ t('projects') }}</option>
+                        {% for p in projects %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('start_date') }}</label>
+                    <input type="date" name="start_date" class="form-control">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('end_date') }}</label>
+                    <input type="date" name="end_date" class="form-control">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">{{ t('status') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <label class="form-check">
+                        <input type="checkbox" name="status" value="approved" checked>
+                        <span class="form-check-label">{{ t('approved') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="status" value="pending">
+                        <span class="form-check-label">{{ t('pending') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="status" value="rejected">
+                        <span class="form-check-label">{{ t('rejected') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="status" value="draft">
+                        <span class="form-check-label">{{ t('draft') }}</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">{{ t('export_format') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <label class="form-check">
+                        <input type="radio" name="format" value="summary" checked>
+                        <span class="form-check-label">{{ t('summary') }} - {{ t('overview') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="radio" name="format" value="detailed">
+                        <span class="form-check-label">{{ t('detailed') }} - {{ t('all_sections') }}</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">{{ t('include_sections') }}</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="human_resources" checked>
+                        <span class="form-check-label">{{ t('human_resources') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="tools_equipment" checked>
+                        <span class="form-check-label">{{ t('tools_and_equipment') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="construction_operations" checked>
+                        <span class="form-check-label">{{ t('construction_operations') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="incoming_materials" checked>
+                        <span class="form-check-label">{{ t('incoming_materials') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="climate" checked>
+                        <span class="form-check-label">{{ t('climate_conditions') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="issues" checked>
+                        <span class="form-check-label">{{ t('project_issues') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="safety" checked>
+                        <span class="form-check-label">{{ t('safety') }}</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="sections" value="events" checked>
+                        <span class="form-check-label">{{ t('special_events') }}</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">📥 {{ t('export_to_excel') }}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

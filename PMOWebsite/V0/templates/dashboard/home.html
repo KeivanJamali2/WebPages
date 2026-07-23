@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PMO Website{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.dashboard-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-header h1 {
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+}
+
+.dashboard-header p {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-value {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.section {
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.section-header {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+    color: var(--color-text-secondary);
+}
+
+.project-list {
+    display: grid;
+    gap: var(--spacing-sm);
+}
+
+.project-item {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.project-item:hover {
+    background: var(--color-bg-secondary);
+}
+
+.project-info h4 {
+    font-size: var(--font-size-base);
+    margin-bottom: 4px;
+}
+
+.project-info p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.project-status {
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.status-active {
+    background: #d1f4e0;
+    color: #0d5c2c;
+}
+
+.status-on-hold {
+    background: #fff3cd;
+    color: #856404;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>{{ _('dashboard.welcome') }}, {{ user_name }}!</h1>
+        <p>{{ _('dashboard.overview') }}</p>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">{{ _('dashboard.my_submissions') }}</div>
+            <div class="stat-value">{{ format_number(stats.total_submissions) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">{{ _('dashboard.total_projects') }}</div>
+            <div class="stat-value">{{ format_number(stats.total_projects) }}</div>
+        </div>
+    </div>
+    
+    <!-- Projects Section -->
+    <div class="section">
+        <h2 class="section-header">{{ _('dashboard.active_projects') }}</h2>
+        {% if projects %}
+        <div class="project-list">
+            {% for project in projects %}
+            <div class="project-item">
+                <div class="project-info">
+                    <h4>{{ project.name }}</h4>
+                    <p>{{ project.project_id }} - {{ project.description[:60] }}...</p>
+                </div>
+                <span class="project-status status-{{ project.status }}">
+                    {{ _('common.status.' + project.status) }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>{{ _('dashboard.no_projects') }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Recent Submissions -->
+    <div class="section">
+        <h2 class="section-header">{{ _('dashboard.recent_submissions') }}</h2>
+        {% if stats.recent_submissions %}
+        <div class="project-list">
+            {% for submission in stats.recent_submissions %}
+            <div class="project-item">
+                <div class="project-info">
+                    <h4>{{ submission.form_type }}</h4>
+                    <p class="date">{{ format_date(submission.timestamp, include_time=True) }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>{{ _('dashboard.no_submissions') }}</p>
+            <p style="margin-top: 8px; font-size: 14px;">{{ _('dashboard.start_form') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

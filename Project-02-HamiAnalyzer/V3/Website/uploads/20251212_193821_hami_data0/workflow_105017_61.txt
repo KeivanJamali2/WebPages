@@ -1,0 +1,30 @@
+parent_id: None
+id: 73da1b5d-add5-4bd6-93bb-3fcc9884beec
+date: شنبه، 27 خرداد 1404 10:46
+name: کارشناسی پیوسته_زیست فناوری_یزد_4032
+email: sf-105-30578-4-4032@iau.ir
+--------------------------------------------------
+parent_id: 73da1b5d-add5-4bd6-93bb-3fcc9884beec
+id: 75607381-39b8-4ade-ae08-03370d6bb352
+date: شنبه، 27 خرداد 1404 14:17
+name: علیرضا لازمی
+email: 336264@iau.ir
+--------------------------------------------------
+parent_id: 73da1b5d-add5-4bd6-93bb-3fcc9884beec
+id: cc7da5ac-2a0b-497f-8ebb-fad338044e2c
+date: شنبه، 27 خرداد 1404 14:17
+name: Mohaddeseh Soltani Aliabad
+email: 3170207679@iau.ir
+--------------------------------------------------
+parent_id: 73da1b5d-add5-4bd6-93bb-3fcc9884beec
+id: 7f46b852-f5ad-4a5e-a218-04dda68bd867
+date: شنبه، 27 خرداد 1404 14:18
+name: Mohaddeseh Soltani Aliabad
+email: 3170207679@iau.ir
+--------------------------------------------------
+parent_id: 73da1b5d-add5-4bd6-93bb-3fcc9884beec
+id: eded0994-182c-47a8-9600-a41a14a86525
+date: شنبه، 27 خرداد 1404 14:18
+name: علیرضا لازمی
+email: 336264@iau.ir
+--------------------------------------------------

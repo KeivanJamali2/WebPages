@@ -1,0 +1,6 @@
+ts,game_id,round,phase,player,action,text,answer_or_correct
+,,,,,,,
+1758716925,412e9a0d,1,QUESTION,کیوان,Q,fda,0
+1758716927,412e9a0d,1,QUESTION,کیوان,G,asdf,0
+1758716931,412e9a0d,1,GUESS,علی,Q,fdsa,0
+1758716932,412e9a0d,1,CHAT,علی,G,fds,0

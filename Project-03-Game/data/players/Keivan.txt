@@ -1,0 +1,29 @@
+## Basic
+Iran, 2026-04-10T11:35:27.535574, 2026-04-10T11:35:27.535574
+
+## Location
+Iran
+
+## Money
+0
+
+## Skills
+None
+
+## Job
+None
+
+## Energy
+0
+
+## Health
+60
+
+## Transportation
+walk
+
+## Houses
+Iran, 10000, 1, 1, True
+
+## Log
+[created at 2026-04-10T11:35:27.535574]

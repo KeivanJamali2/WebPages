@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('analytics') }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>{{ t('analytics') }}</h1>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="filterForm" class="d-flex gap-3 flex-wrap align-center">
+            <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+                <label class="form-label">{{ t('project') }}</label>
+                <select name="project_id" id="projectFilter" class="form-control">
+                    <option value="">{{ t('all') }} {{ t('projects') }}</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="min-width: 150px; margin-bottom: 0;">
+                <label class="form-label">{{ t('start_date') }}</label>
+                <input type="date" name="from_date" id="fromDate" class="form-control">
+            </div>
+            <div class="form-group" style="min-width: 150px; margin-bottom: 0;">
+                <label class="form-label">{{ t('end_date') }}</label>
+                <input type="date" name="to_date" id="toDate" class="form-control">
+            </div>
+            <div class="form-group" style="min-width: 100px; margin-bottom: 0;">
+                <label class="form-label">&nbsp;</label>
+                <button type="button" onclick="loadCharts()" class="btn btn-primary">{{ t('filter') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-icon primary">📝</div>
+        <div class="stat-content">
+            <h3 id="totalForms">-</h3>
+            <p>{{ t('total_forms') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon primary">📅</div>
+        <div class="stat-content">
+            <h3 id="totalDays">-</h3>
+            <p>{{ t('total_days') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">📊</div>
+        <div class="stat-content">
+            <h3 id="avgForms">-</h3>
+            <p>{{ t('average') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">⚠️</div>
+        <div class="stat-content">
+            <h3 id="totalIncidents">-</h3>
+            <p>{{ t('safety') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="d-flex gap-4 mb-4 flex-wrap">
+    <div class="card flex-1" style="min-width: 300px;">
+        <div class="card-header">
+            <h2 class="card-title">{{ t('forms_over_time') }}</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="formsOverTimeChart"></canvas>
+        </div>
+    </div>
+    <div class="card" style="min-width: 300px;">
+        <div class="card-header">
+            <h2 class="card-title">{{ t('forms_by_project') }}</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="projectsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="d-flex gap-4 mb-4 flex-wrap">
+    <div class="card flex-1" style="min-width: 300px;">
+        <div class="card-header">
+            <h2 class="card-title">{{ t('human_resources') }}</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="hrChart"></canvas>
+        </div>
+    </div>
+    <div class="card flex-1" style="min-width: 300px;">
+        <div class="card-header">
+            <h2 class="card-title">{{ t('tools_and_equipment') }} ({{ t('hours') }})</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="equipmentChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 3 -->
+<div class="d-flex gap-4 mb-4 flex-wrap">
+    <div class="card flex-1" style="min-width: 300px;">
+        <div class="card-header">
+            <h2 class="card-title">{{ t('forms_by_employee') }}</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="employeesChart"></canvas>
+        </div>
+    </div>
+    <div class="card flex-1" style="min-width: 300px;">
+        <div class="card-header">
+            <h2 class="card-title">{{ t('safety') }}</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="safetyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Construction Progress -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('construction_operations') }} {{ t('summary') }}</h2>
+    </div>
+    <div class="card-body">
+        <div id="progressTable" class="table-responsive">
+            <p class="text-muted">{{ t('loading') }}...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let charts = {};
+
+function getFilterParams() {
+    const params = new URLSearchParams();
+    const project = document.getElementById('projectFilter').value;
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    
+    if (project) params.append('project_id', project);
+    if (fromDate) params.append('from_date', fromDate);
+    if (toDate) params.append('to_date', toDate);
+    
+    return params.toString();
+}
+
+async function loadCharts() {
+    const params = getFilterParams();
+    
+    // Load overview
+    const overview = await fetch(`/analytics/api/overview?${params}`).then(r => r.json());
+    document.getElementById('totalForms').textContent = overview.total_forms;
+    document.getElementById('totalDays').textContent = overview.total_days;
+    document.getElementById('avgForms').textContent = overview.avg_forms_per_day;
+    
+    // Load forms by date
+    const formsData = await fetch(`/analytics/api/forms-by-date?${params}`).then(r => r.json());
+    updateChart('formsOverTimeChart', 'line', formsData.labels, [{
+        label: '{{ t("forms") }}',
+        data: formsData.data,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        fill: true,
+        tension: 0.4
+    }]);
+    
+    // Load forms by project
+    const projectData = await fetch(`/analytics/api/forms-by-project?${params}`).then(r => r.json());
+    updateChart('projectsChart', 'doughnut', projectData.labels, [{
+        data: projectData.data,
+        backgroundColor: ['#2563eb', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#06b6d4']
+    }]);
+    
+    // Load forms by employee
+    const empData = await fetch(`/analytics/api/forms-by-employee?${params}`).then(r => r.json());
+    updateChart('employeesChart', 'bar', empData.labels, [{
+        label: '{{ t("forms") }}',
+        data: empData.data,
+        backgroundColor: '#8b5cf6'
+    }]);
+    
+    // Load equipment hours
+    const eqData = await fetch(`/analytics/api/equipment-hours?${params}`).then(r => r.json());
+    updateChart('equipmentChart', 'bar', eqData.labels, [{
+        label: '{{ t("hours") }}',
+        data: eqData.data,
+        backgroundColor: '#10b981'
+    }], { indexAxis: 'y' });
+    
+    // Load HR data
+    const hrData = await fetch(`/analytics/api/human-resources?${params}`).then(r => r.json());
+    updateChart('hrChart', 'bar', hrData.labels, [
+        { label: '{{ t("present") }}', data: hrData.present, backgroundColor: '#22c55e' },
+        { label: '{{ t("vacation") }}', data: hrData.vacation, backgroundColor: '#eab308' }
+    ], { indexAxis: 'y' });
+    
+    // Load safety data
+    const safetyData = await fetch(`/analytics/api/safety-incidents?${params}`).then(r => r.json());
+    document.getElementById('totalIncidents').textContent = safetyData.total_incidents;
+    updateChart('safetyChart', 'pie', safetyData.situation_labels, [{
+        data: safetyData.situation_data,
+        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#3b82f6']
+    }]);
+    
+    // Load progress data
+    const progressData = await fetch(`/analytics/api/progress-summary?${params}`).then(r => r.json());
+    renderProgressTable(progressData.data);
+}
+
+function updateChart(canvasId, type, labels, datasets, extraOptions = {}) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    if (charts[canvasId]) {
+        charts[canvasId].destroy();
+    }
+    
+    charts[canvasId] = new Chart(ctx, {
+        type: type,
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: datasets.length > 1 || type === 'pie' || type === 'doughnut', position: 'bottom' }
+            },
+            scales: type === 'line' || type === 'bar' ? {
+                y: { beginAtZero: true },
+                ...extraOptions
+            } : undefined,
+            ...extraOptions
+        }
+    });
+}
+
+function renderProgressTable(data) {
+    if (!data || data.length === 0) {
+        document.getElementById('progressTable').innerHTML = '<p class="text-muted">{{ t("no_data") }}</p>';
+        return;
+    }
+    
+    let html = `<table class="table">
+        <thead><tr>
+            <th>{{ t("operation") }}</th>
+            <th>{{ t("progress") }}</th>
+            <th>{{ t("unit") }}</th>
+        </tr></thead><tbody>`;
+    
+    data.forEach(item => {
+        html += `<tr>
+            <td>${item.operation}</td>
+            <td>${item.progress.toLocaleString()}</td>
+            <td>${item.unit}</td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    document.getElementById('progressTable').innerHTML = html;
+}
+
+// Load charts on page load
+document.addEventListener('DOMContentLoaded', loadCharts);
+</script>
+{% endblock %}

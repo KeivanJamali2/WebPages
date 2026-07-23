@@ -1,0 +1,11 @@
+﻿date,message,from,to,to_email,from_id,to_id,matched
+1404-05-09 11:15:00,There is nothing about this message in the Emails.,<empty>,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,<empty>,a88e33ed-bb1a-414d-b256-cca42a652179,False
+1404-05-09 12:10:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_4021,سمیرا سالاری مدوار,336763@iau.ir,a88e33ed-bb1a-414d-b256-cca42a652179,e4bced0f-d83f-4782-b84b-8344cb367a82,False
+1404-05-09 15:23:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_4021,Mehran  Ayani anjan,6350142071@iau.ir,a88e33ed-bb1a-414d-b256-cca42a652179,41caa6ff-4223-406c-8057-13a91dec40b6,False
+1404-05-27 13:19:00,There is nothing about this message in the Emails.,سمیرا سالاری مدوار,دکتری عمومی_پزشکی_یزد_4021,sm-105-10101-6-4021@iau.ir,e4bced0f-d83f-4782-b84b-8344cb367a82,a428a5b2-67fb-4f35-a6de-0f3e31336200,False
+1404-06-16 14:18:00,There is nothing about this message in the Emails.,دکتری عمومی_پزشکی_یزد_4021,Mehran  Ayani anjan,6350142071@iau.ir,a428a5b2-67fb-4f35-a6de-0f3e31336200,a4b2d894-b51f-44b2-907b-28b9e4f9e398,False
+1500-01-01 00:00:00,"Subject : درخواست ارسال پرونده دانشجویان انتقالی به واحد دیگر
+Code: 6350142071793478
+Major: دکتری عمومی_پزشکی_یزد_4021
+ جزئیات درخواست 
+ارسال شده: 'یک‌شنبه، 16 شهریور 1404 2:18:31'",Not in workflow,Not in workflow,Not in workflow,Not in workflow,Not in workflow,False

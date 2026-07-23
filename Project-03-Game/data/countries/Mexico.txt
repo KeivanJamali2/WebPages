@@ -1,0 +1,10 @@
+## Resources
+Silver, 50.0, 4, 0.1
+Avocados, 20.0, 6, 0.12
+Automotive, 40.0, 10, 0.05
+
+## Capacity
+128
+
+## HouseWorth
+80000

@@ -1,0 +1,10 @@
+## Resources
+Automotive, 90.0, 8, 0.05
+Engineering, 85.0, 6, 0.05
+Coal, 25.0, 2, 0.15
+
+## Capacity
+84
+
+## HouseWorth
+250000

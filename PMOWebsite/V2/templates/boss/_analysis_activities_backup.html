@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ 'Activities Analysis' if lang == 'en' else 'تحلیل فعالیت‌ها' }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+/* ── Layout ── */
+.act-page { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+.back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--primary-color); text-decoration: none;
+    margin-bottom: 20px; font-size: 14px;
+}
+.back-link:hover { text-decoration: underline; }
+
+.page-header { text-align: center; margin-bottom: 28px; }
+.page-header h1 { font-size: 24px; margin-bottom: 4px; }
+.page-header .subtitle { color: var(--text-secondary); font-size: 14px; }
+
+/* ── Filters bar ── */
+.filters-bar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 24px;
+}
+.filters-bar label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.filters-bar select,
+.filters-bar input[type="date"] {
+    padding: 6px 10px; border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 6px; font-size: 13px; background: #fff;
+}
+.filters-bar .btn-apply {
+    padding: 6px 18px; border: none; border-radius: 6px;
+    background: var(--primary-color, #3b82f6); color: #fff;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.filters-bar .btn-apply:hover { opacity: .9; }
+
+/* ── Card ── */
+.card {
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px; padding: 20px; margin-bottom: 24px;
+}
+.card h2 { font-size: 17px; margin: 0 0 14px 0; }
+
+/* ── Table ── */
+.tbl-wrap { overflow-x: auto; }
+.data-tbl {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.data-tbl th, .data-tbl td {
+    padding: 8px 10px; border-bottom: 1px solid var(--border-color, #e5e7eb);
+    text-align: {{ 'right' if lang == 'fa' else 'left' }};
+    white-space: nowrap;
+}
+.data-tbl th {
+    background: #f9fafb; font-weight: 600; position: sticky; top: 0;
+    font-size: 12px; color: var(--text-secondary);
+}
+.data-tbl tr:hover td { background: #f8fafc; }
+.data-tbl .num { text-align: center; }
+.data-tbl .total-row td { font-weight: 700; border-top: 2px solid var(--border-color); }
+
+/* progress bar */
+.prog-bar { display: inline-block; width: 80px; height: 8px; background: #e5e7eb; border-radius: 4px; vertical-align: middle; }
+.prog-bar .fill { height: 100%; border-radius: 4px; background: #3b82f6; }
+
+/* ── Charts grid ── */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+@media (max-width: 800px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-box {
+    background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px; padding: 16px;
+}
+.chart-box h3 { font-size: 14px; margin: 0 0 10px 0; }
+.chart-box canvas { width: 100% !important; max-height: 320px; }
+
+/* ── Loading / No data ── */
+.loading-overlay {
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 20px; text-align: center; color: var(--text-secondary);
+}
+.spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid #e5e7eb; border-top-color: var(--primary-color, #3b82f6); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="act-page">
+
+    <!-- Back link -->
+    <a href="{{ url_for('boss.analysis', project_id=project.id) }}" class="back-link">
+        ← {{ 'Back to Analysis' if lang == 'en' else 'بازگشت به تحلیل' }}
+    </a>
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1>📐 {{ 'Activities & Roadmap' if lang == 'en' else 'فعالیت‌ها و نقشه مسیر' }}</h1>
+        <p class="subtitle">{{ project.name }}</p>
+    </div>
+
+    {% if not has_data %}
+    <div class="loading-overlay">
+        <div>
+            <div style="font-size:48px; margin-bottom:12px;">📭</div>
+            <p>{{ 'No approved data yet. Submit and approve daily forms first.' if lang == 'en' else 'هنوز داده تأیید شده‌ای نیست. ابتدا فرم‌های روزانه را ثبت و تأیید کنید.' }}</p>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <label>{{ 'Unit' if lang == 'en' else 'واحد' }}:</label>
+        <select id="unitSelect">
+            <option value="per_day"  selected>{{ 'Per Day' if lang == 'en' else 'روزانه' }}</option>
+            <option value="per_week">{{ 'Per Week' if lang == 'en' else 'هفتگی' }}</option>
+            <option value="per_month">{{ 'Per Month' if lang == 'en' else 'ماهانه' }}</option>
+            <option value="per_hour">{{ 'Per Hour' if lang == 'en' else 'ساعتی' }}</option>
+        </select>
+
+        <label>{{ 'From' if lang == 'en' else 'از' }}:</label>
+        <input type="date" id="fromDate">
+
+        <label>{{ 'To' if lang == 'en' else 'تا' }}:</label>
+        <input type="date" id="toDate">
+
+        <button class="btn-apply" id="btnApply">{{ 'Apply' if lang == 'en' else 'اعمال' }}</button>
+    </div>
+
+    <!-- Main content: filled by JS -->
+    <div id="mainContent">
+        <div class="loading-overlay" id="loadingIndicator">
+            <div>
+                <div class="spinner"></div>
+                <p>{{ 'Loading data...' if lang == 'en' else 'در حال بارگذاری...' }}</p>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if has_data %}
+<script>
+(function() {
+    const PROJECT_ID = {{ project.id }};
+    const API_URL = '{{ url_for("boss.api_activities", project_id=project.id) }}';
+    const LANG = '{{ lang }}';
+    const T = {
+        activity:      LANG === 'fa' ? 'فعالیت' : 'Activity',
+        unit:          LANG === 'fa' ? 'واحد' : 'Unit',
+        totalDone:     LANG === 'fa' ? 'مقدار انجام‌شده' : 'Total Done',
+        planned:       LANG === 'fa' ? 'مقدار برنامه' : 'Planned',
+        progress:      LANG === 'fa' ? 'پیشرفت' : 'Progress',
+        costDone:      LANG === 'fa' ? 'هزینه انجام‌شده' : 'Cost Done',
+        plannedCost:   LANG === 'fa' ? 'هزینه برنامه' : 'Planned Cost',
+        firstDate:     LANG === 'fa' ? 'اولین تاریخ' : 'First Date',
+        lastDate:      LANG === 'fa' ? 'آخرین تاریخ' : 'Last Date',
+        daysActive:    LANG === 'fa' ? 'روز فعال' : 'Days Active',
+        avgAmount:     LANG === 'fa' ? 'میانگین مقدار' : 'Avg Amount',
+        total:         LANG === 'fa' ? 'جمع کل' : 'Total',
+        summaryTitle:  LANG === 'fa' ? 'خلاصه فعالیت‌ها' : 'Activities Summary',
+        cumulTitle:    LANG === 'fa' ? 'پیشرفت تجمعی' : 'Cumulative Progress',
+        dailyTitle:    LANG === 'fa' ? 'خروجی روزانه' : 'Daily Work Output',
+        costTitle:     LANG === 'fa' ? 'ترکیب هزینه' : 'Cost Breakdown',
+        projTitle:     LANG === 'fa' ? 'پیش‌بینی تکمیل' : 'Completion Forecast',
+        roadmapTitle:  LANG === 'fa' ? 'پوشش نقشه مسیر' : 'Roadmap Coverage',
+        projActivity:  LANG === 'fa' ? 'فعالیت' : 'Activity',
+        projRate:      LANG === 'fa' ? 'نرخ فعلی/روز' : 'Rate/Day',
+        projRemain:    LANG === 'fa' ? 'باقی‌مانده' : 'Remaining',
+        projDays:      LANG === 'fa' ? 'روز تا پایان' : 'Days Left',
+        projEnd:       LANG === 'fa' ? 'تاریخ پیش‌بینی' : 'Projected End',
+        na:            'N/A',
+    };
+
+    const COLORS = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+    let charts = {};
+
+    // ── Fetch and render ──
+    function loadData() {
+        const unit = document.getElementById('unitSelect').value;
+        const from = document.getElementById('fromDate').value;
+        const to   = document.getElementById('toDate').value;
+        let url = API_URL + '?unit=' + unit;
+        if (from) url += '&from_date=' + from;
+        if (to)   url += '&to_date=' + to;
+
+        document.getElementById('mainContent').innerHTML =
+            '<div class="loading-overlay"><div><div class="spinner"></div><p>' +
+            (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading data...') + '</p></div></div>';
+
+        fetch(url)
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success) throw new Error('API error');
+                render(res.data);
+            })
+            .catch(err => {
+                document.getElementById('mainContent').innerHTML =
+                    '<div class="loading-overlay"><div><p style="color:#ef4444;">Error loading data</p></div></div>';
+            });
+    }
+
+    function render(data) {
+        // Destroy old charts
+        Object.values(charts).forEach(c => c.destroy());
+        charts = {};
+
+        const html = `
+            ${renderSummaryTable(data.summary)}
+            <div class="charts-grid">
+                <div class="chart-box"><h3>${T.cumulTitle}</h3><canvas id="chartCumul"></canvas></div>
+                <div class="chart-box"><h3>${T.dailyTitle}</h3><canvas id="chartDaily"></canvas></div>
+                <div class="chart-box"><h3>${T.costTitle}</h3><canvas id="chartCost"></canvas></div>
+                <div class="chart-box"><h3>${T.projTitle}</h3><canvas id="chartProj"></canvas></div>
+            </div>
+            ${renderRoadmap(data.roadmap)}
+            ${renderProjectionTable(data.projection)}
+        `;
+        document.getElementById('mainContent').innerHTML = html;
+
+        // Draw charts
+        drawCumulative(data.cumulative);
+        drawDailyOutput(data.daily_output);
+        drawCostPie(data.cost_breakdown);
+        drawProjection(data.cumulative, data.projection);
+    }
+
+    // ── Summary Table ──
+    function renderSummaryTable(summary) {
+        const rows = summary.rows;
+        if (!rows.length) return '<div class="card"><p>' + T.na + '</p></div>';
+        let trs = rows.map(r => {
+            const prog = r.progress !== null ? r.progress.toFixed(1) + '%' : T.na;
+            const progW = r.progress !== null ? Math.min(r.progress, 100) : 0;
+            return `<tr>
+                <td>${r.activity}</td>
+                <td class="num">${r.unit_label}</td>
+                <td class="num">${fmt(r.total_amount)}</td>
+                <td class="num">${fmt(r.planned_amount)}</td>
+                <td class="num">${prog} <span class="prog-bar"><span class="fill" style="width:${progW}%"></span></span></td>
+                <td class="num">${fmt(r.cost_done)}</td>
+                <td class="num">${fmt(r.planned_cost)}</td>
+                <td class="num">${r.first_date || '-'}</td>
+                <td class="num">${r.last_date || '-'}</td>
+                <td class="num">${r.days_active}</td>
+                <td class="num">${fmt(r.avg_amount)}</td>
+            </tr>`;
+        }).join('');
+        trs += `<tr class="total-row">
+            <td colspan="5">${T.total}</td>
+            <td class="num">${fmt(summary.total_cost_done)}</td>
+            <td class="num">${fmt(summary.total_planned_cost)}</td>
+            <td colspan="4"></td>
+        </tr>`;
+        return `<div class="card">
+            <h2>${T.summaryTitle}</h2>
+            <div class="tbl-wrap"><table class="data-tbl">
+            <thead><tr>
+                <th>${T.activity}</th><th>${T.unit}</th><th>${T.totalDone}</th>
+                <th>${T.planned}</th><th>${T.progress}</th><th>${T.costDone}</th>
+                <th>${T.plannedCost}</th><th>${T.firstDate}</th><th>${T.lastDate}</th>
+                <th>${T.daysActive}</th><th>${T.avgAmount}</th>
+            </tr></thead>
+            <tbody>${trs}</tbody>
+            </table></div>
+        </div>`;
+    }
+
+    // ── Roadmap Coverage ──
+    function renderRoadmap(segments) {
+        if (!segments.length) return '';
+        // Group by operation_type
+        const types = [...new Set(segments.map(s => s.operation_type))];
+        const minM = Math.min(...segments.map(s => s.start_m));
+        const maxM = Math.max(...segments.map(s => s.end_m));
+        const range = maxM - minM || 1;
+
+        let rowsHtml = types.map((t, i) => {
+            const segs = segments.filter(s => s.operation_type === t);
+            const bars = segs.map(s => {
+                const left = ((s.start_m - minM) / range * 100).toFixed(2);
+                const width = ((s.end_m - s.start_m) / range * 100).toFixed(2);
+                const color = COLORS[i % COLORS.length];
+                return `<div title="${s.date}\n${s.start_station} → ${s.end_station}\nAmount: ${s.amount}\nCost: ${fmt(s.cost)}"
+                    style="position:absolute; left:${left}%; width:${Math.max(parseFloat(width),0.5)}%;
+                    height:20px; background:${color}; opacity:0.7; border-radius:3px; top:2px;"></div>`;
+            }).join('');
+            return `<tr>
+                <td style="width:120px; font-size:12px;">${t}</td>
+                <td style="position:relative; height:24px;">${bars}</td>
+            </tr>`;
+        }).join('');
+
+        return `<div class="card">
+            <h2>${T.roadmapTitle}</h2>
+            <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">
+                ${minM}m → ${maxM}m (${LANG === 'fa' ? 'روی میله‌ها هاور کنید' : 'hover for details'})
+            </div>
+            <div class="tbl-wrap"><table style="width:100%; table-layout:fixed;">
+                <tbody>${rowsHtml}</tbody>
+            </table></div>
+        </div>`;
+    }
+
+    // ── Projection Table ──
+    function renderProjectionTable(proj) {
+        if (!proj.length) return '';
+        const trs = proj.map(r => `<tr>
+            <td>${r.activity}</td>
+            <td class="num">${fmt(r.total_done)} / ${fmt(r.planned_amount)}</td>
+            <td class="num">${fmt(r.current_rate)}</td>
+            <td class="num">${fmt(r.remaining)}</td>
+            <td class="num">${r.days_to_finish !== null ? r.days_to_finish : T.na}</td>
+            <td class="num">${r.projected_end || T.na}</td>
+        </tr>`).join('');
+        return `<div class="card">
+            <h2>${T.projTitle}</h2>
+            <div class="tbl-wrap"><table class="data-tbl">
+            <thead><tr>
+                <th>${T.projActivity}</th><th>${T.totalDone} / ${T.planned}</th>
+                <th>${T.projRate}</th><th>${T.projRemain}</th>
+                <th>${T.projDays}</th><th>${T.projEnd}</th>
+            </tr></thead>
+            <tbody>${trs}</tbody>
+            </table></div>
+        </div>`;
+    }
+
+    // ── Chart: Cumulative Progress ──
+    function drawCumulative(cumul) {
+        const ctx = document.getElementById('chartCumul');
+        if (!ctx) return;
+        const activities = Object.keys(cumul);
+        const datasets = [];
+        // Actual lines
+        activities.forEach((a, i) => {
+            const series = cumul[a];
+            datasets.push({
+                label: a,
+                data: series.map(p => ({ x: p.date, y: p.cumulative })),
+                borderColor: COLORS[i % COLORS.length],
+                backgroundColor: 'transparent',
+                tension: 0.3,
+                pointRadius: 3,
+            });
+            // Planned horizontal
+            if (series.length && series[0].planned_amount > 0) {
+                datasets.push({
+                    label: a + (LANG === 'fa' ? ' (برنامه)' : ' (planned)'),
+                    data: [
+                        { x: series[0].date, y: series[0].planned_amount },
+                        { x: series[series.length-1].date, y: series[0].planned_amount }
+                    ],
+                    borderColor: COLORS[i % COLORS.length],
+                    borderDash: [6, 3],
+                    backgroundColor: 'transparent',
+                    pointRadius: 0,
+                });
+            }
+        });
+        charts.cumul = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+                scales: { x: { type: 'category' }, y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // ── Chart: Daily Output (stacked bar) ──
+    function drawDailyOutput(daily) {
+        const ctx = document.getElementById('chartDaily');
+        if (!ctx) return;
+        const allActivities = new Set();
+        daily.forEach(d => Object.keys(d.activities).forEach(a => allActivities.add(a)));
+        const acts = [...allActivities];
+        const labels = daily.map(d => d.date);
+        const datasets = acts.map((a, i) => ({
+            label: a,
+            data: daily.map(d => d.activities[a] || 0),
+            backgroundColor: COLORS[i % COLORS.length] + 'cc',
+        }));
+        charts.daily = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // ── Chart: Cost Pie ──
+    function drawCostPie(costData) {
+        const ctx = document.getElementById('chartCost');
+        if (!ctx) return;
+        charts.cost = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: costData.map(c => c.activity),
+                datasets: [{
+                    data: costData.map(c => c.total_cost),
+                    backgroundColor: COLORS.slice(0, costData.length),
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+            }
+        });
+    }
+
+    // ── Chart: Projection ──
+    function drawProjection(cumul, proj) {
+        const ctx = document.getElementById('chartProj');
+        if (!ctx) return;
+        const datasets = [];
+        const activities = Object.keys(cumul);
+        activities.forEach((a, i) => {
+            const series = cumul[a];
+            // Actual
+            datasets.push({
+                label: a,
+                data: series.map(p => ({ x: p.date, y: p.cumulative })),
+                borderColor: COLORS[i % COLORS.length],
+                backgroundColor: 'transparent',
+                tension: 0.3,
+                pointRadius: 2,
+            });
+            // Projection dashed
+            const p = proj.find(r => r.activity === a);
+            if (p && p.projected_end && series.length) {
+                const lastPt = series[series.length - 1];
+                datasets.push({
+                    label: a + (LANG === 'fa' ? ' (پیش‌بینی)' : ' (projected)'),
+                    data: [
+                        { x: lastPt.date, y: lastPt.cumulative },
+                        { x: p.projected_end, y: p.planned_amount }
+                    ],
+                    borderColor: COLORS[i % COLORS.length],
+                    borderDash: [6, 3],
+                    backgroundColor: 'transparent',
+                    pointRadius: 0,
+                });
+            }
+        });
+        charts.proj = new Chart(ctx, {
+            type: 'line',
+            data: { datasets },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+                scales: { x: { type: 'category' }, y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // ── Helpers ──
+    function fmt(n) {
+        if (n === null || n === undefined) return '-';
+        return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    // ── Init ──
+    document.getElementById('btnApply').addEventListener('click', loadData);
+    loadData();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,7 @@
+# username_english,username_persian,password,phone_number,national_ID,email,role
+
+boss,مدیر,1234,09101511983,4421031429,boss@gmail.com,boss
+babaii,بابائی,9130039130,09130039130,4420621559,test@gmail.com,admin
+jamali,جمالی,1234,09101511983,4421031428,jamali@gmail.com,admin
+keivan,کیوان,1234,09011111111,001111111,keivan@gmail.com,employee
+oreizi,عریضی,9139543640,09139543640,5510026790,test2@gmail.com,employee

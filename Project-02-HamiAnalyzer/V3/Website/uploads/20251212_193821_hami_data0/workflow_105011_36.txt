@@ -1,0 +1,18 @@
+parent_id: None
+id: d6fca8bc-ea2f-4f7e-933b-2ef9755ccddc
+date: شنبه، 27 خرداد 1404 08:50
+name: کارشناسی پیوسته_مهندسی کامپیوتر_یزد_4021
+email: sm-105-41054-4-4021@iau.ir
+--------------------------------------------------
+parent_id: d6fca8bc-ea2f-4f7e-933b-2ef9755ccddc
+id: d2ea1329-17fb-44f6-8f14-3deab6f870c7
+date: چهارشنبه، 28 خرداد 1404 14:30
+name: Ahmadreza Tabeshnezhad
+email: 4240587514@iau.ir
+--------------------------------------------------
+parent_id: d6fca8bc-ea2f-4f7e-933b-2ef9755ccddc
+id: b9ed5175-ecdd-4914-be7e-0b75aea803e2
+date: چهارشنبه، 28 خرداد 1404 14:30
+name: علیرضا لازمی
+email: 336264@iau.ir
+--------------------------------------------------

@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h1>Connect to Me</h1>
+  <p style="text-align: center; color: #929393; margin-bottom: 20px;">
+    You are now connected. Access your files below.
+  </p>
+  <a href="{{ url_for('connect_page') }}" class="btn-primary" style="display: inline-block; text-decoration: none; margin: 0 auto;">
+    View Files
+  </a>
+{% endblock %}

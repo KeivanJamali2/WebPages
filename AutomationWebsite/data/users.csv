@@ -1,0 +1,10 @@
+email,name,password,allowed_tools
+keivan@gmail.com,Keivan Jamali,1234142324,"connect,share,generic,ppk,csdp,delete_distance,culvert,distance2"
+test@gmail.com,Test User,test123,"share,connect"
+erfan.zare.khormizi.ezk@gmail.com,Erfan Zare,09130028066,"connect,generic,ppk,share,csdp,delete_distance,connect,distance2"
+zaynab.hmp@gmail.com,Zeinab Hashemi,09139514475,"connect,share,culvert"
+m.dehghanyzade@yahoo.com,M Dehghanyzade,20321784md,"connect,share,generic,csdp,delete_distance,distance2"
+tajobian.sajjad144@gmail.com,sajjad_taj,sajjad1234,"connect,share,generic,csdp,delete_distance,distance2"
+nargesbagestani1363@gmail.com,Narges Bagestani,1234,"connect,share"
+tarhgostar1@gmail.com,Baghestani,41391356,"share,connect,generic,ppk,csdp,delete_distance,distance2,culvert"
+ahmadi.afz@gmail.com,Ahmadi,Aa86262001,"share,connect,ppk"

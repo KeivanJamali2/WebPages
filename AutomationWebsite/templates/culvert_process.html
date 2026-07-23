@@ -1,0 +1,3584 @@
+{% extends "layout.html" %}
+
+{% block title %}<span data-i18n="culvert_processing_title">Culvert Design Tool</span>{% endblock %}
+
+{% block content %}
+<div class="tool-container">
+    <div class="tool-header">
+        <h1 data-i18n="culvert_processing_title">Culvert Design Tool</h1>
+        <p class="tool-description" data-i18n="culvert_processing_desc">Automated design and drawing generation for culverts</p>
+    </div>
+
+    <div class="tool-content">
+        <form id="culvertForm" action="{{ url_for('process_culvert') }}" method="post" enctype="multipart/form-data">
+
+            <!-- All sections in a clean grid layout -->
+            <div class="form-grid-layout">
+                
+                <!-- Basic Parameters Card -->
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-icon">📐</span>
+                        <h3 data-i18n="basic_parameters">Basic Parameters</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="field-grid">
+                            <div class="form-group">
+                                <label for="n" data-i18n="number_of_openings">Openings (n)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="n" name="n" min="1" max="6" value="1" required>
+                                    <span class="input-unit">#</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="D" data-i18n="diameter">Span (D)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="D" name="D" step="1" min="1" max="10" value="3.0" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="L_left" data-i18n="length_left">Length Left</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="L_left" name="L_left" step="0.01" min="0" max="100" value="5.0" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="L_right" data-i18n="length_right">Length Right</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="L_right" name="L_right" step="0.01" min="0" max="100" value="5.0" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="Hs" data-i18n="static_head">Static Head (Hs)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="Hs" name="Hs" step="0.01" min="0.04" max="1" value="0.25" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="H_min" data-i18n="min_height">Min Height (H_min)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="H_min" name="H_min" step="0.01" min="0" max="10" value="1.0" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="CL" data-i18n="center_line_elevation">Project Line Elevation (CL)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="CL" name="CL" step="0.01" value="100.0" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Parameters Card -->
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-icon">📍</span>
+                        <h3 data-i18n="location_parameters">Location Parameters</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="field-grid">
+                            <div class="form-group full-width">
+                                <label for="ax_natural" data-i18n="natural_axis_elevation">Natural Axis Elevation</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="ax_natural" name="ax_natural" step="0.01" value="100.0" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="dever_left" data-i18n="left_slope">Left Slope</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="dever_left" name="dever_left" step="0.1" min="-50" max="50" value="2" required>
+                                    <span class="input-unit">%</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="dever_right" data-i18n="right_slope">Right Slope</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="dever_right" name="dever_right" step="0.1" min="-50" max="50" value="2" required>
+                                    <span class="input-unit">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slope Parameters Card -->
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <h3 data-i18n="slope_parameters">Slope Parameters</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="field-grid">
+                            <div class="form-group">
+                                <label for="z_natural" data-i18n="natural_slope">Natural Slope</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="z_natural" name="z_natural" step="0.01" min="0" max="100" value="2" required>
+                                    <span class="input-unit">%</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="z_toli" data-i18n="longitudinal_slope">Longitudinal Slope</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="z_toli" name="z_toli" step="0.01" min="-100" max="100" value="1" required>
+                                    <span class="input-unit">%</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="z_shirvani" data-i18n="transverse_slope">Transverse Slope</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="z_shirvani" name="z_shirvani" step="0.1" min="0" max="6" value="3" required>
+                                    <span class="input-unit">1:z</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="u_shirvani" data-i18n="extra_width_slope">Extra Width Slope</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="u_shirvani" name="u_shirvani" step="0.1" min="0" max="6" value="1.5" required>
+                                    <span class="input-unit">1:z</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="ret" data-i18n="retention">Retention</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="ret" name="ret" step="0.01" min="0" max="5" value="0.5" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="h_min_dastak_r" data-i18n="h_min_dastak_r">H Min Dastak Right</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="h_min_dastak_r" name="h_min_dastak_r" step="0.1" min="0" max="5" value="1" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="h_min_dastak_l" data-i18n="h_min_dastak_l">H Min Dastak Left</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="h_min_dastak_l" name="h_min_dastak_l" step="0.1" min="0" max="5" value="1" required>
+                                    <span class="input-unit">m</span>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="dastak_degree" data-i18n="dastak_degree">Dastak Degree</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="ball_degree" name="ball_degree" step="1" min="0" max="90" value="30" required>
+                                    <span class="input-unit">°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Angle Parameters Card -->
+                <div class="form-card" id="angle_section">
+                    <div class="card-header">
+                        <span class="card-icon">🔄</span>
+                        <h3 data-i18n="angle_parameters">Angle Parameters</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="field-grid">
+                            <div class="form-group">
+                                <label for="direction_flag" data-i18n="direction_up_down">Direction</label>
+                                <select class="form-control" id="direction_flag" name="direction_flag">
+                                    <option value="true" data-i18n="left_up_right_down">Left UP / Right DOWN</option>
+                                    <option value="false" data-i18n="left_down_right_up">Left DOWN / Right UP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="alpha" data-i18n="angle">Angle (α)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" class="form-control" id="alpha" name="alpha" step="0.1" min="-90" max="90" value="0.0">
+                                    <span class="input-unit">°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Information Card -->
+                <div class="form-card" id="project_info_section">
+                    <div class="card-header">
+                        <span class="card-icon">🏗️</span>
+                        <h3 data-i18n="project_information">Project Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="field-grid">
+                            <div class="form-group full-width">
+                                <label for="employer" data-i18n="employer">Employer</label>
+                                <input type="text" class="form-control" id="employer" name="employer" placeholder="Employer / Client name" value="">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="project_title" data-i18n="project_title">Project Title</label>
+                                <input type="text" class="form-control" id="project_title" name="project_title" placeholder="Project title" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="project_type" data-i18n="project_type">Project Type</label>
+                                <input type="text" class="form-control" id="project_type" name="project_type" placeholder="Project type" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="project_date" data-i18n="project_date">Date</label>
+                                <input type="text" class="form-control" id="project_date" name="project_date" placeholder="Date" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="map_code" data-i18n="map_code">Map Code</label>
+                                <input type="text" class="form-control" id="map_code" name="map_code" placeholder="Map / Drawing code" value="DWG-r-1405/0059-HD-012-00">
+                            </div>
+                            <div class="form-group">
+                                <label for="page_number" data-i18n="page_number">Page Number</label>
+                                <input type="text" class="form-control" id="page_number" name="page_number" placeholder="Page / Sheet number" value="1">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="location" data-i18n="culvert_location">Location</label>
+                                <input type="text" class="form-control" id="location" name="location" placeholder="Project location" value="00+000">
+                            </div>
+                            <div class="form-group">
+                                <label for="city_top" data-i18n="city_top">Upper City</label>
+                                <input type="text" class="form-control" id="city_top" name="city_top" data-i18n-placeholder="city_top_placeholder" placeholder="Upper city name" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="city_bottom" data-i18n="city_bottom">Lower City</label>
+                                <input type="text" class="form-control" id="city_bottom" name="city_bottom" data-i18n-placeholder="city_bottom_placeholder" placeholder="Lower city name" value="">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Design Summary Preview -->
+            <div class="form-section summary-section" id="design-summary">
+                <div class="summary-header">
+                    <h3>
+                        <span class="summary-icon">📋</span>
+                        <span data-i18n="design_summary">Design Summary</span>
+                    </h3>
+                    <button type="button" class="btn-refresh" onclick="updateDesignSummary()" title="Refresh Summary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-grid">
+                        <div class="summary-category">
+                            <h4 data-i18n="culvert_type">Culvert Type</h4>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="culvert_type_label">Type:</span>
+                                <span class="summary-value" id="summary-type">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="template_label">Template:</span>
+                                <span class="summary-value" id="summary-template">-</span>
+                            </div>
+                        </div>
+                        <div class="summary-category">
+                            <h4 data-i18n="dimensions_label">Dimensions</h4>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="number_of_openings">Openings (n):</span>
+                                <span class="summary-value" id="summary-n">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="diameter">Span (D):</span>
+                                <span class="summary-value" id="summary-D">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="total_length">Total Length (L):</span>
+                                <span class="summary-value" id="summary-L">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="static_head">Static Head (Hs):</span>
+                                <span class="summary-value" id="summary-Hs">-</span>
+                            </div>
+                        </div>
+                        <div class="summary-category">
+                            <h4 data-i18n="elevations_label">Elevations</h4>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="project_line">Project Line (CL):</span>
+                                <span class="summary-value" id="summary-CL">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="natural_axis">Natural Axis:</span>
+                                <span class="summary-value" id="summary-ax">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="min_height">Min Height (H_min):</span>
+                                <span class="summary-value" id="summary-Hmin">-</span>
+                            </div>
+                        </div>
+                        <div class="summary-category">
+                            <h4 data-i18n="slopes_and_angles">Slopes & Angles</h4>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="alpha_angle">Alpha (α):</span>
+                                <span class="summary-value" id="summary-alpha">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="wall_degree">Wall Degree:</span>
+                                <span class="summary-value" id="summary-ball">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="natural_slope">Natural Slope:</span>
+                                <span class="summary-value" id="summary-znat">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-calculated" id="summary-calculated">
+                        <h4 data-i18n="estimated_calculations">Estimated Calculations</h4>
+                        <div class="summary-calc-grid">
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="est_h_left">Est. H_left:</span>
+                                <span class="summary-value" id="summary-Hleft">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label" data-i18n="est_h_right">Est. H_right:</span>
+                                <span class="summary-value" id="summary-Hright">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span data-i18n="generate_design">Generate Design</span>
+                </button>
+            </div>
+            
+            <!-- Configuration Accordion -->
+            <div class="config-accordion" id="config-accordion">
+                <div class="accordion-header" onclick="toggleAccordion()">
+                    <div class="accordion-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span data-i18n="saved_configs_batch">Saved Configurations & Batch Processing</span>
+                    </div>
+                    <svg class="accordion-chevron" id="accordion-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                
+                <div class="accordion-content" id="accordion-content">
+                    <div class="config-panels">
+                        <!-- Load & Save Panel -->
+                        <div class="config-panel">
+                            <div class="panel-header">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <span data-i18n="load_configuration">Load Configuration</span>
+                            </div>
+                            <select class="config-select" id="config_select">
+                                <option value="" data-i18n="select_configuration">Select a configuration...</option>
+                                <optgroup label="Default Presets" data-i18n="default_presets" data-i18n-attr="label" id="preset_group"></optgroup>
+                                <optgroup label="Saved Configurations" data-i18n="saved_configurations" data-i18n-attr="label" id="saved_group"></optgroup>
+                            </select>
+                            <div class="panel-actions">
+                                <button type="button" class="config-btn config-btn-primary" onclick="loadSelectedConfig()" data-i18n="load">Load</button>
+                                <button type="button" class="config-btn config-btn-danger" onclick="deleteSelectedConfig()" data-i18n="delete">Delete</button>
+                                <button type="button" class="config-btn config-btn-ghost" onclick="resetToTypeDefault()" data-i18n="reset">Reset</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Panel -->
+                        <div class="config-panel">
+                            <div class="panel-header">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                                <span data-i18n="save_current_settings">Save Current Settings</span>
+                            </div>
+                            <div class="save-row">
+                                <input type="text" class="config-input" id="config_name" data-i18n-placeholder="configuration_name" placeholder="Configuration name...">
+                                <button type="button" class="config-btn config-btn-success" onclick="saveCurrentConfig()" data-i18n="save">Save</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Batch Panel -->
+                        <div class="config-panel batch-panel">
+                            <div class="panel-header">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                <span data-i18n="batch_processing">Batch Processing</span>
+                            </div>
+                            <div class="batch-list" id="batch-list"></div>
+                            <div class="batch-footer">
+                                <div class="batch-actions">
+                                    <button type="button" class="batch-link" onclick="selectAllBatch()" data-i18n="select_all">Select All</button>
+                                    <span class="batch-divider">|</span>
+                                    <button type="button" class="batch-link" onclick="clearBatch()" data-i18n="clear">Clear</button>
+                                </div>
+                                <button type="button" class="config-btn config-btn-accent" onclick="runBatchProcess()" id="batch-run-btn" disabled>
+                                    <span id="batch-btn-text" data-i18n="run_batch">Run Batch (0)</span>
+                                </button>
+                            </div>
+                            <div class="batch-progress" id="batch-progress">
+                                <div class="progress-track">
+                                    <div class="progress-fill" id="batch-progress-fill"></div>
+                                </div>
+                                <p class="progress-label" id="batch-progress-text" data-i18n="ready">Ready</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Live Validation Panel -->
+        <div id="validation-panel" class="validation-panel-new">
+            <div class="validation-header-new">
+                <div class="validation-title">
+                    <span class="validation-icon-new">🔍</span>
+                    <h3 data-i18n="input_validation">Input Validation</h3>
+                </div>
+                <span id="validation-status" class="validation-badge status-pending">
+                    <span data-i18n="checking">Checking...</span>
+                </span>
+            </div>
+            <div id="validation-content" class="validation-body">
+                <!-- Validation messages will appear here -->
+            </div>
+        </div>
+
+        <!-- Results Display -->
+        <div id="results" class="results-panel" style="display: none;">
+            <div class="results-header">
+                <div class="results-icon-circle">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <div class="results-title">
+                    <h3 data-i18n="calculation_complete">Calculation Complete</h3>
+                    <p data-i18n="results_ready">Your design is ready for download</p>
+                </div>
+            </div>
+            <div id="results-content" class="results-body"></div>
+            <div class="results-actions">
+                <a id="download-link" class="btn-download" download>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span data-i18n="download_dxf">Download DXF File</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Error Details Panel -->
+        <div id="error-panel" class="error-panel-new" style="display: none;">
+            <div class="error-header-new">
+                <div class="error-icon-circle">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="error-title">
+                    <h3 data-i18n="calculation_issues">Calculation Issues Found</h3>
+                    <p data-i18n="error_review">Please review the following issues</p>
+                </div>
+                <button class="btn-close-new" onclick="closeErrorPanel()" title="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="error-content" class="error-body">
+                <!-- Error details will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // DISABLE SCROLL-TO-CHANGE ON NUMBER INPUTS
+    // ============================================
+    document.addEventListener('wheel', function(e) {
+        if (document.activeElement && document.activeElement.type === 'number') {
+            document.activeElement.blur();
+        }
+    }, { passive: true });
+
+    // ============================================
+    // CULVERT VALIDATION & INTERACTIVE FEEDBACK
+    // ============================================
+
+    const ValidationRules = {
+        // Table3 H range constraint
+        H_MIN: 1.0,
+        H_MAX: 7.0,
+        
+        // Diameter constraints (from Culvert_one.csv table)
+        D_VALUES: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+        
+        // Static head constraints
+        HS_MIN: 0.0,
+        HS_MAX: 6.0,
+        
+        // Get parameters for formulas
+        getParams() {
+            const L_left = parseFloat(document.getElementById('L_left').value) || 5.0;
+            const L_right = parseFloat(document.getElementById('L_right').value) || 5.0;
+            return {
+                n: parseFloat(document.getElementById('n').value) || 1,
+                D: parseFloat(document.getElementById('D').value) || 1.0,
+                L: L_left + L_right,
+                L_left: L_left,
+                L_right: L_right,
+                Hs: parseFloat(document.getElementById('Hs').value) || 2.0,
+                H_min: parseFloat(document.getElementById('H_min').value) || 1.0,
+                CL: parseFloat(document.getElementById('CL').value) || 100.0,
+                ax_natural: parseFloat(document.getElementById('ax_natural').value) || 100.0,
+                dever_right: parseFloat(document.getElementById('dever_right').value) || 0.0,
+                dever_left: parseFloat(document.getElementById('dever_left').value) || 0.0,
+                z_natural: (parseFloat(document.getElementById('z_natural').value) || 2) / 100,
+                z_toli: (parseFloat(document.getElementById('z_toli').value) || 1) / 100,
+                z_shirvani: parseFloat(document.getElementById('z_shirvani').value) || 1.5,
+                ret: parseFloat(document.getElementById('ret').value) || 0.3,
+                ball_degree: parseFloat(document.getElementById('ball_degree').value) || 45,
+                A: L_left,
+                B: L_right,
+                alpha: parseFloat(document.getElementById('alpha').value) || 0.0,
+                direction_flag: document.getElementById('direction_flag').value === 'true'
+            };
+        }
+    };
+
+    // Validation result class
+    class ValidationResult {
+        constructor() {
+            this.errors = [];
+            this.warnings = [];
+            this.info = [];
+            this.calculatedValues = {};
+        }
+        
+        addError(field, message, formula, suggestion) {
+            this.errors.push({ field, message, formula, suggestion, type: 'error' });
+        }
+        
+        addWarning(field, message, formula, suggestion) {
+            this.warnings.push({ field, message, formula, suggestion, type: 'warning' });
+        }
+        
+        addInfo(field, message, value) {
+            this.info.push({ field, message, value, type: 'info' });
+        }
+        
+        isValid() {
+            return this.errors.length === 0;
+        }
+    }
+
+    // Main validation function
+    function validateCulvertInputs() {
+        const result = new ValidationResult();
+        const p = ValidationRules.getParams();
+        
+        // === BASIC PARAMETER VALIDATION ===
+        
+        // 1. Check Diameter (D) - must be in available values
+        if (!ValidationRules.D_VALUES.includes(p.D)) {
+            result.addError(
+                'D',
+                `Diameter ${p.D}m is not available in design tables.`,
+                null,
+                `Available diameters: ${ValidationRules.D_VALUES.join(', ')} meters`
+            );
+        }
+        
+        // 2. Check H_min range (Table3 constraint)
+        if (p.H_min < ValidationRules.H_MIN || p.H_min > ValidationRules.H_MAX) {
+            result.addError(
+                'H_min',
+                `Minimum Height (H_min = ${p.H_min}m) is out of valid range.`,
+                `Valid range: ${ValidationRules.H_MIN} ≤ H_min ≤ ${ValidationRules.H_MAX}`,
+                `Set H_min between ${ValidationRules.H_MIN}m and ${ValidationRules.H_MAX}m`
+            );
+        }
+        
+        // 3. Check Static Head (Hs)
+        if (p.Hs < ValidationRules.HS_MIN || p.Hs > ValidationRules.HS_MAX) {
+            result.addWarning(
+                'Hs',
+                `Static Head (Hs = ${p.Hs}m) may be out of typical range.`,
+                `Typical range: ${ValidationRules.HS_MIN} ≤ Hs ≤ ${ValidationRules.HS_MAX}`,
+                `Check if Hs value is correct for your design`
+            );
+        }
+        
+        // === CALCULATED VALUES VALIDATION ===
+        
+        // Estimate t value from table (approximate for validation)
+        const t_estimate = p.D <= 1.0 ? 0.25 : (p.D <= 1.5 ? 0.30 : 0.35);
+        
+        // Use L_left as A (left distance) and L_right as B (right distance)
+        const A = p.L_left;
+        const B = p.L_right;
+        const alpha_rad = p.alpha * Math.PI / 180;
+        
+        // Calculate i-A, i-B, i-L (adjusted for alpha)
+        const iA = Math.abs(A / Math.cos(alpha_rad));
+        const iB = Math.abs(B / Math.cos(alpha_rad));
+        const iL = Math.abs(p.L / Math.cos(alpha_rad));
+        
+        // Calculate element1 (base elevation) - always CL
+        const element1 = p.CL;
+        
+        // Calculate i-100 and i-103 (culvert base elevations)
+        // Angular correction: c04 uses MINUS, c14 uses PLUS for tan(alpha)*z_toli
+        const i100 = element1 + (p.dever_left / 100) * A - A * Math.tan(alpha_rad) * p.z_toli - p.Hs - t_estimate - 0.3;
+        const i103 = element1 + (p.dever_right / 100) * B + B * Math.tan(alpha_rad) * p.z_toli - p.Hs - t_estimate - 0.3;
+        
+        // Calculate i-101 and i-104 (natural ground elevations)
+        let i101, i104;
+        if (p.direction_flag) { // left = UP
+            i101 = p.ax_natural + p.z_natural * iA - p.ret;
+            i104 = p.ax_natural - p.z_natural * iB - p.ret;
+        } else { // left = DOWN
+            i101 = p.ax_natural - p.z_natural * iA - p.ret;
+            i104 = p.ax_natural + p.z_natural * iB - p.ret;
+        }
+        
+        // Calculate H_max_l and H_max_r
+        const H_max_l = i100 + 0.3 + t_estimate - i101;
+        const H_max_r = i103 + 0.3 + t_estimate - i104;
+        
+        // Store calculated values
+        result.calculatedValues = {
+            i100: i100.toFixed(2),
+            i101: i101.toFixed(2),
+            i103: i103.toFixed(2),
+            i104: i104.toFixed(2),
+            H_max_l: H_max_l.toFixed(2),
+            H_max_r: H_max_r.toFixed(2),
+            t_estimate: t_estimate.toFixed(2),
+            iA: iA.toFixed(2),
+            iB: iB.toFixed(2),
+            iL: iL.toFixed(2)
+        };
+        
+        // Add info about calculated values
+        result.addInfo('calculations', 'Estimated wall heights:', 
+            `H_max_left ≈ ${H_max_l.toFixed(2)}m, H_max_right ≈ ${H_max_r.toFixed(2)}m`);
+        
+        // === CRITICAL: CHECK H VALUES FOR TABLE3 ===
+        
+        // Check if H_max_l is in valid range
+        if (H_max_l < ValidationRules.H_MIN) {
+            result.addError(
+                'H_max_l',
+                `Calculated left wall height (${H_max_l.toFixed(2)}m) is less than ${ValidationRules.H_MIN}m`,
+                `H_max_left = i-100 + 0.3 + t - i-101 = ${i100.toFixed(2)} + 0.3 + ${t_estimate} - ${i101.toFixed(2)} = ${H_max_l.toFixed(2)}`,
+                createHeightSuggestion('H_max_l', H_max_l, p, 'left')
+            );
+        } else if (H_max_l > ValidationRules.H_MAX) {
+            result.addError(
+                'H_max_l',
+                `Calculated left wall height (${H_max_l.toFixed(2)}m) exceeds ${ValidationRules.H_MAX}m`,
+                `H_max_left = i-100 + 0.3 + t - i-101 = ${i100.toFixed(2)} + 0.3 + ${t_estimate} - ${i101.toFixed(2)} = ${H_max_l.toFixed(2)}`,
+                createHeightSuggestion('H_max_l', H_max_l, p, 'left')
+            );
+        }
+        
+        // Check if H_max_r is in valid range
+        if (H_max_r < ValidationRules.H_MIN) {
+            result.addError(
+                'H_max_r',
+                `Calculated right wall height (${H_max_r.toFixed(2)}m) is less than ${ValidationRules.H_MIN}m`,
+                `H_max_right = i-103 + 0.3 + t - i-104 = ${i103.toFixed(2)} + 0.3 + ${t_estimate} - ${i104.toFixed(2)} = ${H_max_r.toFixed(2)}`,
+                createHeightSuggestion('H_max_r', H_max_r, p, 'right')
+            );
+        } else if (H_max_r > ValidationRules.H_MAX) {
+            result.addError(
+                'H_max_r',
+                `Calculated right wall height (${H_max_r.toFixed(2)}m) exceeds ${ValidationRules.H_MAX}m`,
+                `H_max_right = i-103 + 0.3 + t - i-104 = ${i103.toFixed(2)} + 0.3 + ${t_estimate} - ${i104.toFixed(2)} = ${H_max_r.toFixed(2)}`,
+                createHeightSuggestion('H_max_r', H_max_r, p, 'right')
+            );
+        }
+        
+        // Check consistency between n and alpha
+        if (p.n === 1 && p.alpha !== 0) {
+            // Single angular - valid
+        } else if (p.n === 1 && p.alpha === 0) {
+            // Single perpendicular - valid
+        } else if (p.n > 1) {
+            // Multi opening - valid (alpha can be 0 or non-zero)
+        }
+        // Note: n validation (positive integer) is handled by HTML input constraints
+        
+        return result;
+    }
+    
+    // Helper function to create height adjustment suggestions
+    function createHeightSuggestion(field, currentH, p, side) {
+        const target = currentH < ValidationRules.H_MIN ? ValidationRules.H_MIN : ValidationRules.H_MAX;
+        const diff = target - currentH;
+        
+        let suggestions = [];
+        
+        if (side === 'left') {
+            suggestions.push(`• Adjust CL by ${diff > 0 ? '+' : ''}${diff.toFixed(2)}m → New CL = ${(p.CL + diff).toFixed(2)}m`);
+            suggestions.push(`• Adjust ax_natural by ${diff > 0 ? '' : '+'}${(-diff).toFixed(2)}m → New ax_natural = ${(p.ax_natural - diff).toFixed(2)}m`);
+            suggestions.push(`• Adjust Hs by ${diff > 0 ? '' : '+'}${(-diff).toFixed(2)}m → New Hs = ${(p.Hs - diff).toFixed(2)}m`);
+            suggestions.push(`• Adjust ret by ${diff > 0 ? '+' : ''}${diff.toFixed(2)}m → New ret = ${(p.ret + diff).toFixed(2)}m`);
+        } else {
+            suggestions.push(`• Adjust CL by ${diff > 0 ? '+' : ''}${diff.toFixed(2)}m → New CL = ${(p.CL + diff).toFixed(2)}m`);
+            suggestions.push(`• Adjust ax_natural by ${diff > 0 ? '' : '+'}${(-diff).toFixed(2)}m → New ax_natural = ${(p.ax_natural - diff).toFixed(2)}m`);
+            suggestions.push(`• Adjust Hs by ${diff > 0 ? '' : '+'}${(-diff).toFixed(2)}m → New Hs = ${(p.Hs - diff).toFixed(2)}m`);
+        }
+        
+        return suggestions.join('\n');
+    }
+    
+    // Display validation results
+    function displayValidation(result) {
+        const content = document.getElementById('validation-content');
+        const status = document.getElementById('validation-status');
+        
+        let html = '';
+        
+        // Show calculated values
+        if (Object.keys(result.calculatedValues).length > 0) {
+            html += `
+                <div class="validation-section calculated-values">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span class="toggle-icon">▼</span>
+                        <span class="section-title">📊 ${t('calculated_preview_values', 'Calculated Preview Values')}</span>
+                    </div>
+                    <div class="section-content">
+                        <div class="calc-grid">
+                            <div class="calc-item">
+                                <span class="calc-label">i-100 (${t('left_base', 'Left base')}):</span>
+                                <span class="calc-value">${result.calculatedValues.i100}m</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">i-101 (${t('left_natural', 'Left natural')}):</span>
+                                <span class="calc-value">${result.calculatedValues.i101}m</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">i-103 (${t('right_base', 'Right base')}):</span>
+                                <span class="calc-value">${result.calculatedValues.i103}m</span>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">i-104 (${t('right_natural', 'Right natural')}):</span>
+                                <span class="calc-value">${result.calculatedValues.i104}m</span>
+                            </div>
+                            <div class="calc-item highlight">
+                                <span class="calc-label">${t('h_max_left', 'H_max_left')}:</span>
+                                <span class="calc-value">${result.calculatedValues.H_max_l}m</span>
+                            </div>
+                            <div class="calc-item highlight">
+                                <span class="calc-label">${t('h_max_right', 'H_max_right')}:</span>
+                                <span class="calc-value">${result.calculatedValues.H_max_r}m</span>
+                            </div>
+                        </div>
+                        <div class="valid-range-note">
+                            <strong>${t('valid_h_range', 'Valid H range for walls')}:</strong> ${ValidationRules.H_MIN}m ${t('to', 'to')} ${ValidationRules.H_MAX}m
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show errors
+        if (result.errors.length > 0) {
+            html += '<div class="validation-section errors">';
+            html += '<div class="section-header"><span class="section-title">❌ ' + t('errors', 'Errors') + ' (' + result.errors.length + ')</span></div>';
+            html += '<div class="section-content">';
+            result.errors.forEach(err => {
+                html += createValidationCard(err, 'error');
+            });
+            html += '</div></div>';
+            
+            status.className = 'validation-status status-error';
+            status.innerHTML = '<span>❌ ' + result.errors.length + ' ' + t('error_count', 'Error(s)') + '</span>';
+        }
+        
+        // Show warnings
+        if (result.warnings.length > 0) {
+            html += '<div class="validation-section warnings">';
+            html += '<div class="section-header"><span class="section-title">⚠️ ' + t('warnings', 'Warnings') + ' (' + result.warnings.length + ')</span></div>';
+            html += '<div class="section-content">';
+            result.warnings.forEach(warn => {
+                html += createValidationCard(warn, 'warning');
+            });
+            html += '</div></div>';
+            
+            if (result.errors.length === 0) {
+                status.className = 'validation-status status-warning';
+                status.innerHTML = '<span>⚠️ ' + result.warnings.length + ' ' + t('warning_count', 'Warning(s)') + '</span>';
+            }
+        }
+        
+        // All good
+        if (result.errors.length === 0 && result.warnings.length === 0) {
+            html += `
+                <div class="validation-section success">
+                    <div class="success-message">
+                        <span class="success-icon">✅</span>
+                        <span>${t('all_inputs_valid', 'All inputs look good! Ready to generate design.')}</span>
+                    </div>
+                </div>
+            `;
+            status.className = 'validation-status status-success';
+            status.innerHTML = '<span>✅ ' + t('valid', 'Valid') + '</span>';
+        }
+        
+        content.innerHTML = html;
+        
+        // Highlight error fields
+        highlightFields(result);
+    }
+    
+    function createValidationCard(item, type) {
+        const iconClass = type === 'error' ? 'error-card' : 'warning-card';
+        return `
+            <div class="validation-card ${iconClass}">
+                <div class="card-header">
+                    <span class="field-name">${item.field}</span>
+                </div>
+                <div class="card-message">${item.message}</div>
+                ${item.formula ? `
+                    <div class="card-formula">
+                        <strong>${t('formula', 'Formula')}:</strong>
+                        <code>${item.formula}</code>
+                    </div>
+                ` : ''}
+                ${item.suggestion ? `
+                    <div class="card-suggestion">
+                        <strong>💡 ${t('suggestions', 'Suggestions')}:</strong>
+                        <pre>${item.suggestion}</pre>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+    
+    function highlightFields(result) {
+        // Remove all highlights first
+        document.querySelectorAll('.form-control').forEach(el => {
+            el.classList.remove('field-error', 'field-warning');
+        });
+        
+        // Add error highlights
+        result.errors.forEach(err => {
+            const field = document.getElementById(err.field);
+            if (field) field.classList.add('field-error');
+        });
+        
+        // Add warning highlights
+        result.warnings.forEach(warn => {
+            const field = document.getElementById(warn.field);
+            if (field) field.classList.add('field-warning');
+        });
+    }
+    
+    function toggleSection(header) {
+        const content = header.nextElementSibling;
+        const icon = header.querySelector('.toggle-icon');
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '▼';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▶';
+        }
+    }
+    
+    function closeErrorPanel() {
+        document.getElementById('error-panel').style.display = 'none';
+    }
+
+    // ============================================
+    // EVENT HANDLERS
+    // ============================================
+    
+    // Live validation on input change
+    const formInputs = document.querySelectorAll('#culvertForm input, #culvertForm select');
+    formInputs.forEach(input => {
+        input.addEventListener('change', debounce(runValidation, 300));
+        input.addEventListener('input', debounce(runValidation, 500));
+    });
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    function runValidation() {
+        const result = validateCulvertInputs();
+        displayValidation(result);
+    }
+
+    // Form submission handler
+    document.getElementById('culvertForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Run validation first
+        const validationResult = validateCulvertInputs();
+        displayValidation(validationResult);
+        
+        // Show validation warnings but DON'T block submission - server will generate DXF anyway for debugging
+        if (!validationResult.isValid()) {
+            // Show warning panel with details (but don't return - let it submit)
+            const errorPanel = document.getElementById('error-panel');
+            const errorContent = document.getElementById('error-content');
+            
+            let html = '<div class="error-summary">';
+            html += '<p>' + t('validation_issues_found', 'Validation issues found (DXF will still be generated for debugging):') + '</p>';
+            html += '<ul>';
+            validationResult.errors.forEach(err => {
+                html += `<li><strong>${err.field}:</strong> ${err.message}</li>`;
+            });
+            html += '</ul>';
+            html += '</div>';
+            
+            html += '<div class="error-formulas">';
+            html += '<h4>📐 ' + t('relevant_formulas', 'Relevant Formulas') + '</h4>';
+            html += `
+                <div class="formula-block">
+                    <div class="formula-title">${t('wall_height_calculation', 'Wall Height Calculation')}:</div>
+                    <code>H_max_left = i-100 + 0.3 + t - i-101</code>
+                    <code>H_max_right = i-103 + 0.3 + t - i-104</code>
+                </div>
+                <div class="formula-block">
+                    <div class="formula-title">${t('base_elevation', 'Base Elevation')} (i-100):</div>
+                    <code>i-100 = CL + (dever_left/100) × A - Hs - t - 0.3</code>
+                </div>
+                <div class="formula-block">
+                    <div class="formula-title">${t('natural_ground', 'Natural Ground')} (i-101, ${t('left_up', 'Left UP')}):</div>
+                    <code>i-101 = ax_natural + z_natural × A - ret</code>
+                </div>
+                <div class="formula-block">
+                    <div class="formula-title">${t('natural_ground', 'Natural Ground')} (i-104, ${t('left_up', 'Left UP')}):</div>
+                    <code>i-104 = ax_natural - z_natural × B - ret</code>
+                </div>
+            `;
+            html += '</div>';
+            
+            html += '<div class="error-suggestions">';
+            html += '<h4>💡 ' + t('how_to_fix', 'How to Fix') + '</h4>';
+            html += '<p>' + t('valid_range_help', 'To get H values in valid range (1m to 7m), you can:') + '</p>';
+            html += '<ul>';
+            html += '<li><strong>' + t('increase_h', 'Increase H') + ':</strong> ' + t('increase_h_tip', 'Raise CL, Lower ax_natural, Reduce Hs, Increase ret') + '</li>';
+            html += '<li><strong>' + t('decrease_h', 'Decrease H') + ':</strong> ' + t('decrease_h_tip', 'Lower CL, Raise ax_natural, Increase Hs, Reduce ret') + '</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            errorContent.innerHTML = html;
+            errorPanel.style.display = 'block';
+            // Don't return - continue to submit for debug DXF generation
+        } else {
+            // Hide error panel if validation passed
+            document.getElementById('error-panel').style.display = 'none';
+        }
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner"></span> ' + t('generating', 'Generating...');
+        submitBtn.disabled = true;
+        
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch('{{ url_for("process_culvert") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.status === 'success' || result.status === 'warning') {
+                    // Show results
+                    document.getElementById('results').style.display = 'block';
+                    
+                    let resultsHtml = `
+                        <div class="result-item">
+                            <span class="result-label">${t('calculated_height', 'Calculated Height (H)')}:</span>
+                            <span class="result-value">${result.calculated_height} ${t('meters', 'meters')}</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">${t('dxf_generated', 'DXF File Generated')}:</span>
+                            <span class="result-value">${result.filename}</span>
+                        </div>
+                    `;
+                    
+                    // Show warning if there were calculation errors
+                    if (result.status === 'warning' || result.has_calculation_errors) {
+                        resultsHtml += `
+                            <div class="result-warning">
+                                <div>
+                                    <strong>${t('warning', 'Warning')}:</strong> ${result.message}
+                                    <small>${t('debug_dxf_note', 'DXF generated for debugging - some values may be incorrect or empty.')}</small>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Show specific warnings if available
+                        if (result.warnings) {
+                            resultsHtml += '<div class="result-warnings-list">';
+                            resultsHtml += '<strong>' + t('issues_found', 'Issues found') + ':</strong><ul>';
+                            // Handle both array and string formats
+                            const warningsList = Array.isArray(result.warnings) ? result.warnings : [result.warnings];
+                            warningsList.forEach(w => {
+                                if (w) resultsHtml += '<li>' + w + '</li>';
+                            });
+                            resultsHtml += '</ul></div>';
+                        }
+                    }
+                    
+                    document.getElementById('results-content').innerHTML = resultsHtml;
+                    
+                    // Update download link
+                    document.getElementById('download-link').href = result.download_url;
+                    
+                    // Scroll to results
+                    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Re-apply translations
+                    if (typeof updateTranslations === 'function') {
+                        updateTranslations();
+                    }
+                } else {
+                    showServerError(result);
+                }
+            } else {
+                alert(t('server_error', 'Server error') + ': ' + response.statusText);
+            }
+        } catch (error) {
+            alert(t('error', 'Error') + ': ' + error.message);
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+    
+    function showServerError(result) {
+        const errorPanel = document.getElementById('error-panel');
+        const errorContent = document.getElementById('error-content');
+        
+        let html = '<div class="server-error">';
+        html += '<h4>🔧 ' + t('server_processing_error', 'Server Processing Error') + '</h4>';
+        html += `<p class="error-message">${result.message}</p>`;
+        
+        // Parse specific errors
+        if (result.message.includes('H=') && result.message.includes('out of range')) {
+            html += `
+                <div class="error-help">
+                    <h5>${t('what_this_means', 'What this means')}:</h5>
+                    <p>${t('h_out_of_range_explain', 'One of the calculated wall heights (H_min, H_max_left, or H_max_right) is outside the valid range of 1m to 7m.')}</p>
+                    <h5>${t('how_to_fix', 'How to fix')}:</h5>
+                    <ul>
+                        <li>${t('check_preview_values', 'Check the Calculated Preview Values above')}</li>
+                        <li>${t('adjust_parameters', 'Adjust CL, ax_natural, Hs, or ret to bring H values into range')}</li>
+                        <li>${t('review_formulas', 'Review the formulas in the validation panel')}</li>
+                    </ul>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        errorContent.innerHTML = html;
+        errorPanel.style.display = 'block';
+        errorPanel.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // ============================================
+    // FORM PERSISTENCE - Save and Restore Values
+    // ============================================
+    
+    const STORAGE_KEY = 'culvert_saved_configs';
+    
+    // List of all form field IDs to save/restore
+    const FORM_FIELDS = [
+        'n', 'D', 'L_left', 'L_right', 'Hs', 'H_min', 'CL',
+        'ax_natural', 'dever_right', 'dever_left', 'z_natural', 'z_toli',
+        'z_shirvani', 'ret', 'ball_degree', 'direction_flag', 'alpha'
+    ];
+    
+    // Helper function to derive culvert type from n and alpha
+    function getCulvertType(n, alpha) {
+        if (n === 1) {
+            if (alpha === 0) return 'single';
+            else if (alpha < 0) return 'angular_less';
+            else return 'angular_more';
+        } else if (n === 2) {
+            if (alpha === 0) return 'double_perpendicular';
+            else if (alpha < 0) return 'double_angular_less';
+            else return 'double_angular_more';
+        } else {
+            // Multi-opening (n > 2)
+            if (alpha === 0) return 'multi_perpendicular';
+            else if (alpha < 0) return 'multi_angular_less';
+            else return 'multi_angular_more';
+        }
+    }
+    
+    // ============================================
+    // DEFAULT PRESETS
+    // ============================================
+    
+    const TYPE_DEFAULTS = {
+        'single': {
+            name: 'Single Perpendicular At-Grade (Default)',
+            values: {
+                'n': '1',
+                'D': '2.0',
+                'L_left': '5.8',
+                'L_right': '7.1',
+                'Hs': '0.25',
+                'H_min': '1.0',
+                'CL': '9.12',
+                'ax_natural': '7.5',
+                'dever_right': '-0.2',
+                'dever_left': '0.2',
+                'z_natural': '1.5',
+                'z_toli': '0.5',
+                'z_shirvani': '1.5',
+                'ret': '0.3',
+                'ball_degree': '30',
+                'direction_flag': 'true',
+                'alpha': '0.0'
+            }
+        },
+    };
+    
+    // ============================================
+    // CONFIGURATION MANAGEMENT FUNCTIONS
+    // ============================================
+    
+    // Get all saved configurations from localStorage
+    function getSavedConfigs() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('[ERROR] Failed to parse saved configs:', e);
+                return {};
+            }
+        }
+        return {};
+    }
+    
+    // Save configurations to localStorage
+    function setSavedConfigs(configs) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
+    }
+    
+    // Populate the configuration dropdown
+    function populateConfigDropdown() {
+        const presetGroup = document.getElementById('preset_group');
+        const savedGroup = document.getElementById('saved_group');
+        
+        console.log('[DEBUG] populateConfigDropdown called');
+        console.log('[DEBUG] presetGroup element:', presetGroup);
+        console.log('[DEBUG] savedGroup element:', savedGroup);
+        console.log('[DEBUG] TYPE_DEFAULTS:', TYPE_DEFAULTS);
+        
+        if (!presetGroup || !savedGroup) {
+            console.error('[ERROR] Could not find preset_group or saved_group elements');
+            return;
+        }
+        
+        // Clear existing options
+        presetGroup.innerHTML = '';
+        savedGroup.innerHTML = '';
+        
+        // Add default presets
+        let presetCount = 0;
+        for (const [typeKey, preset] of Object.entries(TYPE_DEFAULTS)) {
+            const option = document.createElement('option');
+            option.value = `preset_${typeKey}`;
+            option.textContent = preset.name;
+            presetGroup.appendChild(option);
+            presetCount++;
+        }
+        console.log('[DEBUG] Added', presetCount, 'preset options');
+        
+        // Add saved configurations grouped by derived culvert type
+        const savedConfigs = getSavedConfigs();
+        const configsByType = {};
+        
+        for (const [configName, configData] of Object.entries(savedConfigs)) {
+            const n = parseInt(configData.values.n) || 1;
+            const alpha = parseFloat(configData.values.alpha) || 0;
+            const culvertType = getCulvertType(n, alpha);
+            if (!configsByType[culvertType]) {
+                configsByType[culvertType] = [];
+            }
+            configsByType[culvertType].push({ name: configName, data: configData });
+        }
+        
+        // Add grouped saved configs
+        let savedCount = 0;
+        for (const [type, configs] of Object.entries(configsByType)) {
+            const typeLabel = TYPE_DEFAULTS[type]?.name?.split(' (')[0] || type;
+            configs.forEach(config => {
+                const option = document.createElement('option');
+                option.value = `saved_${config.name}`;
+                option.textContent = `[${typeLabel}] ${config.name}`;
+                savedGroup.appendChild(option);
+                savedCount++;
+            });
+        }
+        console.log('[DEBUG] Added', savedCount, 'saved config options');
+        
+        console.log('[INFO] Configuration dropdown populated');
+    }
+    
+    // Load selected configuration
+    function loadSelectedConfig() {
+        const select = document.getElementById('config_select');
+        const selectedValue = select.value;
+        
+        if (!selectedValue) {
+            alert('Please select a configuration to load.');
+            return;
+        }
+        
+        let values;
+        
+        if (selectedValue.startsWith('preset_')) {
+            // Load default preset
+            const typeKey = selectedValue.replace('preset_', '');
+            values = TYPE_DEFAULTS[typeKey]?.values;
+            if (!values) {
+                alert('Preset not found.');
+                return;
+            }
+        } else if (selectedValue.startsWith('saved_')) {
+            // Load saved configuration
+            const configName = selectedValue.replace('saved_', '');
+            const savedConfigs = getSavedConfigs();
+            values = savedConfigs[configName]?.values;
+            if (!values) {
+                alert('Saved configuration not found.');
+                return;
+            }
+        }
+        
+        // Apply values to form
+        applyValuesToForm(values);
+        runValidation();
+        updateDesignSummary();
+        console.log('[INFO] Configuration loaded:', selectedValue);
+    }
+    
+    // Apply values to form fields
+    function applyValuesToForm(values) {
+        FORM_FIELDS.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element && values[fieldId] !== undefined) {
+                element.value = values[fieldId];
+            }
+        });
+    }
+    
+    // Get current form values
+    function getCurrentFormValues() {
+        const values = {};
+        FORM_FIELDS.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                values[fieldId] = element.value;
+            }
+        });
+        return values;
+    }
+    
+    // Save current configuration
+    function saveCurrentConfig() {
+        const configName = document.getElementById('config_name').value.trim();
+        
+        if (!configName) {
+            alert('Please enter a name for your configuration.');
+            return;
+        }
+        
+        // Check if name starts with reserved prefix
+        if (configName.toLowerCase().startsWith('default')) {
+            alert('Configuration name cannot start with "Default".');
+            return;
+        }
+        
+        const savedConfigs = getSavedConfigs();
+        
+        // Check if name already exists
+        if (savedConfigs[configName]) {
+            if (!confirm(`Configuration "${configName}" already exists. Overwrite?`)) {
+                return;
+            }
+        }
+        
+        // Save configuration
+        savedConfigs[configName] = {
+            values: getCurrentFormValues(),
+            savedAt: new Date().toISOString()
+        };
+        
+        setSavedConfigs(savedConfigs);
+        populateConfigDropdown();
+        
+        // Clear the name input
+        document.getElementById('config_name').value = '';
+        
+        alert(`Configuration "${configName}" saved successfully!`);
+        console.log('[INFO] Configuration saved:', configName);
+    }
+    
+    // Delete selected configuration
+    function deleteSelectedConfig() {
+        const select = document.getElementById('config_select');
+        const selectedValue = select.value;
+        
+        if (!selectedValue) {
+            alert('Please select a configuration to delete.');
+            return;
+        }
+        
+        if (selectedValue.startsWith('preset_')) {
+            alert('Cannot delete default presets.');
+            return;
+        }
+        
+        if (selectedValue.startsWith('saved_')) {
+            const configName = selectedValue.replace('saved_', '');
+            
+            if (!confirm(`Are you sure you want to delete "${configName}"?`)) {
+                return;
+            }
+            
+            const savedConfigs = getSavedConfigs();
+            delete savedConfigs[configName];
+            setSavedConfigs(savedConfigs);
+            populateConfigDropdown();
+            
+            // Reset dropdown
+            select.value = '';
+            
+            alert(`Configuration "${configName}" deleted.`);
+            console.log('[INFO] Configuration deleted:', configName);
+        }
+    }
+    
+    // Reset form to the default values based on current n and alpha
+    function resetToTypeDefault() {
+        const n = parseInt(document.getElementById('n').value) || 1;
+        const alpha = parseFloat(document.getElementById('alpha').value) || 0;
+        const currentType = getCulvertType(n, alpha);
+        const defaults = TYPE_DEFAULTS[currentType] || TYPE_DEFAULTS['single'];
+        
+        if (defaults) {
+            applyValuesToForm(defaults.values);
+            runValidation();
+            updateDesignSummary();
+            console.log('[INFO] Form reset to type default:', currentType);
+        } else {
+            alert('No default preset found for this configuration.');
+        }
+    }
+    
+    // Legacy function for backwards compatibility
+    function saveFormValues() {
+        saveCurrentConfig();
+    }
+    
+    // Legacy function for backwards compatibility  
+    function resetFormToDefaults() {
+        resetToTypeDefault();
+    }
+    
+    // ============================================
+    // ACCORDION FUNCTIONS
+    // ============================================
+    
+    function toggleAccordion() {
+        const accordion = document.getElementById('config-accordion');
+        accordion.classList.toggle('open');
+        
+        // If opening, populate batch list
+        if (accordion.classList.contains('open')) {
+            populateBatchList();
+        }
+    }
+    
+    // ============================================
+    // DESIGN SUMMARY FUNCTIONS
+    // ============================================
+    
+    function updateDesignSummary() {
+        const n = parseInt(document.getElementById('n').value) || 1;
+        const alpha = parseFloat(document.getElementById('alpha').value) || 0;
+        const D = parseFloat(document.getElementById('D').value) || 0;
+        const L_left = parseFloat(document.getElementById('L_left').value) || 0;
+        const L_right = parseFloat(document.getElementById('L_right').value) || 0;
+        const Hs = parseFloat(document.getElementById('Hs').value) || 0;
+        const H_min = parseFloat(document.getElementById('H_min').value) || 0;
+        const CL = parseFloat(document.getElementById('CL').value) || 0;
+        const ax_natural = parseFloat(document.getElementById('ax_natural').value) || 0;
+        const ball_degree = parseFloat(document.getElementById('ball_degree').value) || 0;
+        const z_natural = parseFloat(document.getElementById('z_natural').value) || 0;
+        
+        // Derive culvert type
+        let culvertType = '';
+        let templateName = '';
+        
+        if (n === 1) {
+            if (alpha === 0) {
+                culvertType = 'Single Perpendicular';
+                templateName = 'single_atGrade.dxf';
+            } else if (alpha < 0) {
+                culvertType = 'Single Angular (α < 0°)';
+                templateName = 'single_angularL_atGrade.dxf';
+            } else {
+                culvertType = 'Single Angular (α ≥ 0°)';
+                templateName = 'single_angularM_atGrade.dxf';
+            }
+        } else if (n === 2) {
+            if (alpha === 0) {
+                culvertType = 'Double Perpendicular';
+                templateName = 'double_perpendicular_atGrade.dxf';
+            } else if (alpha < 0) {
+                culvertType = 'Double Angular (α < 0°)';
+                templateName = 'double_angularL_atGrade.dxf';
+            } else {
+                culvertType = 'Double Angular (α ≥ 0°)';
+                templateName = 'double_angularM_atGrade.dxf';
+            }
+        } else {
+            // Multi-opening (n > 2)
+            if (alpha === 0) {
+                culvertType = `Multi Perpendicular (n=${n})`;
+                templateName = 'triple_perpendicular_atGrade.dxf';
+            } else if (alpha < 0) {
+                culvertType = `Multi Angular < 0° (n=${n})`;
+                templateName = 'triple_angularL_atGrade.dxf';
+            } else {
+                culvertType = `Multi Angular ≥ 0° (n=${n})`;
+                templateName = 'triple_angularM_atGrade.dxf';
+            }
+        }
+        
+        // Update summary values
+        document.getElementById('summary-type').textContent = culvertType;
+        document.getElementById('summary-template').textContent = templateName;
+        document.getElementById('summary-n').textContent = n;
+        document.getElementById('summary-D').textContent = D.toFixed(2) + ' m';
+        document.getElementById('summary-L').textContent = (L_left + L_right).toFixed(2) + ' m';
+        document.getElementById('summary-Hs').textContent = Hs.toFixed(2) + ' m';
+        document.getElementById('summary-CL').textContent = CL.toFixed(2) + ' m';
+        document.getElementById('summary-ax').textContent = ax_natural.toFixed(2) + ' m';
+        document.getElementById('summary-Hmin').textContent = H_min.toFixed(2) + ' m';
+        document.getElementById('summary-alpha').textContent = alpha.toFixed(1) + '°';
+        document.getElementById('summary-ball').textContent = ball_degree.toFixed(0) + '°';
+        document.getElementById('summary-znat').textContent = z_natural.toFixed(4);
+        
+        // Calculate estimated heights
+        const H_left_est = (CL - ax_natural) + Hs;
+        const H_right_est = (CL - ax_natural) + Hs;
+        
+        document.getElementById('summary-Hleft').textContent = H_left_est.toFixed(2) + ' m';
+        document.getElementById('summary-Hright').textContent = H_right_est.toFixed(2) + ' m';
+    }
+    
+    // ============================================
+    // BATCH PROCESSING FUNCTIONS
+    // ============================================
+    
+    function populateBatchList() {
+        const batchList = document.getElementById('batch-list');
+        const savedConfigs = getSavedConfigs();
+        const configEntries = Object.entries(savedConfigs);
+        
+        if (configEntries.length === 0) {
+            batchList.innerHTML = '<div class="no-configs-message">No saved configurations yet.<br>Save some configurations first to use batch processing.</div>';
+            return;
+        }
+        
+        let html = '';
+        
+        configEntries.forEach(([name, data]) => {
+            const n = parseInt(data.values.n) || 1;
+            const alpha = parseFloat(data.values.alpha) || 0;
+            const typeLabel = getCulvertTypeLabel(n, alpha);
+            
+            html += `
+                <div class="batch-item" onclick="toggleBatchItem('${name}')">
+                    <input type="checkbox" id="batch_${name}" data-config-name="${name}">
+                    <span class="batch-item-label">${name}</span>
+                    <span class="batch-item-type">${typeLabel}</span>
+                </div>
+            `;
+        });
+        
+        batchList.innerHTML = html;
+        updateBatchButton();
+    }
+    
+    function getCulvertTypeLabel(n, alpha) {
+        if (n === 1) {
+            if (alpha === 0) return 'Single';
+            else if (alpha < 0) return 'Angular<0';
+            else return 'Angular>0';
+        } else if (n === 2) {
+            if (alpha === 0) return 'Double';
+            else if (alpha < 0) return 'Double-Ang<0';
+            else return 'Double-Ang>0';
+        } else {
+            // Multi-opening (n > 2)
+            if (alpha === 0) return `Multi(${n})`;
+            else if (alpha < 0) return `Multi-Ang<0(${n})`;
+            else return `Multi-Ang>0(${n})`;
+        }
+    }
+    
+    function toggleBatchItem(configName) {
+        const checkbox = document.getElementById(`batch_${configName}`);
+        checkbox.checked = !checkbox.checked;
+        updateBatchButton();
+    }
+    
+    function selectAllBatch() {
+        const checkboxes = document.querySelectorAll('#batch-list input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = true);
+        updateBatchButton();
+    }
+    
+    function clearBatch() {
+        const checkboxes = document.querySelectorAll('#batch-list input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        updateBatchButton();
+    }
+    
+    function getSelectedBatchConfigs() {
+        const checkboxes = document.querySelectorAll('#batch-list input[type="checkbox"]:checked');
+        return Array.from(checkboxes).map(cb => cb.dataset.configName);
+    }
+    
+    function updateBatchButton() {
+        const selected = getSelectedBatchConfigs();
+        const btn = document.getElementById('batch-run-btn');
+        const btnText = document.getElementById('batch-btn-text');
+        btn.disabled = selected.length === 0;
+        btnText.textContent = `Run Batch (${selected.length} selected)`;
+    }
+    
+    async function runBatchProcess() {
+        const selected = getSelectedBatchConfigs();
+        if (selected.length === 0) {
+            alert('Please select at least one configuration to process.');
+            return;
+        }
+        
+        const savedConfigs = getSavedConfigs();
+        const progressDiv = document.getElementById('batch-progress');
+        const progressFill = document.getElementById('batch-progress-fill');
+        const progressText = document.getElementById('batch-progress-text');
+        const runBtn = document.getElementById('batch-run-btn');
+        
+        progressDiv.style.display = 'block';
+        runBtn.disabled = true;
+        
+        const results = [];
+        const errors = [];
+        
+        for (let i = 0; i < selected.length; i++) {
+            const configName = selected[i];
+            const configData = savedConfigs[configName];
+            
+            progressFill.style.width = `${((i + 0.5) / selected.length) * 100}%`;
+            progressText.textContent = `Processing: ${configName} (${i + 1}/${selected.length})...`;
+            
+            try {
+                // Create form data from saved config
+                const formData = new FormData();
+                for (const [key, value] of Object.entries(configData.values)) {
+                    formData.append(key, value);
+                }
+                
+                // Submit to server
+                const response = await fetch('/process_culvert', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    results.push({
+                        name: configName,
+                        filename: result.filename
+                    });
+                } else {
+                    errors.push({
+                        name: configName,
+                        error: result.message
+                    });
+                }
+            } catch (e) {
+                errors.push({
+                    name: configName,
+                    error: e.message
+                });
+            }
+            
+            progressFill.style.width = `${((i + 1) / selected.length) * 100}%`;
+        }
+        
+        // Complete
+        progressText.textContent = `Completed! ${results.length} succeeded, ${errors.length} failed.`;
+        runBtn.disabled = false;
+        
+        // Show results
+        showBatchResults(results, errors);
+    }
+    
+    function showBatchResults(results, errors) {
+        let message = `Batch processing complete!\n\n`;
+        
+        if (results.length > 0) {
+            message += `✅ Succeeded (${results.length}):\n`;
+            results.forEach(r => {
+                message += `  • ${r.name} → ${r.filename}\n`;
+            });
+        }
+        
+        if (errors.length > 0) {
+            message += `\n❌ Failed (${errors.length}):\n`;
+            errors.forEach(e => {
+                message += `  • ${e.name}: ${e.error}\n`;
+            });
+        }
+        
+        message += `\nGenerated files are saved in the output folder.`;
+        
+        alert(message);
+    }
+
+    // Initial validation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Populate configuration dropdown
+        populateConfigDropdown();
+        
+        // Initialize with first section open
+        updateProgressSteps(1);
+        runValidation();
+        
+        // Initialize design summary
+        updateDesignSummary();
+        
+        // Add event listeners to update summary on input change
+        FORM_FIELDS.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.addEventListener('input', updateDesignSummary);
+                element.addEventListener('change', updateDesignSummary);
+            }
+        });
+    });
+</script>
+
+<style>
+/* ============================================
+   CULVERT DESIGN TOOL - CLEAN CARD LAYOUT
+   ============================================ */
+
+/* Grid Layout for Cards */
+.form-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.form-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: #d1d5db;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-icon {
+    font-size: 1.3em;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #374151;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Field Grid inside cards */
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.field-grid .form-group {
+    margin-bottom: 0;
+}
+
+.field-grid .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Compact Form Groups */
+.form-card .form-group label {
+    display: block;
+    font-size: 0.8em;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Input with Unit - Compact */
+.input-with-unit {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-unit .form-control {
+    padding: 10px 45px 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #e5e7eb;
+    font-size: 0.95em;
+    transition: all 0.15s ease;
+    width: 100%;
+}
+
+.input-with-unit .form-control:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.input-unit {
+    position: absolute;
+    right: 12px;
+    color: #9ca3af;
+    font-size: 0.8em;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+/* Select styling */
+.form-card select.form-control {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #e5e7eb;
+    font-size: 0.95em;
+    background: white;
+    cursor: pointer;
+}
+
+/* Responsive - Stack cards on mobile */
+@media (max-width: 900px) {
+    .form-grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 500px) {
+    .field-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .field-grid .form-group.full-width {
+        grid-column: 1;
+    }
+}
+
+/* Configuration Management Section */
+.config-section {
+    background: linear-gradient(135deg, #e8f4fd 0%, #d6eaf8 100%);
+    border: 2px solid #3498db;
+}
+
+.config-section h3 {
+    color: #2980b9;
+    border-bottom-color: #2980b9;
+}
+
+.config-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.config-row:last-child {
+    margin-bottom: 0;
+}
+
+.config-select-group {
+    flex: 1;
+    min-width: 250px;
+    margin-bottom: 0;
+}
+
+.config-name-group {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 0;
+}
+
+.config-row .btn {
+    padding: 12px 20px;
+    white-space: nowrap;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(23, 162, 184, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(149, 165, 166, 0.4);
+}
+
+#config_select {
+    font-size: 14px;
+}
+
+#config_select optgroup {
+    font-weight: 600;
+    color: #2c3e50;
+    padding-top: 8px;
+}
+
+#config_select option {
+    padding: 8px;
+}
+
+.form-section h3 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #34495e;
+    font-size: 0.95em;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #dde4e9;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+}
+
+.form-control.field-error {
+    border-color: #e74c3c;
+    background-color: #fdf2f2;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
+}
+
+.form-control.field-warning {
+    border-color: #f39c12;
+    background-color: #fffcf2;
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.15);
+}
+
+.form-text {
+    display: block;
+    margin-top: 6px;
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+/* Buttons */
+.form-actions {
+    text-align: center;
+    margin-top: 32px;
+}
+
+.btn {
+    padding: 14px 36px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #1f6dad 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.4);
+}
+
+.btn-primary:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #1e8449 0%, #196f3d 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(39, 174, 96, 0.4);
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #7f8c8d;
+    padding: 4px 12px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-close:hover {
+    background: rgba(0,0,0,0.1);
+    color: #2c3e50;
+}
+
+/* Spinner */
+.spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   VALIDATION PANEL - NEW DESIGN
+   ============================================ */
+
+.validation-panel-new {
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.validation-header-new {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.validation-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.validation-icon-new {
+    font-size: 1.4em;
+}
+
+.validation-title h3 {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 600;
+    color: #374151;
+}
+
+.validation-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.validation-badge.status-pending {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.validation-badge.status-success {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.validation-badge.status-success::before {
+    content: '✓';
+}
+
+.validation-badge.status-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.validation-badge.status-warning::before {
+    content: '⚠';
+}
+
+.validation-badge.status-error {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.validation-badge.status-error::before {
+    content: '✕';
+}
+
+.validation-body {
+    padding: 16px 20px;
+}
+
+.validation-body:empty::after {
+    content: 'All inputs look good!';
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Validation Items */
+.validation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #f9fafb;
+    border-left: 4px solid transparent;
+}
+
+.validation-item:last-child {
+    margin-bottom: 0;
+}
+
+.validation-item.item-error {
+    background: #fef2f2;
+    border-left-color: #ef4444;
+}
+
+.validation-item.item-warning {
+    background: #fffbeb;
+    border-left-color: #f59e0b;
+}
+
+.validation-item.item-info {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+}
+
+.validation-item-icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.validation-item-content {
+    flex: 1;
+}
+
+.validation-item-message {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.validation-item-detail {
+    font-size: 0.85em;
+    color: #6b7280;
+}
+
+/* ============================================
+   RESULTS PANEL - NEW DESIGN
+   ============================================ */
+
+.results-panel {
+    background: white;
+    border-radius: 16px;
+    margin-top: 24px;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+    border: 2px solid #10b981;
+    overflow: hidden;
+}
+
+.results-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-bottom: 1px solid #a7f3d0;
+}
+
+.results-icon-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #10b981;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+.results-title h3 {
+    margin: 0 0 4px 0;
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #065f46;
+}
+
+.results-title p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #059669;
+}
+
+.results-body {
+    padding: 20px 24px;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.result-card {
+    background: #f9fafb;
+    padding: 14px 16px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.result-card-label {
+    font-size: 0.85em;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.result-card-value {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.results-actions {
+    padding: 20px 24px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1em;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.btn-download:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-download:active {
+    transform: translateY(0);
+}
+
+/* ============================================
+   ERROR PANEL - NEW DESIGN
+   ============================================ */
+
+.error-panel-new {
+    background: white;
+    border-radius: 16px;
+    margin-top: 24px;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);
+    border: 2px solid #ef4444;
+    overflow: hidden;
+}
+
+.error-header-new {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-bottom: 1px solid #fecaca;
+    position: relative;
+}
+
+.error-icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.error-title h3 {
+    margin: 0 0 4px 0;
+    font-size: 1.15em;
+    font-weight: 700;
+    color: #991b1b;
+}
+
+.error-title p {
+    margin: 0;
+    font-size: 0.85em;
+    color: #dc2626;
+}
+
+.btn-close-new {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-close-new:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.error-body {
+    padding: 20px 24px;
+}
+
+/* Error Items */
+.error-item {
+    background: #fef2f2;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #fecaca;
+}
+
+.error-item:last-child {
+    margin-bottom: 0;
+}
+
+.error-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.error-item-icon {
+    font-size: 1.2em;
+}
+
+.error-item-field {
+    font-weight: 600;
+    color: #991b1b;
+}
+
+.error-item-message {
+    color: #7f1d1d;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.error-item-formula {
+    background: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.85em;
+    color: #6b7280;
+    margin-bottom: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.error-item-suggestion {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fef3c7;
+    border-radius: 8px;
+    font-size: 0.9em;
+    color: #92400e;
+}
+
+.error-item-suggestion::before {
+    content: '💡';
+}
+
+/* Error Summary Section */
+.error-summary-new {
+    background: #fef2f2;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.error-summary-new h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.95em;
+    color: #991b1b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-summary-new ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.error-summary-new li {
+    color: #7f1d1d;
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+/* Help Tips in Error */
+.error-help-new {
+    background: #eff6ff;
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+    border: 1px solid #bfdbfe;
+}
+
+.error-help-new h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.95em;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-help-new h4::before {
+    content: '💡';
+}
+
+.error-help-new ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.error-help-new li {
+    color: #1e3a8a;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.section-header:hover {
+    background: #ecf0f1;
+}
+
+.toggle-icon {
+    font-size: 0.8em;
+    color: #7f8c8d;
+}
+
+.section-content {
+    padding-left: 10px;
+}
+
+/* Calculated Values Grid */
+.calculated-values .section-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.calc-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.calc-item.highlight {
+    background: linear-gradient(135deg, #e8f4fd 0%, #d4edfd 100%);
+    border-color: #3498db;
+}
+
+.calc-label {
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.calc-value {
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.valid-range-note {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #e8f8f5 0%, #d1f2eb 100%);
+    border-radius: 6px;
+    border-left: 4px solid #1abc9c;
+    font-size: 0.95em;
+}
+
+/* Validation Cards */
+.validation-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.error-card {
+    border-left-color: #e74c3c;
+    background: linear-gradient(135deg, #fff 0%, #fdf2f2 100%);
+}
+
+.warning-card {
+    border-left-color: #f39c12;
+    background: linear-gradient(135deg, #fff 0%, #fffcf2 100%);
+}
+
+.card-header {
+    margin-bottom: 10px;
+}
+
+.field-name {
+    display: inline-block;
+    background: #34495e;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.card-message {
+    color: #2c3e50;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.card-formula {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 0.9em;
+}
+
+.card-formula code {
+    display: block;
+    margin-top: 6px;
+    font-family: 'Monaco', 'Consolas', monospace;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    color: #e74c3c;
+}
+
+.card-suggestion {
+    background: linear-gradient(135deg, #e8f8f5 0%, #d5f5e3 100%);
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.card-suggestion pre {
+    margin: 8px 0 0 0;
+    white-space: pre-wrap;
+    font-family: inherit;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    line-height: 1.6;
+}
+
+/* Success State */
+.validation-section.success {
+    background: linear-gradient(135deg, #d5f5e3 0%, #abebc6 100%);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.success-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #1e8449;
+}
+
+.success-icon {
+    font-size: 1.5em;
+}
+
+/* ============================================
+   ERROR PANEL
+   ============================================ */
+
+.error-panel {
+    background: white;
+    border-radius: 12px;
+    margin-top: 24px;
+    box-shadow: 0 8px 30px rgba(231, 76, 60, 0.2);
+    border: 2px solid #e74c3c;
+    overflow: hidden;
+}
+
+.error-header {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-icon {
+    font-size: 1.3em;
+}
+
+.error-content {
+    padding: 24px;
+}
+
+.error-summary {
+    background: #fef2f2;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #fecaca;
+}
+
+.error-summary p {
+    margin: 0 0 12px 0;
+    font-weight: 600;
+    color: #991b1b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-summary p::before {
+    content: '⚠️';
+}
+
+.error-summary ul {
+    margin: 0;
+    padding-left: 24px;
+    list-style: none;
+}
+
+.error-summary li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: #7f1d1d;
+    position: relative;
+    padding-left: 16px;
+}
+
+.error-summary li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.error-formulas {
+    background: #f0f9ff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #bae6fd;
+}
+
+.error-formulas h4 {
+    margin: 0 0 16px 0;
+    color: #0369a1;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.formula-block {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e0f2fe;
+    transition: all 0.2s ease;
+}
+
+.formula-block:hover {
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+}
+
+.formula-block:last-child {
+    margin-bottom: 0;
+}
+
+.formula-title {
+    font-weight: 600;
+    color: #0c4a6e;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.formula-block code {
+    display: block;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #0284c7;
+    font-size: 0.85em;
+    border: 1px solid #e2e8f0;
+    margin-top: 4px;
+}
+
+.error-suggestions {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #a7f3d0;
+}
+
+.error-suggestions h4 {
+    margin: 0 0 12px 0;
+    color: #065f46;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-suggestions p {
+    margin: 0 0 12px 0;
+    color: #047857;
+    font-size: 0.9em;
+}
+
+.error-suggestions ul {
+    margin: 0;
+    padding-left: 24px;
+    list-style: none;
+}
+
+.error-suggestions li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: #064e3b;
+    position: relative;
+    padding-left: 16px;
+    font-size: 0.9em;
+}
+
+.error-suggestions li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: bold;
+}
+
+.server-error {
+    text-align: center;
+    padding: 20px;
+}
+
+.server-error h4 {
+    color: #e74c3c;
+    margin-bottom: 16px;
+}
+
+.server-error .error-message {
+    background: #fdf2f2;
+    padding: 16px;
+    border-radius: 8px;
+    color: #c0392b;
+    font-family: monospace;
+    margin-bottom: 20px;
+}
+
+.error-help {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.error-help h5 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.error-help p {
+    margin: 0 0 16px 0;
+    color: #5d6d7e;
+}
+
+.error-help ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.error-help li {
+    margin-bottom: 6px;
+}
+
+/* ============================================
+   RESULTS SECTION (Legacy - kept for compatibility)
+   ============================================ */
+
+.results-section {
+    background: linear-gradient(135deg, #d5f5e3 0%, #abebc6 100%);
+    border: 2px solid #27ae60;
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 24px;
+    box-shadow: 0 4px 20px rgba(39, 174, 96, 0.2);
+}
+
+.results-section h3 {
+    color: #1e8449;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.results-section h3::before {
+    content: '✅';
+    font-size: 1.2em;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 14px 20px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.result-label {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.result-value {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #27ae60;
+}
+
+/* Result Warning Styles */
+.result-warning {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #fcd34d;
+    border-radius: 12px;
+    color: #92400e;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.result-warning::before {
+    content: '⚠️';
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.result-warning strong {
+    color: #78350f;
+}
+
+.result-warning small {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.85em;
+    color: #a16207;
+}
+
+.result-warnings-list {
+    margin-top: 12px;
+    padding: 14px 18px;
+    background: #fffbeb;
+    border-radius: 10px;
+    font-size: 0.9em;
+}
+
+.result-warnings-list strong {
+    color: #92400e;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.result-warnings-list ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.result-warnings-list li {
+    color: #78350f;
+    margin-bottom: 6px;
+    position: relative;
+    padding-left: 14px;
+}
+
+.result-warnings-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #f59e0b;
+    font-weight: bold;
+}
+
+/* ============================================
+   RTL SUPPORT
+   ============================================ */
+
+.rtl .form-section {
+    text-align: right;
+}
+
+.rtl .form-group label {
+    text-align: right;
+}
+
+.rtl .form-text {
+    text-align: right;
+}
+
+.rtl .validation-card {
+    border-left: none;
+    border-right: 4px solid;
+}
+
+.rtl .error-card {
+    border-right-color: #e74c3c;
+}
+
+.rtl .warning-card {
+    border-right-color: #f39c12;
+}
+
+.rtl .card-suggestion pre {
+    direction: rtl;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .form-section {
+        padding: 16px;
+    }
+    
+    .validation-header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .calc-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .result-item {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .error-header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .config-sidebar {
+        width: 100%;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   DESIGN SUMMARY SECTION
+   ============================================ */
+
+.summary-section {
+    background: linear-gradient(135deg, #e8f4fd 0%, #d6eaf8 100%);
+    border: 2px solid #3498db;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 12px;
+}
+
+.summary-section h3 {
+    color: #2471a3;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1em;
+}
+
+.btn-refresh {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(36, 113, 163, 0.1);
+    color: #2471a3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-refresh:hover {
+    background: #2471a3;
+    color: white;
+    transform: rotate(180deg);
+}
+
+.btn-refresh:active {
+    transform: rotate(360deg);
+}
+
+.summary-icon {
+    font-size: 1.2em;
+}
+
+.summary-content {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.summary-category {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.summary-category h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: #5d6d7e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.9em;
+}
+
+.summary-label {
+    color: #7f8c8d;
+}
+
+.summary-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.summary-calculated {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px dashed #bdc3c7;
+}
+
+.summary-calculated h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.95em;
+    color: #2471a3;
+}
+
+.summary-calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+/* ============================================
+   CONFIGURATION ACCORDION
+   ============================================ */
+
+.config-accordion {
+    margin-top: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.accordion-header:hover {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.accordion-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #475569;
+}
+
+.accordion-title svg {
+    color: #64748b;
+}
+
+.accordion-chevron {
+    color: #94a3b8;
+    transition: transform 0.3s ease;
+}
+
+.config-accordion.open .accordion-chevron {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+}
+
+.config-accordion.open .accordion-content {
+    max-height: 600px;
+    overflow: visible;
+}
+
+.config-panels {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 900px) {
+    .config-panels {
+        grid-template-columns: 1fr;
+    }
+}
+
+.config-panel {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.panel-header svg {
+    color: #94a3b8;
+}
+
+.config-select,
+.config-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+
+.config-select:focus,
+.config-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.config-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+    margin-bottom: 12px;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.save-row {
+    display: flex;
+    gap: 8px;
+}
+
+.save-row .config-input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.config-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.config-btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.config-btn-primary:hover {
+    background: #2563eb;
+}
+
+.config-btn-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.config-btn-danger:hover {
+    background: #fecaca;
+}
+
+.config-btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.config-btn-success:hover {
+    background: #059669;
+}
+
+.config-btn-ghost {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.config-btn-ghost:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.config-btn-accent {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    flex: 1;
+}
+
+.config-btn-accent:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.config-btn-accent:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Batch Panel */
+.batch-panel {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-color: #fcd34d;
+}
+
+.batch-list {
+    max-height: 140px;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+}
+
+.batch-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.batch-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+}
+
+.batch-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.1s ease;
+    font-size: 12px;
+}
+
+.batch-item:last-child {
+    border-bottom: none;
+}
+
+.batch-item:hover {
+    background: #f8fafc;
+}
+
+.batch-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #6366f1;
+}
+
+.batch-item-label {
+    flex: 1;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.batch-item-type {
+    font-size: 9px;
+    font-weight: 600;
+    color: #6366f1;
+    background: #e0e7ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.batch-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.batch-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.batch-link {
+    background: none;
+    border: none;
+    color: #6366f1;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.batch-link:hover {
+    text-decoration: underline;
+}
+
+.batch-divider {
+    color: #cbd5e1;
+    font-size: 10px;
+}
+
+.batch-progress {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.progress-track {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-label {
+    margin: 6px 0 0 0;
+    font-size: 10px;
+    color: #64748b;
+    text-align: center;
+}
+
+.no-configs-message {
+    padding: 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 11px;
+}
+</style>
+{% endblock %}

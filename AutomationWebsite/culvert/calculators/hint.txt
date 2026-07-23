@@ -1,0 +1,182 @@
+i-001 : f001
+i-012 : f002
+i-023 : f003
+i-030 : f004
+i-039 : f005
+i-046 : f006
+i-053 : f007
+i-063 : f008
+i-070 : f009
+i-081 : f081
+i-002 : f010
+i-013 : f011
+i-024 : f012
+i-031 : f013
+i-040 : f014
+i-047 : f015
+i-054 : f016
+i-064 : f017
+i-071 : f018
+i-082 : f082
+i-003 : f019
+i-004 : f020
+i-005 : f021
+i-006 : f022
+i-007 : f023
+i-014 : f024
+i-015 : f025
+i-016 : f026
+i-017 : f027
+i-018 : f028
+i-025 : f029
+i-032 : f030
+i-033 : f031
+i-034 : f032
+i-041 : f033
+i-048 : f034
+i-055 : f035
+i-056 : f036
+i-057 : f037
+i-058 : f038
+i-065 : f039
+i-072 : f040
+i-073 : f041
+i-074 : f042
+i-075 : f043
+i-076 : f044
+i-083 : f083
+i-084 : f084
+i-008 : f045
+i-019 : f046
+i-026 : f047
+i-035 : f048
+i-042 : f049
+i-049 : f050
+i-059 : f051
+i-066 : f052
+i-077 : f053
+i-085 : f085
+i-009 : f054
+i-020 : f055
+i-027 : f056
+i-036 : f057
+i-043 : f058
+i-050 : f059
+i-060 : f060
+i-067 : f061
+i-078 : f062
+i-086 : f086
+i-010 : f063
+i-021 : f064
+i-028 : f065
+i-037 : f066
+i-044 : f067
+i-051 : f068
+i-061 : f069
+i-068 : f070
+i-079 : f071
+i-087 : f087
+i-011 : f072
+i-022 : f073
+i-029 : f074
+i-038 : f075
+i-045 : f076
+i-052 : f077
+i-062 : f078
+i-088 : f088
+i-069 : f079
+i-080 : f080
+i-089 : f089
+i-090 : f090
+i-091 : f091
+
+i-092 : b03
+i-093 : b01
+i-094 : b02
+i-095 : b04
+
+i-097 : c01
+i-098 : c02
+i-099 : c03
+i-100 : c04
+i-101 : c06
+i-102 : c07
+i-103 : c14
+i-104 : c12
+i-105 : c11
+i-A : c08
+i-B : c09
+i-L : c10
+i-182 : should be removed.
+
+i-096 : d01
+i-c2 : d09
+i-c1 : d10
+i-Hs : d13
+i-j : d12
+i-t : d11
+i-D : d02
+i-b2 : d08
+i-a2 : d06
+i-b1 : d05
+i-a1 : d07
+i-HA : should be removed.
+i-m : d04
+i-f : d03
+
+i-106 : e01
+i-107 : e05
+i-108 : should be removed.
+i-109 : should be removed.
+i-110 : should be removed.
+i-111 : should be removed.
+i-112 : should be removed.
+i-113 : should be removed.
+i-114 : should be removed.
+i-115 : e07
+i-116 : e11
+i-117 : e15
+i-118 : e19
+i-119 : should be removed.
+i-120 : e02
+i-121 : e05
+i-122 : should be removed.
+i-123 : should be removed.
+i-124 : should be removed.
+i-125 : should be removed.
+i-126 : should be removed.
+i-127 : should be removed.
+i-128 : should be removed.
+i-129 : e08
+i-130 : e12
+i-131 : e16
+i-132 : e20
+i-133 : should be removed.
+i-134 : e03
+i-135 : e06
+i-136 : should be removed.
+i-137 : should be removed.
+i-138 : should be removed.
+i-139 : should be removed.
+i-140 : should be removed.
+i-141 : should be removed.
+i-142 : should be removed.
+i-143 : e9
+i-144 : e13
+i-145 : e17
+i-146 : e21
+i-147 : should be removed.
+i-148 : e04
+i-149 : e06
+i-150 : should be removed.
+i-151 : should be removed.
+i-152 : should be removed.
+i-153 : should be removed.
+i-154 : should be removed.
+i-155 : should be removed.
+i-156 : should be removed.
+i-157 : e10
+i-158 : e14
+i-159 : e18
+i-160 : e22
+i-161 : should be removed.

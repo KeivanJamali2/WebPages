@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}" dir="{{ get_direction() }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PMO Website{% endblock %}</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% if get_direction() == 'rtl' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{{ get_direction() }}-body">
+    <!-- Navigation -->
+    {% if is_logged_in() %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="{{ url_for('dashboard.home') }}">PMO Website</a>
+            </div>
+            <div class="nav-menu">
+                <a href="{{ url_for('dashboard.home') }}" class="nav-link">{{ _('nav.dashboard') }}</a>
+                <a href="{{ url_for('forms.form_list') }}" class="nav-link">{{ _('nav.forms') }}</a>
+                {% if is_admin() %}
+                <a href="{{ url_for('dashboard.admin') }}" class="nav-link">{{ _('nav.admin') }}</a>
+                {% endif %}
+                <a href="{{ url_for('settings.profile') }}" class="nav-link">{{ _('nav.settings') }}</a>
+                <div class="nav-user">
+                    <span class="user-name">{{ get_user_name() }}</span>
+                    <span class="user-role">{{ _('common.role.' + get_user_role()) }}</span>
+                </div>
+                <!-- Language Switcher -->
+                <div class="language-switcher">
+                    {% if get_locale() == 'en' %}
+                    <a href="{{ url_for('language.switch_language', lang='fa') }}" class="lang-link" title="فارسی">FA</a>
+                    {% else %}
+                    <a href="{{ url_for('language.switch_language', lang='en') }}" class="lang-link" title="English">EN</a>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link logout">{{ _('nav.logout') }}</a>
+            </div>
+        </div>
+    </nav>
+    {% else %}
+    <!-- Language switcher for login page -->
+    <div class="login-language-switcher">
+        {% if get_locale() == 'en' %}
+        <a href="{{ url_for('language.switch_language', lang='fa') }}" class="lang-link">فارسی</a>
+        {% else %}
+        <a href="{{ url_for('language.switch_language', lang='en') }}" class="lang-link">English</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+                {{ message }}
+                <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2025 PMO Website. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

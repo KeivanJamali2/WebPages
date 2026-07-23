@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t('login') }} - {{ t('app_name') }}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    {% if lang == 'fa' %}
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    {% endif %}
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        {% if lang == 'fa' %}
+        body { font-family: 'Vazirmatn', 'Inter', sans-serif; }
+        {% endif %}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>📊 {{ t('app_name') }}</h1>
+                <p>{{ t('login_subtitle') }}</p>
+            </div>
+            
+            <!-- Language Toggle -->
+            <div class="lang-toggle" style="justify-content: center; margin-bottom: 1.5rem; background: var(--bg-color); padding: 0.5rem; border-radius: var(--radius);">
+                <button class="lang-btn {% if lang == 'en' %}active{% endif %}" data-lang="en" onclick="changeLanguage('en')">English</button>
+                <button class="lang-btn {% if lang == 'fa' %}active{% endif %}" data-lang="fa" onclick="changeLanguage('fa')">فارسی</button>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <div class="form-group">
+                    <label class="form-label" for="username">{{ t('username') }}</label>
+                    <input type="text" class="form-control" id="username" name="username" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">{{ t('password') }}</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">{{ t('login') }}</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function changeLanguage(lang) {
+            fetch('/set-language/' + lang, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

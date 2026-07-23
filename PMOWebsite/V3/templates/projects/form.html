@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('new_project') if mode == 'new' else t('edit_project') }} - {{ t('app_name') }}{% endblock %}
+
+{% block extra_head %}
+<!-- Persian Date Picker -->
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<style>
+    .datepicker-plot-area { font-family: 'Vazirmatn', sans-serif !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>{{ t('new_project') if mode == 'new' else t('edit_project') }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('project_code') }}</label>
+                    {% if mode == 'new' %}
+                    <input type="text" class="form-control" value="{{ next_project_code }}" readonly disabled>
+                    <small class="text-muted">{{ t('auto_generated') }}</small>
+                    {% else %}
+                    <input type="text" class="form-control" value="{{ project.project_code }}" readonly>
+                    {% endif %}
+                </div>
+                <div class="form-group flex-1" style="min-width: 300px;">
+                    <label class="form-label">{{ t('project_name') }} *</label>
+                    <input type="text" name="name" class="form-control" required
+                           value="{{ project.name if project else '' }}">
+                </div>
+            </div>
+            
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('location') }}</label>
+                    <input type="text" name="location" class="form-control"
+                           value="{{ project.location if project else '' }}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('contract_number') }}</label>
+                    <input type="text" name="contract_number" class="form-control"
+                           value="{{ project.contract_number if project else '' }}">
+                </div>
+            </div>
+            
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('start_date') }}</label>
+                    <input type="text" name="start_date" id="start-date-input" class="form-control"
+                           placeholder="۱۴۰۴-۰۹-۰۶" autocomplete="off"
+                           value="{% if project and project.start_date %}{{ project.start_date|jalali('%Y-%m-%d') }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('end_date') }}</label>
+                    <input type="text" name="end_date" id="end-date-input" class="form-control"
+                           placeholder="۱۴۰۴-۰۹-۰۶" autocomplete="off"
+                           value="{% if project and project.end_date %}{{ project.end_date|jalali('%Y-%m-%d') }}{% endif %}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="form-check" style="margin-top: 0.5rem;">
+                        <input type="checkbox" name="is_ongoing" class="form-check-input" id="is_ongoing"
+                               {% if project and project.is_ongoing %}checked{% endif %}
+                               onchange="document.getElementById('end-date-input').disabled = this.checked">
+                        <label class="form-check-label" for="is_ongoing">{{ t('ongoing') }}</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-group flex-1" style="min-width: 150px;">
+                    <label class="form-label">{{ t('budget') }}</label>
+                    <input type="number" name="budget" class="form-control" step="0.01"
+                           value="{{ project.budget if project else '' }}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('owner') }}</label>
+                    <input type="text" name="owner" class="form-control"
+                           value="{{ project.owner if project else '' }}">
+                </div>
+                <div class="form-group flex-1" style="min-width: 200px;">
+                    <label class="form-label">{{ t('manager') }}</label>
+                    <input type="text" name="manager" class="form-control"
+                           value="{{ project.manager if project else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">{{ t('description') }}</label>
+                <textarea name="description" class="form-control" rows="4">{{ project.description if project else '' }}</textarea>
+            </div>
+            
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-primary">{{ t('save') }}</button>
+                <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline">{{ t('cancel') }}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Persian Date Picker -->
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Persian date picker for start date
+    $('#start-date-input').persianDatepicker({
+        format: 'YYYY-MM-DD',
+        initialValue: false,
+        initialValueType: 'persian',
+        autoClose: true,
+        calendar: {
+            persian: {
+                locale: 'fa'
+            }
+        },
+        toolbox: {
+            calendarSwitch: {
+                enabled: false
+            }
+        }
+    });
+    
+    // Initialize Persian date picker for end date
+    $('#end-date-input').persianDatepicker({
+        format: 'YYYY-MM-DD',
+        initialValue: false,
+        initialValueType: 'persian',
+        autoClose: true,
+        calendar: {
+            persian: {
+                locale: 'fa'
+            }
+        },
+        toolbox: {
+            calendarSwitch: {
+                enabled: false
+            }
+        }
+    });
+    
+    // Disable end date if ongoing is checked
+    if ($('#is_ongoing').is(':checked')) {
+        $('#end-date-input').prop('disabled', true);
+    }
+});
+</script>
+{% endblock %}

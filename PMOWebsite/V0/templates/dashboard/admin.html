@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - PMO Website{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.dashboard-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-header h1 {
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-primary);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.section {
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.section-header {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    text-align: left;
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover {
+    background: var(--color-bg-secondary);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-admin {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.badge-employee {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>{{ _('admin.title') }}</h1>
+        <p>{{ _('admin.subtitle') }}</p>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">{{ _('admin.total_users') }}</div>
+            <div class="stat-value">{{ format_number(stats.total_users) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">{{ _('admin.total_projects') }}</div>
+            <div class="stat-value">{{ format_number(stats.total_projects) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">{{ _('admin.active_projects') }}</div>
+            <div class="stat-value">{{ format_number(stats.active_projects) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">{{ _('admin.total_submissions') }}</div>
+            <div class="stat-value">{{ format_number(stats.total_submissions) }}</div>
+        </div>
+    </div>
+    
+    <!-- Database Stats -->
+    {% if db_stats %}
+    <div class="section">
+        <h2 class="section-header">{{ _('admin.db_stats') }}</h2>
+        <table class="table">
+            <tr>
+                <td><strong>{{ _('admin.total_nodes') }}:</strong></td>
+                <td class="number">{{ format_number(db_stats.total_nodes) }}</td>
+            </tr>
+            <tr>
+                <td><strong>{{ _('admin.total_edges') }}:</strong></td>
+                <td class="number">{{ format_number(db_stats.total_edges) }}</td>
+            </tr>
+            <tr>
+                <td><strong>{{ _('admin.user_nodes') }}:</strong></td>
+                <td class="number">{{ format_number(db_stats.users) }}</td>
+            </tr>
+            <tr>
+                <td><strong>{{ _('admin.project_nodes') }}:</strong></td>
+                <td class="number">{{ format_number(db_stats.projects) }}</td>
+            </tr>
+            <tr>
+                <td><strong>{{ _('admin.submission_nodes') }}:</strong></td>
+                <td class="number">{{ format_number(db_stats.submissions) }}</td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+    
+    <!-- Recent Submissions -->
+    <div class="section">
+        <h2 class="section-header">{{ _('admin.recent_submissions') }}</h2>
+        {% if stats.recent_submissions %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{{ _('admin.form_type') }}</th>
+                    <th>{{ _('admin.project') }}</th>
+                    <th>{{ _('admin.user') }}</th>
+                    <th>{{ _('admin.timestamp') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in stats.recent_submissions %}
+                <tr>
+                    <td>{{ submission.form_type }}</td>
+                    <td>{{ submission.project_id }}</td>
+                    <td>{{ submission.user_id }}</td>
+                    <td class="date">{{ format_date(submission.timestamp, include_time=True) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>{{ _('admin.no_submissions') }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Users List -->
+    <div class="section">
+        <h2 class="section-header">{{ _('admin.system_users') }}</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{{ _('admin.name') }}</th>
+                    <th>{{ _('admin.email') }}</th>
+                    <th>{{ _('admin.national_id') }}</th>
+                    <th>{{ _('admin.role') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td class="number">{{ user.national_id }}</td>
+                    <td>
+                        <span class="badge badge-{{ user.role }}">
+                            {{ _('common.role.' + user.role) }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Analytics Placeholder -->
+    <div class="section">
+        <h2 class="section-header">{{ _('admin.analytics') }}</h2>
+        <div class="empty-state">
+            <p style="margin-bottom: 8px;">📊 {{ _('admin.visualizations_placeholder') }}</p>
+            <p style="font-size: 14px;">{{ _('admin.charts_description') }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

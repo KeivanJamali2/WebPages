@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t(page_title) }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-between align-center">
+    <div>
+        <h1>{{ t(page_title) }}</h1>
+        <p class="text-muted">{{ t('total') }}: {{ forms.total }} {{ t('entries') }}</p>
+    </div>
+    {% if user.role == 'employee' %}
+    <a href="{{ url_for('forms.choose_form_method') }}" class="btn btn-primary">➕ {{ t('new_daily_form') }}</a>
+    {% endif %}
+</div>
+
+<!-- Filters -->
+{% if user.role in ['admin', 'boss'] %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="d-flex gap-3 flex-wrap align-center">
+            <div class="form-group mb-0" style="min-width: 150px;">
+                <select name="status" class="form-control">
+                    <option value="">{{ t('all') }} {{ t('status') }}</option>
+                    <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>{{ t('draft') }}</option>
+                    <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>{{ t('pending') }}</option>
+                    <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>{{ t('approved') }}</option>
+
+                </select>
+            </div>
+            {% if projects %}
+            <div class="form-group mb-0" style="min-width: 200px;">
+                <select name="project" class="form-control">
+                    <option value="">{{ t('all') }} {{ t('projects') }}</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if request.args.get('project', type=int) == project.id %}selected{% endif %}>{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            {% if employees %}
+            <div class="form-group mb-0" style="min-width: 150px;">
+                <select name="employee" class="form-control">
+                    <option value="">{{ t('all_employees') }}</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}" {% if request.args.get('employee', type=int) == emp.id %}selected{% endif %}>{{ emp|display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">{{ t('filter') }}</button>
+            <a href="{{ request.path }}" class="btn btn-outline">{{ t('reset_filter') }}</a>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Forms Table -->
+<div class="card">
+    <div class="card-body">
+        {% if forms.items %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{% if user.role == 'boss' %}{{ t('document_code') }}{% else %}{{ t('form_name') }}{% endif %}</th>
+                        <th>{{ t('project') }}</th>
+                        <th>{{ t('form_date') }}</th>
+                        {% if user.role != 'employee' %}
+                        <th>{{ t('submitted_by') }}</th>
+                        {% endif %}
+                        <th>{{ t('status') }}</th>
+                        <th>{{ t('submitted_at') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in forms.items %}
+                    <tr>
+                        <td><strong>{% if user.role == 'boss' %}{{ form.document_code }}{% else %}{{ t('daily_form') }} - {{ form.form_date|jalali }}{% endif %}</strong></td>
+                        <td>{{ form.project.name if form.project else '-' }}</td>
+                        <td>{{ form.form_date|jalali }}</td>
+                        {% if user.role != 'employee' %}
+                        <td>{{ form.submitted_by_user|display_name if form.submitted_by_user else '-' }}</td>
+                        {% endif %}
+                        <td>
+                            <span class="badge badge-{{ form.status }}">
+                                {{ t(form.status) }}
+                            </span>
+                        </td>
+                        <td>{{ form.submitted_at|jalali_datetime if form.submitted_at else '-' }}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('forms.view_form', form_id=form.id) }}" class="btn btn-sm btn-outline">{{ t('view') }}</a>
+                                {% if user.role == 'admin' and form.status == 'pending' %}
+                                <a href="{{ url_for('forms.review_form', form_id=form.id) }}" class="btn btn-sm btn-primary">{{ t('review') }}</a>
+                                {% endif %}
+                                {% if form.submitted_by_user.username == user.username and form.status == 'draft' %}
+                                <a href="{{ url_for('forms.edit_form', form_id=form.id) }}" class="btn btn-sm btn-warning">{{ t('edit') }}</a>
+                                {% endif %}
+                                {% if form.submitted_by_user.username == user.username and form.status == 'draft' %}
+                                <form method="POST" action="{{ url_for('forms.delete_form', form_id=form.id) }}" style="display: inline;" onsubmit="return confirm('{{ t('confirm_delete') }}');">
+                                    <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
+                                </form>
+                                {% endif %}
+                                <a href="{{ url_for('export.export_single_form', form_id=form.id) }}" class="btn btn-sm btn-outline">📥</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if forms.pages > 1 %}
+        <div class="pagination">
+            {% if forms.has_prev %}
+            <a href="{{ url_for(request.endpoint, page=forms.prev_num, **request.args) }}" class="pagination-btn">«</a>
+            {% endif %}
+            
+            {% for page in forms.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page %}
+                <a href="{{ url_for(request.endpoint, page=page, **request.args) }}" 
+                   class="pagination-btn {% if page == forms.page %}active{% endif %}">{{ page }}</a>
+                {% else %}
+                <span class="pagination-btn" style="border: none;">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if forms.has_next %}
+            <a href="{{ url_for(request.endpoint, page=forms.next_num, **request.args) }}" class="pagination-btn">»</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>{{ t('no_data') }}</h3>
+            <p>{{ t('no_data') }}</p>
+            {% if user.role == 'employee' %}
+            <a href="{{ url_for('forms.choose_form_method') }}" class="btn btn-primary">{{ t('new_daily_form') }}</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

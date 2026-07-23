@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Persian/Farsi Font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo-site.png') }}">
+    <title>Login - Automation</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f3f5f5 0%, #cfd8de 50%, #4054b2 100%);
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            padding: 50px 40px;
+            width: 90%;
+            max-width: 450px;
+            animation: slideUp 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .login-header h1 {
+            font-size: 2.5em;
+            color: #4054b2;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .login-header p {
+            color: #929393;
+            font-size: 1.05em;
+            margin: 0;
+        }
+        
+        .form-group {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #cfd8de;
+            border-radius: 12px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+            color: #17191f;
+        }
+        
+        .form-group input:focus {
+            border-color: #4054b2;
+            box-shadow: 0 0 0 3px rgba(64, 84, 178, 0.1);
+            outline: none;
+            transform: translateY(-2px);
+        }
+        
+        .form-group label {
+            position: absolute;
+            left: 45px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #929393;
+            font-size: 1em;
+            font-weight: 500;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus + label,
+        .form-group input:not(:placeholder-shown) + label {
+            top: -10px;
+            left: 15px;
+            font-size: 0.85em;
+            color: #4054b2;
+            background: white;
+            padding: 0 8px;
+        }
+        
+        .form-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #929393;
+            font-size: 1.2em;
+            transition: color 0.3s ease;
+        }
+        
+        .form-group input:focus ~ .form-icon {
+            color: #4054b2;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4054b2 0%, #3c4ea0 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #3c4ea0 0%, #412bec 100%);
+            box-shadow: 0 8px 20px rgba(64, 84, 178, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .flashes {
+            margin-bottom: 20px;
+        }
+        
+        .flashes li {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .footer-links {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #cfd8de;
+        }
+        
+        .footer-links a {
+            color: #4054b2;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: #3c4ea0;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1 data-i18n="login_page_title">Welcome Back</h1>
+            <p data-i18n="login_page_subtitle">Sign in to access your automation tools</p>
+        </div>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for message in messages %}
+                    <li class="error">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <input type="email" id="email" name="email" placeholder=" " required autocomplete="email">
+                <label for="email" data-i18n="email_address">Email Address</label>
+                <span class="form-icon">✉</span>
+            </div>
+            
+            <div class="form-group">
+                <input type="password" id="password" name="password" placeholder=" " required autocomplete="current-password">
+                <label for="password" data-i18n="password">Password</label>
+                <span class="form-icon">🔒</span>
+            </div>
+            
+            <button type="submit" class="submit-btn" data-i18n="sign_in">Sign In</button>
+        </form>
+        
+        <div class="footer-links">
+            <a href="https://keivanjamali.com" data-i18n="visit_website">Visit KeivanJamali.com</a>
+        </div>
+    </div>
+    
+    <!-- i18n System -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+</body>
+</html>

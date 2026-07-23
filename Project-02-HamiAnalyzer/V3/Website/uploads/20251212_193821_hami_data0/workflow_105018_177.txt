@@ -1,0 +1,12 @@
+parent_id: None
+id: d8bd2d1c-f99b-4fdb-b6dd-d5acdccb869d
+date: شنبه، 5 تیر 1404 10:44
+name: کارشناسی پیوسته_پرستاری_یزد_4021
+email: sf-105-10401-4-4021@iau.ir
+--------------------------------------------------
+parent_id: d8bd2d1c-f99b-4fdb-b6dd-d5acdccb869d
+id: 32ce98d1-77eb-45ef-b71a-9728be19e8b7
+date: شنبه، 5 تیر 1404 11:04
+name: Melika Niroomand
+email: 2283421772@iau.ir
+--------------------------------------------------

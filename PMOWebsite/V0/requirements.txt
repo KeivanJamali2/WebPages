@@ -1,0 +1,7 @@
+# PMO Website Requirements
+Flask==3.0.0
+Flask-Babel==4.0.0
+networkx==3.2.1
+python-dotenv==1.0.0
+Werkzeug==3.0.1
+jdatetime==5.0.0

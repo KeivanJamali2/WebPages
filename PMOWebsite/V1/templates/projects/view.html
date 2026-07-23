@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-between align-center">
+    <div>
+        <h1>{{ project.name }}</h1>
+        <p class="text-muted">{{ project.project_code }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-warning">{{ t('edit') }}</a>
+        <form method="POST" action="{{ url_for('projects.toggle_project_active', project_id=project.id) }}" style="display: inline;">
+            {% if project.is_active %}
+            <button type="submit" class="btn btn-outline">{{ t('inactive') }}</button>
+            {% else %}
+            <button type="submit" class="btn btn-success">{{ t('active') }}</button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Project Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-icon primary">📝</div>
+        <div class="stat-content">
+            <h3>{{ stats.total_forms }}</h3>
+            <p>{{ t('total_forms') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">✓</div>
+        <div class="stat-content">
+            <h3>{{ stats.approved_forms }}</h3>
+            <p>{{ t('approved') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon warning">⏳</div>
+        <div class="stat-content">
+            <h3>{{ stats.pending_forms }}</h3>
+            <p>{{ t('pending_review') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Project Details -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('details') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-3 flex-wrap">
+            <div><strong>{{ t('location') }}:</strong> {{ project.location or '-' }}</div>
+            <div><strong>{{ t('contract_number') }}:</strong> {{ project.contract_number or '-' }}</div>
+            <div><strong>{{ t('start_date') }}:</strong> {{ project.start_date or '-' }}</div>
+            <div><strong>{{ t('end_date') }}:</strong> {% if project.is_ongoing %}{{ t('ongoing') }}{% else %}{{ project.end_date or '-' }}{% endif %}</div>
+            <div><strong>{{ t('budget') }}:</strong> {{ project.budget or '-' }}</div>
+            <div><strong>{{ t('owner') }}:</strong> {{ project.owner or '-' }}</div>
+            <div><strong>{{ t('manager') }}:</strong> {{ project.manager or '-' }}</div>
+        </div>
+        {% if project.description %}
+        <div class="mt-3">
+            <strong>{{ t('description') }}:</strong>
+            <p>{{ project.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Forms -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('recent_activity') }}</h2>
+        <a href="{{ url_for('forms.all_forms', project=project.id) }}" class="btn btn-sm btn-outline">{{ t('view') }} {{ t('all') }}</a>
+    </div>
+    <div class="card-body">
+        {% if recent_forms %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('document_code') }}</th>
+                        <th>{{ t('form_date') }}</th>
+                        <th>{{ t('submitted_by') }}</th>
+                        <th>{{ t('status') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in recent_forms %}
+                    <tr>
+                        <td>{{ form.document_code }}</td>
+                        <td>{{ form.form_date }}</td>
+                        <td>{{ form.submitted_by_user.username if form.submitted_by_user else '-' }}</td>
+                        <td><span class="badge badge-{{ form.status }}">{{ t(form.status) }}</span></td>
+                        <td>
+                            <a href="{{ url_for('forms.view_form', form_id=form.id) }}" class="btn btn-sm btn-outline">{{ t('view') }}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>{{ t('no_data') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline">{{ t('back') }}</a>
+</div>
+{% endblock %}

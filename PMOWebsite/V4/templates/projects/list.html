@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('projects') }} - {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-between align-center">
+    <div>
+        <h1>{{ t('projects') }}</h1>
+        <p class="text-muted">{{ t('total') }}: {{ projects.total }} {{ t('entries') }}</p>
+    </div>
+    <a href="{{ url_for('projects.new_project') }}" class="btn btn-primary">➕ {{ t('new_project') }}</a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="d-flex gap-3 align-center flex-wrap">
+            <label class="form-label mb-0">{{ t('filter_by_status') }}:</label>
+            <select name="status" class="form-control" style="width: auto;" onchange="this.form.submit()">
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>{{ t('active') }}</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>{{ t('inactive') }}</option>
+                <option value="removed" {% if status_filter == 'removed' %}selected{% endif %}>{{ t('removed') }}</option>
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>{{ t('all') }}</option>
+            </select>
+        </form>
+    </div>
+</div>
+
+<!-- Projects List -->
+<div class="card">
+    <div class="card-body">
+        {% if projects.items %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{{ t('project_code') }}</th>
+                        <th>{{ t('project_name') }}</th>
+                        <th>{{ t('location') }}</th>
+                        <th>{{ t('start_date') }}</th>
+                        <th>{{ t('end_date') }}</th>
+                        <th>{{ t('owner') }}</th>
+                        <th>{{ t('status') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects.items %}
+                    <tr>
+                        <td><strong>{{ project.project_code }}</strong></td>
+                        <td>{{ project.name }}</td>
+                        <td>{{ project.location or '-' }}</td>
+                        <td>{{ project.start_date|jalali if project.start_date else '-' }}</td>
+                        <td>{% if project.is_ongoing %}{{ t('ongoing') }}{% else %}{{ project.end_date|jalali if project.end_date else '-' }}{% endif %}</td>
+                        <td>{{ project.owner or '-' }}</td>
+                        <td>
+                            {% if project.status == 'active' %}
+                            <span class="badge badge-approved">{{ t('active') }}</span>
+                            {% elif project.status == 'inactive' %}
+                            <span class="badge badge-pending">{{ t('inactive') }}</span>
+                            {% else %}
+                            <span class="badge badge-rejected">{{ t('removed') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('projects.view_project', project_id=project.id) }}" class="btn btn-sm btn-outline">{{ t('view') }}</a>
+                                {% if project.status != 'removed' %}
+                                <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-sm btn-warning">{{ t('edit') }}</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if projects.pages > 1 %}
+        <div class="pagination">
+            {% if projects.has_prev %}
+            <a href="{{ url_for('projects.list_projects', page=projects.prev_num, status=status_filter) }}" class="pagination-btn">«</a>
+            {% endif %}
+            
+            {% for page in projects.iter_pages() %}
+                {% if page %}
+                <a href="{{ url_for('projects.list_projects', page=page, status=status_filter) }}" 
+                   class="pagination-btn {% if page == projects.page %}active{% endif %}">{{ page }}</a>
+                {% else %}
+                <span class="pagination-btn" style="border: none;">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if projects.has_next %}
+            <a href="{{ url_for('projects.list_projects', page=projects.next_num, status=status_filter) }}" class="pagination-btn">»</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📁</div>
+            <h3>{{ t('no_data') }}</h3>
+            <a href="{{ url_for('projects.new_project') }}" class="btn btn-primary">{{ t('new_project') }}</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - PMO Website{% endblock %}
+
+{% block extra_css %}
+<style>
+.settings-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.settings-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.settings-header h1 {
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+}
+
+.section {
+    background: var(--color-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.section-header {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.info-grid {
+    display: grid;
+    gap: var(--spacing-sm);
+}
+
+.info-item {
+    display: flex;
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    width: 140px;
+    color: var(--color-text-secondary);
+}
+
+.info-value {
+    flex: 1;
+    color: var(--color-text);
+}
+
+.submission-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.submission-item {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.submission-item h4 {
+    font-size: var(--font-size-base);
+    margin-bottom: 4px;
+}
+
+.submission-item p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>{{ _('settings.title') }}</h1>
+        <p>{{ _('settings.subtitle') }}</p>
+    </div>
+    
+    <!-- Profile Information -->
+    <div class="section">
+        <h2 class="section-header">{{ _('settings.profile_info') }}</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">{{ _('settings.name') }}:</div>
+                <div class="info-value">{{ user.name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">{{ _('settings.email') }}:</div>
+                <div class="info-value">{{ user.email }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">{{ _('settings.national_id') }}:</div>
+                <div class="info-value number">{{ user.national_id }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">{{ _('settings.phone') }}:</div>
+                <div class="info-value number">{{ user.phone }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">{{ _('settings.role') }}:</div>
+                <div class="info-value">{{ _('common.role.' + user.role) }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password -->
+    <div class="section">
+        <h2 class="section-header">{{ _('settings.change_password') }}</h2>
+        <form method="POST" action="{{ url_for('settings.change_password') }}">
+            <div class="form-group">
+                <label for="current_password">{{ _('settings.current_password') }}</label>
+                <input 
+                    type="password" 
+                    id="current_password" 
+                    name="current_password" 
+                    class="form-control" 
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="new_password">{{ _('settings.new_password') }}</label>
+                <input 
+                    type="password" 
+                    id="new_password" 
+                    name="new_password" 
+                    class="form-control" 
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">{{ _('settings.confirm_password') }}</label>
+                <input 
+                    type="password" 
+                    id="confirm_password" 
+                    name="confirm_password" 
+                    class="form-control" 
+                    required
+                >
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                {{ _('settings.update_password') }}
+            </button>
+        </form>
+    </div>
+    
+    <!-- Submission History -->
+    <div class="section">
+        <h2 class="section-header">{{ _('settings.submission_history') }}</h2>
+        {% if submissions %}
+        <div class="submission-list">
+            {% for submission in submissions %}
+            <div class="submission-item">
+                <h4>{{ submission.form_type }}</h4>
+                <p>{{ _('settings.project') }}: {{ submission.project_id }}</p>
+                <p class="date">{{ _('settings.submitted') }}: {{ format_date(submission.timestamp, include_time=True) }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>{{ _('settings.no_submissions') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

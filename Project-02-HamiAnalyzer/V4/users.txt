@@ -1,0 +1,5 @@
+# HamiAnalyzer Users File
+# Format: username,password,phone_number
+# Example: admin,admin123,09123456789
+keivan,1234142324,09101511983
+zohreh,zohreh27271359,09126957584

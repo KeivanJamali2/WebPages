@@ -1,0 +1,24 @@
+# HamiAnalyzer Website Requirements
+
+# Flask Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.2
+jdatetime==4.1.0
+
+# Visualization
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# Persian Text Support
+arabic-reshaper==3.0.0
+python-bidi==0.4.2
+
+# File Handling
+openpyxl==3.1.2
+
+# Utilities
+python-dateutil==2.8.2
