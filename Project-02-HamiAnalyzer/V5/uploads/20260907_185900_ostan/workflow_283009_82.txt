@@ -1,0 +1,18 @@
+parent_id: None
+id: 0afaa7d7-6ddc-419b-ab03-e730ffa7bbaa
+date: شنبه، 14 مرداد 1404 23:29
+name: کارشناسی پیوسته_حسابداری_اردکان_4011
+email: sf-283-21301-4-4011@iau.ir
+--------------------------------------------------
+parent_id: 0afaa7d7-6ddc-419b-ab03-e730ffa7bbaa
+id: 21f92519-134a-4930-8dfd-2d2081509305
+date: چهارشنبه، 15 مرداد 1404 10:58
+name: Atena zare dehabadi
+email: 4480177477@iau.ir
+--------------------------------------------------
+parent_id: 0afaa7d7-6ddc-419b-ab03-e730ffa7bbaa
+id: 2f1df732-d7c4-44cc-b43a-0a6b92dd594e
+date: چهارشنبه، 15 مرداد 1404 10:58
+name: Atena zare dehabadi
+email: 4480177477@iau.ir
+--------------------------------------------------

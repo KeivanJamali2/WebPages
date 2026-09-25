@@ -1,0 +1,12 @@
+parent_id: None
+id: edfffbad-4ddc-416e-aaca-bc87288b911f
+date: چهارشنبه، 17 دی 1404 18:54
+name: کاردانی پیوسته_حسابداری_تفت_4041
+email: sf-201-21301-1-4041@iau.ir
+--------------------------------------------------
+parent_id: edfffbad-4ddc-416e-aaca-bc87288b911f
+id: 723aa9a3-cb92-4ea9-991e-880c5a75a610
+date: شنبه، 21 دی 1404 12:47
+name: mohadese dehghan
+email: 4450086937@iau.ir
+--------------------------------------------------

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </h1>
+        <p class="text-muted">Welcome back, {{ username }}!</p>
+    </div>
+</div>
+
+<!-- Database Statistics -->
+<div class="row mb-3">
+    <div class="col">
+        <h5 class="text-primary"><i class="bi bi-database"></i> Database Statistics</h5>
+    </div>
+</div>
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Unique Hamis</h6>
+                        <h2 class="mb-0">{{ stats.hamis }}</h2>
+                    </div>
+                    <i class="bi bi-folder-fill" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Total Requests</h6>
+                        <h2 class="mb-0">{{ stats.requests }}</h2>
+                    </div>
+                    <i class="bi bi-file-earmark-text-fill" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Total Messages</h6>
+                        <h2 class="mb-0">{{ stats.messages }}</h2>
+                    </div>
+                    <i class="bi bi-chat-dots-fill" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Database Size</h6>
+                        <h2 class="mb-0">{{ stats.size }}</h2>
+                    </div>
+                    <i class="bi bi-hdd-fill" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge-fill text-warning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-cloud-upload"></i> Upload New Data
+                    </a>
+                    <a href="{{ url_for('upload_excel_data') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-file-earmark-excel"></i> Upload Excel Task List
+                    </a>
+                    <a href="{{ url_for('analyze') }}" class="btn btn-outline-success btn-lg">
+                        <i class="bi bi-bar-chart-line"></i> Run Analysis
+                    </a>
+                    <a href="{{ url_for('evaluations') }}" class="btn btn-outline-success btn-lg">
+                        <i class="bi bi-star"></i> Enter Evaluation Scores
+                    </a>
+                    <a href="{{ url_for('view_plots') }}" class="btn btn-outline-info btn-lg">
+                        <i class="bi bi-image"></i> View Plots
+                    </a>
+                    <a href="{{ url_for('view_downloads') }}" class="btn btn-outline-warning btn-lg">
+                        <i class="bi bi-file-earmark-arrow-down"></i> Download CSVs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0"><i class="bi bi-info-circle-fill text-primary"></i> Getting Started</h5>
+            </div>
+            <div class="card-body">
+                <ol class="list-group list-group-numbered list-group-flush">
+                    <li class="list-group-item border-0 px-0">
+                        <strong>Upload Data:</strong> Click "Upload New Data" to add ZIP files containing raw data
+                    </li>
+                    <li class="list-group-item border-0 px-0">
+                        <strong>Process Data:</strong> The system will automatically extract and organize your data
+                    </li>
+                    <li class="list-group-item border-0 px-0">
+                        <strong>Run Analysis:</strong> Generate comprehensive analytics and visualizations
+                    </li>
+                    <li class="list-group-item border-0 px-0">
+                        <strong>View Results:</strong> Access plots and download CSV reports
+                    </li>
+                </ol>
+                <a href="{{ url_for('help_page') }}" class="btn btn-sm btn-outline-secondary mt-3">
+                    <i class="bi bi-question-circle"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

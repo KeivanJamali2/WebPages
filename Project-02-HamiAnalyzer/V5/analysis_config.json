@@ -1,0 +1,72 @@
+{
+  "start_date": "1404-10-01",
+  "end_date": "1405-01-01",
+  "selected_analyses": [
+    "request_date_distribution_per_month",
+    "message_date_distribution_per_month",
+    "message_date_distribution_per_day",
+    "total_requests_per_hami",
+    "total_requests_per_city",
+    "total_messages_per_student",
+    "response_time_per_person",
+    "top_communicators_employee",
+    "top_communicators_student",
+    "place_by_field",
+    "place_by_year",
+    "place_by_edu_level",
+    "place_by_faculty",
+    "hami_performance_score",
+    "employee_performance_score"
+  ],
+  "selected_cities": [
+    "اردکان",
+    "بافق",
+    "بهاباد",
+    "مهریز",
+    "یزد"
+  ],
+  "faculty_totals": {
+    "تعلیم و تربیت": 1000,
+    "علوم انسانی": 400,
+    "پزشکی": 600,
+    "فنی و مهندسی": 7000,
+    "مهارت و فناوری": 300,
+    "هنر و معماری": 800,
+    "هوش مصنوعی": 970
+  },
+  "top_employee_n": 40,
+  "score_weights": {
+    "count": 0.25,
+    "first_response": 0.125,
+    "duration": 0.125,
+    "quality": 0.5
+  },
+  "score_targets": {
+    "first_response_hours": [
+      12.0,
+      32.0,
+      48.0,
+      72.0
+    ],
+    "duration_hours": [
+      48.0,
+      72.0,
+      96.0,
+      120.0
+    ],
+    "volume_target_30d": 60.0,
+    "confidence_half_n": 15.0,
+    "population_top_percent": 75.0
+  },
+  "employee_weights": {
+    "count": 0.25,
+    "response_time": 0.25,
+    "quality": 0.5
+  },
+  "employee_targets": {
+    "volume_target_30d": 15.0,
+    "confidence_half_n": 5.0,
+    "population_top_percent": 75.0,
+    "top_n": 10
+  }
+}

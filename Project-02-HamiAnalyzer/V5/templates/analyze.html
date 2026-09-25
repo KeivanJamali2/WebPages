@@ -1,0 +1,576 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-bar-chart-line"></i> Run Analysis
+        </h1>
+        <p class="text-muted">Generate comprehensive analytics and visualizations</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-5">
+                <h4 class="mb-4">
+                    <i class="bi bi-graph-up"></i> Available Analyses
+                </h4>
+                
+                <div class="list-group mb-4">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Total Requests per Hami</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Bar chart showing request distribution across Hamis</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Message Date Distribution</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Timeline analysis of message frequency</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Top Communicators</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Analysis of employees, students, and places</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Response Time Analysis</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Average response times per person</p>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Total Requests per City</h6>
+                            <small><i class="bi bi-check-circle-fill text-success"></i></small>
+                        </div>
+                        <p class="mb-0 small text-muted">Bar chart showing request distribution across cities</p>
+                    </div>
+                </div>
+                
+                <h2 class="mb-4">Run Analysis</h2>
+                <p class="lead">Generate comprehensive analytics and plots from the processed data.</p>
+                
+                <form method="post" id="analyzeForm">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Select which analyses and plots you want to generate from the current database.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i> Date Range Filter (Optional)
+                        </label>
+                        <div class="form-text mb-3">Filter data by specifying a date range. Leave empty to analyze all data.</div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="startDate" class="form-label">Start Date (Jalali)</label>
+                                <input type="text" class="form-control" id="startDate" name="start_date" 
+                                       placeholder="e.g., 1403-01-01" pattern="\d{4}-\d{2}-\d{2}"
+                                       value="{{ saved_config.start_date }}">
+                                <div class="form-text">Format: YYYY-MM-DD (beginning of day)</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endDate" class="form-label">End Date (Jalali)</label>
+                                <input type="text" class="form-control" id="endDate" name="end_date" 
+                                       placeholder="e.g., 1403-12-29" pattern="\d{4}-\d{2}-\d{2}"
+                                       value="{{ saved_config.end_date }}">
+                                <div class="form-text">Format: YYYY-MM-DD (exclusive - beginning of this day)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-geo-alt me-1"></i> City Filter (Optional)
+                        </label>
+                        <div class="form-text mb-3">Limit the analysis to specific cities. Leave "All Cities" checked to include every city.</div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="allCitiesCheck"
+                                   {% if not saved_config.selected_cities %}checked{% endif %}>
+                            <label class="form-check-label" for="allCitiesCheck"><strong>All Cities</strong></label>
+                        </div>
+
+                        <div class="row" id="cityCheckboxGroup">
+                            {% for city in available_cities %}
+                            <div class="col-md-4">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input city-checkbox" type="checkbox"
+                                           name="cities" value="{{ city }}" id="city{{ loop.index }}"
+                                           {% if not saved_config.selected_cities %}disabled{% endif %}
+                                           {% if city in saved_config.selected_cities %}checked{% endif %}>
+                                    <label class="form-check-label" for="city{{ loop.index }}">{{ city }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Select Plots and Analyses to Generate</label>
+                        <div class="form-text mb-3">Choose one or more analyses to run:</div>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllBtn">
+                                <i class="fas fa-check-square me-1"></i>Select All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBtn">
+                                <i class="fas fa-square me-1"></i>Deselect All
+                            </button>
+                        </div>
+                        
+                        {# One checkbox, plus the extra inputs that only some analyses need. #}
+                        {% macro analysis_item(analysis, index) %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input plot-checkbox" type="checkbox"
+                                   name="plots" value="{{ analysis.function_name }}"
+                                   id="plot{{ index }}"
+                                   {% if saved_config.selected_analyses %}{% if analysis.function_name in saved_config.selected_analyses %}checked{% endif %}{% else %}checked{% endif %}>
+                            <label class="form-check-label" for="plot{{ index }}">
+                                <strong>{{ analysis.display_name }}</strong>
+                                <br><small class="text-muted">{{ analysis.description }}</small>
+                            </label>
+
+                            {% if analysis.function_name == 'place_by_faculty' %}
+                            <div class="mt-1">
+                                <a class="small" data-bs-toggle="collapse" href="#facultyTotals" role="button">
+                                    <i class="bi bi-caret-down-fill"></i> Faculty student totals (for the % labels)
+                                </a>
+                                <div class="collapse" id="facultyTotals">
+                                    <div class="card card-body bg-light mt-2 p-3">
+                                        <div class="form-text mb-2">
+                                            Total students per faculty. Request counts are shown as a percentage of this
+                                            number. Leave a box empty to show that faculty as a plain count.
+                                        </div>
+                                        {% for faculty in faculty_names %}
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm"
+                                                       for="facultyTotal{{ loop.index }}">{{ faculty }}</label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" step="1"
+                                                       class="form-control form-control-sm"
+                                                       id="facultyTotal{{ loop.index }}"
+                                                       name="faculty_total_{{ faculty }}"
+                                                       placeholder="students"
+                                                       value="{{ saved_config.faculty_totals.get(faculty, '') }}">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if analysis.function_name == 'top_communicators_employee' %}
+                            <div class="mt-1">
+                                <a class="small" data-bs-toggle="collapse" href="#topEmployeeCount" role="button">
+                                    <i class="bi bi-caret-down-fill"></i> Number of employees to show
+                                </a>
+                                <div class="collapse" id="topEmployeeCount">
+                                    <div class="card card-body bg-light mt-2 p-3">
+                                        <div class="form-text mb-2">
+                                            How many employees appear in the top-employee plots.
+                                        </div>
+                                        <input type="number" min="1" step="1"
+                                               class="form-control form-control-sm"
+                                               id="topEmployeeN" name="top_employee_n"
+                                               value="{{ saved_config.top_employee_n }}">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if analysis.function_name == 'hami_performance_score' %}
+                            <div class="mt-1">
+                                <a class="small" data-bs-toggle="collapse" href="#scoreWeights" role="button">
+                                    <i class="bi bi-caret-down-fill"></i> Metric weights
+                                </a>
+                                <div class="collapse" id="scoreWeights">
+                                    <div class="card card-body bg-light mt-2 p-3">
+                                        <div class="form-text mb-2">
+                                            How much each metric counts toward the final score. The four must add up
+                                            to <strong>1</strong>. Quality of Response comes from the
+                                            <a href="{{ url_for('evaluations') }}">Evaluations</a> page and must be
+                                            filled in for this exact period, otherwise no final score is produced.
+                                        </div>
+                                        {% for key, label in [('count', 'Number of requests'),
+                                                              ('first_response', 'First response time'),
+                                                              ('duration', 'Request duration'),
+                                                              ('quality', 'Quality of response')] %}
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm"
+                                                       for="weight{{ loop.index }}">{{ label }}</label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" max="1" step="0.001"
+                                                       class="form-control form-control-sm score-weight"
+                                                       id="weight{{ loop.index }}"
+                                                       name="weight_{{ key }}"
+                                                       value="{{ saved_config.score_weights.get(key, '') }}">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        <div class="form-text mt-1">
+                                            Total: <strong id="weightTotal">1</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-1">
+                                <a class="small" data-bs-toggle="collapse" href="#scoreTargets" role="button">
+                                    <i class="bi bi-caret-down-fill"></i> Targets for the 0&ndash;100 score
+                                </a>
+                                <div class="collapse" id="scoreTargets">
+                                    <div class="card card-body bg-light mt-2 p-3">
+                                        <div class="form-text mb-2">
+                                            These targets turn the raw numbers into a score out of 100 without
+                                            comparing hamis to each other, so a period where everyone improved
+                                            reads as a higher score for everyone. That only holds while the
+                                            targets stay the same, so <strong>change them once and then leave
+                                            them alone</strong> &mdash; two periods scored with different targets
+                                            are not comparable.
+                                        </div>
+
+                                        <div class="fw-semibold small mt-2">First response time (hours)</div>
+                                        <div class="form-text mb-2">
+                                            Every request is scored on its own: 100 points if the first reply came
+                                            within the first box, then 80, 50, 20, and 0 past the last box. The
+                                            hami&rsquo;s score is the average over their requests.
+                                        </div>
+                                        {% for credit in [100, 80, 50, 20] %}
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm"
+                                                       for="targetFirst{{ loop.index }}">{{ credit }} points if replied within</label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" step="0.5"
+                                                       class="form-control form-control-sm"
+                                                       id="targetFirst{{ loop.index }}"
+                                                       name="target_first_response_hours_{{ loop.index }}"
+                                                       value="{{ saved_config.score_targets.first_response_hours[loop.index0] }}">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+
+                                        <div class="fw-semibold small mt-3">Request duration (hours)</div>
+                                        <div class="form-text mb-2">
+                                            Same idea, applied to how long the whole request stayed open.
+                                        </div>
+                                        {% for credit in [100, 80, 50, 20] %}
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm"
+                                                       for="targetDuration{{ loop.index }}">{{ credit }} points if closed within</label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" step="0.5"
+                                                       class="form-control form-control-sm"
+                                                       id="targetDuration{{ loop.index }}"
+                                                       name="target_duration_hours_{{ loop.index }}"
+                                                       value="{{ saved_config.score_targets.duration_hours[loop.index0] }}">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+
+                                        <div class="fw-semibold small mt-3">Workload, confidence and population</div>
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm" for="targetVolume">
+                                                    Requests per 30 days that count as a full load
+                                                </label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="1" step="1"
+                                                       class="form-control form-control-sm" id="targetVolume"
+                                                       name="target_volume_target_30d"
+                                                       value="{{ saved_config.score_targets.volume_target_30d }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-text mb-2">
+                                            Hitting this exactly scores 80. More always scores higher, with
+                                            diminishing returns, so carrying a heavier load is rewarded but
+                                            cannot buy its way past slow or poor service.
+                                        </div>
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm" for="targetConfidence">
+                                                    Requests per 30 days for 50% confidence
+                                                </label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" step="1"
+                                                       class="form-control form-control-sm" id="targetConfidence"
+                                                       name="target_confidence_half_n"
+                                                       value="{{ saved_config.score_targets.confidence_half_n }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-text mb-2">
+                                            How much evidence a score rests on. Like the workload target this is a
+                                            rate, so over a three month window it takes three times this many
+                                            requests to reach 50%. Shown under each bar next to the request count,
+                                            and as a column in the CSV; it never changes the score itself.
+                                        </div>
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm" for="targetPopulation">
+                                                    Best % of hamis in the system score
+                                                </label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="1" max="100" step="1"
+                                                       class="form-control form-control-sm" id="targetPopulation"
+                                                       name="target_population_top_percent"
+                                                       value="{{ saved_config.score_targets.population_top_percent }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-text">
+                                            The whole-population score averages this share of hamis, best first,
+                                            so the weakest tail does not drag the headline number.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if analysis.function_name == 'employee_performance_score' %}
+                            <div class="mt-1">
+                                <a class="small" data-bs-toggle="collapse" href="#employeeScore" role="button">
+                                    <i class="bi bi-caret-down-fill"></i> Weights and targets
+                                </a>
+                                <div class="collapse" id="employeeScore">
+                                    <div class="card card-body bg-light mt-2 p-3">
+                                        <div class="form-text mb-2">
+                                            Employees have no timing of their own &mdash; a request&rsquo;s clock
+                                            belongs to the hami who owns it &mdash; so speed comes from the
+                                            <strong>Response Time</strong> score on the
+                                            <a href="{{ url_for('evaluations') }}">Evaluations</a> page, which is
+                                            already out of 100. Both grades must be filled in for this exact
+                                            period; without them the score falls back to request volume alone.
+                                        </div>
+
+                                        <div class="fw-semibold small mt-2">Metric weights (must add up to 1)</div>
+                                        {% for key, label in [('count', 'Requests answered'),
+                                                              ('response_time', 'Response Time'),
+                                                              ('quality', 'Quality of Response')] %}
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm"
+                                                       for="empWeight{{ loop.index }}">{{ label }}</label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" max="1" step="0.001"
+                                                       class="form-control form-control-sm employee-weight"
+                                                       id="empWeight{{ loop.index }}"
+                                                       name="emp_weight_{{ key }}"
+                                                       value="{{ saved_config.employee_weights.get(key, '') }}">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        <div class="form-text mb-3">
+                                            Total: <strong id="employeeWeightTotal">1</strong>
+                                        </div>
+
+                                        <div class="fw-semibold small">Targets for the 0&ndash;100 score</div>
+                                        <div class="form-text mb-2">
+                                            Same idea as the hami targets, and the same warning: change them once
+                                            and then leave them alone, or periods stop being comparable.
+                                        </div>
+                                        {% for key, label in [('volume_target_30d', 'Requests answered per 30 days for a full load'),
+                                                              ('confidence_half_n', 'Requests per 30 days for 50% confidence'),
+                                                              ('population_top_percent', 'Best % of employees in the system score'),
+                                                              ('top_n', 'How many names in the best / weakest panels')] %}
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-7">
+                                                <label class="col-form-label col-form-label-sm"
+                                                       for="empTarget{{ loop.index }}">{{ label }}</label>
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="number" min="0" step="1"
+                                                       class="form-control form-control-sm"
+                                                       id="empTarget{{ loop.index }}"
+                                                       name="emp_target_{{ key }}"
+                                                       value="{{ saved_config.employee_targets.get(key, '') }}">
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        <div class="form-text">
+                                            This cohort runs to dozens of people, so the plots show the whole
+                                            distribution plus only the best and weakest few by name, each with
+                                            its request count and confidence.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endmacro %}
+
+                        <div class="row">
+                            {% set half = ((available_analyses|length + 1) / 2)|int %}
+                            <div class="col-md-6">
+                                {% for analysis in available_analyses[:half] %}
+                                {{ analysis_item(analysis, loop.index) }}
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-6">
+                                {% for analysis in available_analyses[half:] %}
+                                {{ analysis_item(analysis, loop.index + half) }}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="analyzeBtn">
+                            <i class="fas fa-chart-line me-2"></i>Run Selected Analyses
+                        </button>
+                    </div>
+                </form>                <!-- Progress Indicator -->
+                <div class="mt-4 d-none" id="analyzeProgress">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Running analyses... This may take a few minutes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle"></i> Analysis Output
+                </h5>
+                <p class="small">The analysis will generate:</p>
+                <ul class="small">
+                    <li><strong>Plots:</strong> High-quality PNG images</li>
+                    <li><strong>CSV Files:</strong> Detailed data tables</li>
+                    <li><strong>Statistics:</strong> Key metrics and insights</li>
+                </ul>
+                <hr>
+                <p class="small mb-0">
+                    <i class="bi bi-clock"></i> Estimated time: 2-5 minutes depending on data size
+                </p>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-lightbulb"></i> Tip
+                </h5>
+                <p class="small mb-0">
+                    After analysis completes, you can view plots and download CSV files from their respective pages.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// "All Cities" toggles the individual city checkboxes on/off
+document.getElementById('allCitiesCheck').addEventListener('change', function() {
+    const cityCheckboxes = document.querySelectorAll('.city-checkbox');
+    cityCheckboxes.forEach(cb => {
+        cb.disabled = this.checked;
+        if (this.checked) cb.checked = false;
+    });
+});
+
+// Select All functionality
+document.getElementById('selectAllBtn').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.plot-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+});
+
+// Deselect All functionality
+document.getElementById('deselectAllBtn').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.plot-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+});
+
+// Form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    const btn = document.getElementById('analyzeBtn');
+    const progress = document.getElementById('analyzeProgress');
+    const checkboxes = document.querySelectorAll('.plot-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one analysis to run.');
+        return false;
+    }
+    
+    // Validate date format if provided
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    
+    if (startDate && !datePattern.test(startDate)) {
+        e.preventDefault();
+        alert('Invalid start date format. Please use YYYY-MM-DD (e.g., 1403-01-01)');
+        return false;
+    }
+    
+    if (endDate && !datePattern.test(endDate)) {
+        e.preventDefault();
+        alert('Invalid end date format. Please use YYYY-MM-DD (e.g., 1403-12-29)');
+        return false;
+    }
+    
+    // Check if start date is before end date
+    if (startDate && endDate && startDate >= endDate) {
+        e.preventDefault();
+        alert('Start date must be before end date.');
+        return false;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
+    progress.classList.remove('d-none');
+});
+// The weights only mean something as a weighted average, so show the running total
+// and flag it the moment it stops adding up to 1.
+[['.score-weight', 'weightTotal'], ['.employee-weight', 'employeeWeightTotal']].forEach(function (pair) {
+    const inputs = document.querySelectorAll(pair[0]);
+    const total = document.getElementById(pair[1]);
+    if (!inputs.length || !total) return;
+    function update() {
+        let sum = 0;
+        inputs.forEach(i => { sum += parseFloat(i.value) || 0; });
+        total.textContent = sum.toFixed(3).replace(/\.?0+$/, '') || '0';
+        const ok = Math.abs(sum - 1) <= 0.001;
+        total.classList.toggle('text-danger', !ok);
+        total.classList.toggle('text-success', ok);
+    }
+    inputs.forEach(i => i.addEventListener('input', update));
+    update();
+});
+</script>
+{% endblock %}

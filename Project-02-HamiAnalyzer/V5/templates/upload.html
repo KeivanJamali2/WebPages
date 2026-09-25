@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Data - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-cloud-upload"></i> Upload Data
+        </h1>
+        <p class="text-muted">Upload a ZIP file containing your raw data files</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-5">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">
+                            <i class="bi bi-file-zip"></i> Select ZIP File
+                        </label>
+                        <input type="file" class="form-control form-control-lg" 
+                               id="file" name="file" accept=".zip" required>
+                        <div class="form-text">
+                            Maximum file size: 500 MB. Only ZIP files are allowed.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Expected File Structure:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>ZIP file should contain <code>file_i_j.txt</code> and <code>workflow_i_j.txt</code> files</li>
+                                <li>Where <code>i</code> is the hami ID and <code>j</code> is the request number</li>
+                                <li>Example: <code>file_105011_1.txt</code>, <code>workflow_105011_1.txt</code></li>
+                                <li>The city of each request is read from its <code>رشته محل</code> line, so you don't need to enter it</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                            <i class="bi bi-cloud-upload"></i> Upload File
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+                
+                <!-- Progress Bar (hidden by default) -->
+                <div class="mt-4 d-none" id="uploadProgress">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%;" id="progressBar">
+                            <span id="progressText">Uploading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-lightbulb"></i> Tips
+                </h5>
+                <ul class="small">
+                    <li>Ensure your ZIP file is properly formatted</li>
+                    <li>Check that all required files are included</li>
+                    <li>Large files may take some time to upload</li>
+                    <li>You can add more data after initial upload</li>
+                    <li>Use the Database page to manage your data</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-question-circle"></i> Need Help?
+                </h5>
+                <p class="small mb-2">Having trouble uploading your data?</p>
+                <a href="{{ url_for('help_page') }}" class="btn btn-sm btn-outline-primary">
+                    View Documentation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('uploadBtn');
+    const progress = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+    progress.classList.remove('d-none');
+    
+    // Simulate progress (actual progress requires AJAX implementation)
+    let width = 0;
+    const interval = setInterval(function() {
+        if (width >= 90) {
+            clearInterval(interval);
+        } else {
+            width += 10;
+            progressBar.style.width = width + '%';
+            progressText.textContent = 'Uploading... ' + width + '%';
+        }
+    }, 500);
+});
+</script>
+{% endblock %}

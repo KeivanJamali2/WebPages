@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Help - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-question-circle"></i> Help & Documentation
+        </h1>
+        <p class="text-muted">Learn how to use the HamiAnalyzer platform</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Getting Started -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Getting Started</h4>
+            </div>
+            <div class="card-body">
+                <h5>1. Upload Your Data</h5>
+                <p>Navigate to the <strong>Upload Data</strong> page and select a ZIP file containing your raw data files. The ZIP should contain files in the format:</p>
+                <ul>
+                    <li><code>file_i_j.txt</code> - Message data files</li>
+                    <li><code>workflow_i_j.txt</code> - Workflow data files</li>
+                </ul>
+                <p>Where <code>i</code> is the Hami ID and <code>j</code> is the request number.</p>
+                
+                <h5 class="mt-4">2. Process the Data</h5>
+                <p>After uploading, you'll be redirected to the <strong>Process Data</strong> page. You can:</p>
+                <ul>
+                    <li>Specify Hami IDs to process (comma-separated)</li>
+                    <li>Leave empty to auto-detect all IDs</li>
+                    <li>Click "Process Data" to organize files into the database</li>
+                </ul>
+                
+                <h5 class="mt-4">3. Run Analysis</h5>
+                <p>Visit the <strong>Analyze</strong> page and click "Run All Analyses" to generate:</p>
+                <ul>
+                    <li>Visualization plots (PNG images)</li>
+                    <li>Statistical data (CSV files)</li>
+                    <li>Comprehensive metrics</li>
+                </ul>
+                
+                <h5 class="mt-4">4. View Results</h5>
+                <p>Access your results through:</p>
+                <ul>
+                    <li><strong>Plots</strong> - View and download visualization images</li>
+                    <li><strong>Downloads</strong> - Download detailed CSV files</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Features -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-star-fill"></i> Key Features</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-check-circle-fill text-success"></i> Data Management</h6>
+                        <ul class="small">
+                            <li>Upload ZIP files</li>
+                            <li>Automatic data extraction</li>
+                            <li>Database organization</li>
+                            <li>Clear/reset functionality</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-check-circle-fill text-success"></i> Analysis Tools</h6>
+                        <ul class="small">
+                            <li>Request distribution</li>
+                            <li>Timeline analysis</li>
+                            <li>Communicator rankings</li>
+                            <li>Response time metrics</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-check-circle-fill text-success"></i> Visualizations</h6>
+                        <ul class="small">
+                            <li>High-quality charts</li>
+                            <li>Communication networks</li>
+                            <li>Heatmaps</li>
+                            <li>Downloadable plots</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-check-circle-fill text-success"></i> Export Options</h6>
+                        <ul class="small">
+                            <li>CSV data exports</li>
+                            <li>PNG plot downloads</li>
+                            <li>Detailed statistics</li>
+                            <li>Ready for Excel/Sheets</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Database Management -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="bi bi-database-fill"></i> Database Management</h4>
+            </div>
+            <div class="card-body">
+                <h5>Adding More Data</h5>
+                <p>You can continuously add more data to your database:</p>
+                <ol>
+                    <li>Upload a new ZIP file</li>
+                    <li>Process the data</li>
+                    <li>New data will be merged with existing data</li>
+                    <li>Re-run analysis to include new data</li>
+                </ol>
+                
+                <h5 class="mt-4">Clearing the Database</h5>
+                <p>To start fresh:</p>
+                <ol>
+                    <li>Go to <strong>Database</strong> page</li>
+                    <li>Click "Clear Database" in the Danger Zone</li>
+                    <li>Confirm the action</li>
+                    <li>Upload and process new data</li>
+                </ol>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>Warning:</strong> Clearing the database is permanent and cannot be undone!
+                </div>
+            </div>
+        </div>
+        
+        <!-- FAQ -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-warning">
+                <h4 class="mb-0"><i class="bi bi-question-circle-fill"></i> Frequently Asked Questions</h4>
+            </div>
+            <div class="card-body">
+                <h6><strong>Q: What file formats are supported?</strong></h6>
+                <p>Only ZIP files containing properly formatted TXT files are accepted.</p>
+                
+                <h6><strong>Q: How large can my upload be?</strong></h6>
+                <p>Maximum file size is 500 MB per upload.</p>
+                
+                <h6><strong>Q: How long does analysis take?</strong></h6>
+                <p>Typically 2-5 minutes depending on data size. Larger datasets may take longer.</p>
+                
+                <h6><strong>Q: Can I access the system from mobile?</strong></h6>
+                <p>Yes! The interface is fully responsive and works on tablets and smartphones.</p>
+                
+                <h6><strong>Q: Who can access the system?</strong></h6>
+                <p>Only users added by the administrator can log in. Contact admin for access.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Links -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-cloud-upload"></i> Upload Data
+                    </a>
+                    <a href="{{ url_for('analyze') }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-bar-chart-line"></i> Run Analysis
+                    </a>
+                    <a href="{{ url_for('manage_database') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-database"></i> Manage Database
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5><i class="bi bi-envelope"></i> Need Help?</h5>
+                <p class="small">If you encounter any issues or have questions, please contact the system administrator.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

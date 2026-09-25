@@ -1,0 +1,24 @@
+parent_id: None
+id: f6ac9dcf-26fe-4fb8-a3bc-fdde1367c69c
+date: چهارشنبه، 28 خرداد 1404 15:43
+name: کارشناسی پیوسته_بهداشت  عمومی_میبد_4011
+email: sf-179-10703-4-4011@iau.ir
+--------------------------------------------------
+parent_id: f6ac9dcf-26fe-4fb8-a3bc-fdde1367c69c
+id: 6c0442e4-ff12-43aa-acf8-fec3b3aa248b
+date: شنبه، 1 تیر 1404 09:09
+name: Hadis Noroozi
+email: 4610825767@iau.ir
+--------------------------------------------------
+parent_id: f6ac9dcf-26fe-4fb8-a3bc-fdde1367c69c
+id: 98278baf-614b-404f-822d-3ba5cc74af09
+date: شنبه، 1 تیر 1404 09:09
+name: مرتضی فیاضی بارجینی
+email: 337080@iau.ir
+--------------------------------------------------
+parent_id: f6ac9dcf-26fe-4fb8-a3bc-fdde1367c69c
+id: 9e33267d-da5c-4d1a-86a0-f5bfb0377135
+date: چهارشنبه، 8 مرداد 1404 12:03
+name: Hadis Noroozi
+email: 4610825767@iau.ir
+--------------------------------------------------

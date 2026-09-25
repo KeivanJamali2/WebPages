@@ -1,0 +1,18 @@
+parent_id: None
+id: 1f8d1c17-cfcd-4d3d-8940-39b8d26cb0cb
+date: شنبه، 2 اسفند 1404 13:52
+name: کاردانی پیوسته_الکتروتکنیک_اشکذر_4021
+email: sm-317-40132-1-4021@iau.ir
+--------------------------------------------------
+parent_id: 1f8d1c17-cfcd-4d3d-8940-39b8d26cb0cb
+id: dd54ffa9-70c7-4289-b51a-d1e49100a7d7
+date: شنبه، 3 اسفند 1404 10:28
+name: Mostafa Hakimabadian
+email: 5510068450@iau.ir
+--------------------------------------------------
+parent_id: 1f8d1c17-cfcd-4d3d-8940-39b8d26cb0cb
+id: bb73ffd2-0be3-47df-bcd0-30687c3fcaf1
+date: شنبه، 3 اسفند 1404 11:06
+name: Mostafa Hakimabadian
+email: 5510068450@iau.ir
+--------------------------------------------------

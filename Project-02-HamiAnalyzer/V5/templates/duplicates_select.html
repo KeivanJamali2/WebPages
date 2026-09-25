@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Select Data Folder - HamiAnalyzer{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6">
+            <i class="bi bi-exclamation-triangle"></i> Check for Duplicates
+        </h1>
+        <p class="text-muted">Select which data folder to check for duplicate records</p>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>You have two separate data folders:</strong>
+    <br>
+    "First" folder and "Last" folder. Each can have duplicate records. Select the one you want to check and manage.
+</div>
+
+<div class="row g-4">
+    <!-- First Folder -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-folder-fill"></i> First Folder
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if first_summary.total_duplicate_groups > 0 %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>Duplicates Found!</strong>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li><strong>Duplicate Groups:</strong> {{ first_summary.total_duplicate_groups }}</li>
+                        <li><strong>Total Duplicate Records:</strong> {{ first_summary.total_duplicates }}</li>
+                    </ul>
+                    <a href="{{ url_for('duplicates_page', date_source='first') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-search"></i> View & Manage Duplicates
+                    </a>
+                {% else %}
+                    <div class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle"></i>
+                        <strong>No Duplicates Found</strong>
+                    </div>
+                    <p class="text-muted">This folder has no duplicate records.</p>
+                    <button class="btn btn-secondary mt-3" disabled>
+                        <i class="bi bi-search"></i> No Duplicates
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Folder -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-folder-fill"></i> Last Folder
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if last_summary.total_duplicate_groups > 0 %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>Duplicates Found!</strong>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li><strong>Duplicate Groups:</strong> {{ last_summary.total_duplicate_groups }}</li>
+                        <li><strong>Total Duplicate Records:</strong> {{ last_summary.total_duplicates }}</li>
+                    </ul>
+                    <a href="{{ url_for('duplicates_page', date_source='last') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-search"></i> View & Manage Duplicates
+                    </a>
+                {% else %}
+                    <div class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle"></i>
+                        <strong>No Duplicates Found</strong>
+                    </div>
+                    <p class="text-muted">This folder has no duplicate records.</p>
+                    <button class="btn btn-secondary mt-3" disabled>
+                        <i class="bi bi-search"></i> No Duplicates
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <a href="{{ url_for('manage_database') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Database Management
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{
+    "login_url": "https://mail.iau.ac.ir",
+    "username": "Manager105001@iau.ir",
+    "password": "Hami@111",
+    "start_date": "1404/08/01",
+    "end_date": "1404/09/22",
+    "i_value": 105006,
+    "name_value": "حامی 006 واحد یزد",
+    "chrome_path": "/Users/keivanjamali/Desktop/chromedriver",
+    "output_dir": "/Users/keivanjamali/Desktop",
+    "file_load_sleep": 3,
+    "workflow_load_sleep": 8,
+    "page_load_sleep": 16,
+    "outdate_tolerance": 3
+}

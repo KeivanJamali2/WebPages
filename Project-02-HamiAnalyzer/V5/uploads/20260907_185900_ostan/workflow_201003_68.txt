@@ -1,0 +1,18 @@
+parent_id: None
+id: c6640976-8ff8-4926-8af4-2b2ffc6fef61
+date: شنبه، 5 تیر 1404 09:21
+name: کارشناسی پیوسته_حقوق_تفت_4032
+email: sm-201-20803-4-4032@iau.ir
+--------------------------------------------------
+parent_id: c6640976-8ff8-4926-8af4-2b2ffc6fef61
+id: 26cb8f90-08a7-46e0-9b86-ae7395f16ea6
+date: شنبه، 5 تیر 1404 13:26
+name: seyed abbas yazdanparast tafti
+email: 4459643731@iau.ir
+--------------------------------------------------
+parent_id: c6640976-8ff8-4926-8af4-2b2ffc6fef61
+id: 131edd8b-c7a4-42f5-a6a6-ec27f170088d
+date: شنبه، 5 تیر 1404 13:27
+name: seyed abbas yazdanparast tafti
+email: 4459643731@iau.ir
+--------------------------------------------------
